@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TTS Pro - မြန်မာအသံ ကာရိုက်တာစနစ် (Vercel Cloud)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Padauk', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 flex flex-col items-center">
+
+  <div class="max-w-4xl w-full space-y-4">
+
+    <!-- Header Section -->
+    <header class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-xl shadow-lg shadow-amber-500/20 shrink-0">
+          🎙️
+        </div>
+        <div>
+          <h1 class="text-base sm:text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+            TTS Pro (မြန်မာအသံစနစ်)
+          </h1>
+          <p class="text-[10px] sm:text-[11px] text-slate-400">ကာရိုက်တာ (၁၀) မျိုးပါ အသံဖန်တီးခန်း • Vercel Cloud</p>
+        </div>
+      </div>
+
+      <!-- Cloud Status Badge -->
+      <div class="flex items-center gap-1.5">
+        <div id="connStatusBadge" class="text-[10px] sm:text-[11px] px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 font-bold transition-all bg-slate-900 border-slate-800 text-slate-300">
+          <span id="connDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="connText">Cloud စစ်ဆေးနေသည်</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+      <!-- Left Column: Character Voice Cards -->
+      <section class="lg:col-span-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xl">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs sm:text-sm font-bold text-amber-400 flex items-center gap-1.5">
+            <span>👥</span>
+            <span>မြန်မာအသံ ရွေးချယ်ရန် (အသံ ၁၀ မျိုး)</span>
+          </h2>
+          <span id="selectedBadge" class="text-[10px] font-bold text-amber-300 bg-amber-950/80 border border-amber-800/80 px-2 py-0.5 rounded-full">
+            ရွေးထားသည်: နေတိုး
+          </span>
+        </div>
+
+        <!-- Category Filter Tabs -->
+        <div class="flex flex-wrap gap-1 text-[11px]">
+          <button type="button" onclick="filterCat('all')" class="cat-btn px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold" data-cat="all">အားလုံး</button>
+          <button type="button" onclick="filterCat('men')" class="cat-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300" data-cat="men">👨 ဦးလေးသံ</button>
+          <button type="button" onclick="filterCat('boy')" class="cat-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300" data-cat="boy">👦 လူငယ်သံ</button>
+          <button type="button" onclick="filterCat('women')" class="cat-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300" data-cat="women">👩 အမျိုးသမီးကြီး</button>
+          <button type="button" onclick="filterCat('girl')" class="cat-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300" data-cat="girl">👧 မိန်းကလေးငယ်</button>
+        </div>
+
+        <!-- Voice Cards Container -->
+        <div id="voiceCardsList" class="space-y-2 max-h-[380px] sm:max-h-[460px] overflow-y-auto pr-1 custom-scroll">
+          <!-- Injected via JS -->
+        </div>
+      </section>
+
+      <!-- Right Column: Text Input & Player -->
+      <section class="lg:col-span-6 space-y-4">
+
+        <!-- Input Box -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xl">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="font-bold text-slate-200 uppercase tracking-wider">မြန်မာစာသား ရိုက်ထည့်ရန်</span>
+            <div class="flex items-center gap-2">
+              <span id="charCount">၀ အက္ခရာ</span>
+              <span>•</span>
+              <button type="button" onclick="clearText()" class="text-rose-400 hover:underline">ဖျက်မည်</button>
+            </div>
+          </div>
+
+          <textarea
+            id="textInput"
+            rows="5"
+            placeholder="အသံပြောင်းလိုသော မြန်မာစာသားများကို ရိုက်ထည့်ပါ..."
+            class="w-full bg-slate-950 border border-slate-700/80 rounded-xl p-3 text-sm leading-relaxed text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-all resize-y"
+          >သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။</textarea>
+
+          <!-- Sliders -->
+          <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>အမြန်နှုန်း</span>
+                <span id="speedVal" class="text-amber-400 font-mono">မူရင်း</span>
+              </div>
+              <input
+                id="speedRange"
+                type="range"
+                min="-20"
+                max="20"
+                step="2"
+                value="0"
+                class="w-full accent-amber-500 cursor-pointer"
+                oninput="updateLabels()"
+              />
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>အသံအမြင့် (Pitch)</span>
+                <span id="pitchVal" class="text-amber-400 font-mono">မူရင်း</span>
+              </div>
+              <input
+                id="pitchRange"
+                type="range"
+                min="-15"
+                max="15"
+                step="1"
+                value="0"
+                class="w-full accent-amber-500 cursor-pointer"
+                oninput="updateLabels()"
+              />
+            </div>
+          </div>
+
+          <!-- Generate Button -->
+          <button
+            id="generateBtn"
+            type="button"
+            onclick="handleGenerate()"
+            class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:brightness-110 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+          >
+            <span id="generateSpinner" class="hidden animate-spin">🌀</span>
+            <span id="generateText">🎙️ အသံဖန်တီးမည် (Generate Voice)</span>
+          </button>
+        </div>
+
+        <!-- Audio Player Card -->
+        <div id="playerSection" class="hidden bg-slate-900 border border-amber-500/40 rounded-2xl p-4 space-y-3 shadow-2xl">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="playerTitle" class="text-xs font-bold text-amber-300">အသံဖိုင် အသင့်ဖြစ်ပါပြီ</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">MP3 Ready</span>
+          </div>
+
+          <audio id="mainAudio" controls class="w-full rounded-lg outline-none"></audio>
+
+          <button
+            type="button"
+            onclick="downloadCurrentMp3()"
+            class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/25"
+          >
+            <span>📥</span>
+            <span>MP3 ဒေါင်းလုဒ်ဆွဲမည် (Download MP3)</span>
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <audio id="previewAudio" class="hidden"></audio>
+
+  <script>
+    const API_BASE = "";
+
+    const PERSONAS = [
+      {
+        id: "u-han",
+        name: "ဦးဟန်",
+        category: "men",
+        icon: "👨",
+        genderBadge: "လူကြီးအမျိုးသား",
+        role: "တည်ကြည် ခန့်ညားသော လူကြီးသံ (သတင်း/အသိပညာပေး)",
+        phrase: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "u-kyi",
+        name: "ဦးကြည်",
+        category: "men",
+        icon: "👴",
+        genderBadge: "အဖိုး/လူကြီးသံ",
+        role: "ဩဇာတိက္ကမပြည့်ဝပြီး လေးနက်သော လူကြီးသံ (သမိုင်း/ဝတ္ထု)",
+        phrase: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးကြည် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "nay-toe",
+        name: "နေတိုး",
+        category: "boy",
+        icon: "👦",
+        genderBadge: "လူငယ်အမျိုးသား",
+        role: "တက်ကြွ လန်းဆန်းသော လူငယ်သံ (Movie Recap အကောင်းဆုံး)",
+        phrase: "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "tay-za",
+        name: "တေဇ",
+        category: "boy",
+        icon: "🧑",
+        genderBadge: "လူငယ်အမျိုးသား",
+        role: "သဘာဝကျပြီး ရှင်းလင်းပြတ်သားသော ဇာတ်ကြောင်းပြောသံ",
+        phrase: "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "zaw-zaw",
+        name: "ဇော်ဇော်",
+        category: "boy",
+        icon: "🧒",
+        genderBadge: "ဆယ်ကျော်သက် ကောင်လေး",
+        role: "သွက်လက် ပေါ့ပါးသော လူငယ်စကားပြောဟန် (Vlog/ဟာသ)",
+        phrase: "မင်္ဂလာပါ၊ ကျွန်တော် ဇော်ဇော် ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "daw-yin",
+        name: "ဒေါ်ရင်",
+        category: "women",
+        icon: "👩",
+        genderBadge: "အမျိုးသမီးကြီး",
+        role: "နွေးထွေး ကြင်နာတတ်သော မိခင်သံ (တရားတော်/ဘဝအတွေ့အကြုံ)",
+        phrase: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်ရင် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "daw-soe",
+        name: "ဒေါ်စိုး",
+        category: "women",
+        icon: "🧕",
+        genderBadge: "အမျိုးသမီးကြီး",
+        role: "တည်ငြိမ် ရင့်ကျက်သော အိမ်ထောင်ရှင်အမျိုးသမီးသံ",
+        phrase: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်စိုး ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "tha-zin",
+        name: "သဇင်",
+        category: "girl",
+        icon: "👧",
+        genderBadge: "မိန်းကလေးငယ်",
+        role: "ချိုသာ သွက်လက်သော အပျိုမလေးသံ (Movie Recap/TikTok)",
+        phrase: "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်နော်။"
+      },
+      {
+        id: "may-hnin",
+        name: "မေနှင်း",
+        category: "girl",
+        icon: "🌸",
+        genderBadge: "မိန်းကလေးငယ်",
+        role: "ကြည်လင် အေးချမ်းသော ကောင်မလေးသံ (ပုံပြင်/ဝတ္ထုဖတ်)",
+        phrase: "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်နော်။"
+      },
+      {
+        id: "nu-nu",
+        name: "နုနု",
+        category: "girl",
+        icon: "🎀",
+        genderBadge: "မိန်းကလေးငယ်",
+        role: "နူးညံ့ ချစ်စဖွယ် ကလေးမလေးသံ (ညအိပ်ရာဝင် ပုံပြင်)",
+        phrase: "မင်္ဂလာပါရှင်၊ ကျွန်မ နုနု ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်ရှင်။"
+      }
+    ];
+
+    let selectedId = "nay-toe";
+    let playingPreviewId = null;
+    let currentBlob = null;
+
+    const previewAudioEl = document.getElementById("previewAudio");
+    const mainAudioEl = document.getElementById("mainAudio");
+    const textInputEl = document.getElementById("textInput");
+
+    async function checkCloudConnection() {
+      const dot = document.getElementById("connDot");
+      const text = document.getElementById("connText");
+      const badge = document.getElementById("connStatusBadge");
+
+      try {
+        const res = await fetch(`${API_BASE}/api/health`);
+        if (res.ok) {
+          dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+          text.innerText = "🟢 Vercel Online (မြန်မာအသံအစစ်)";
+          badge.className = "text-[10px] sm:text-[11px] px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold flex items-center gap-1.5";
+          return;
+        }
+      } catch (e) {}
+
+      dot.className = "w-2 h-2 rounded-full bg-amber-400";
+      text.innerText = "🟡 Vercel ချိတ်ဆက်နေသည်";
+    }
+
+    function renderVoices(filter = "all") {
+      const container = document.getElementById("voiceCardsList");
+      container.innerHTML = "";
+
+      const list = filter === "all" ? PERSONAS : PERSONAS.filter(p => p.category === filter);
+
+      list.forEach(item => {
+        const isSelected = item.id === selectedId;
+        const isPreviewing = item.id === playingPreviewId;
+
+        const card = document.createElement("div");
+        card.className = `p-2.5 sm:p-3 rounded-xl border transition-all flex items-center justify-between gap-2 sm:gap-3 ${
+          isSelected 
+            ? "bg-amber-950/40 border-amber-500 ring-1 ring-amber-500/50 shadow-md" 
+            : "bg-slate-950/60 border-slate-800 hover:border-slate-700"
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0" onclick="selectVoice('${item.id}')">
+            <div class="text-xl sm:text-2xl w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800 flex items-center justify-center shrink-0">
+              ${item.icon}
+            </div>
+            <div class="truncate">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-xs sm:text-sm text-slate-100">${item.name}</span>
+                <span class="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full font-medium ${
+                  item.category === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800' :
+                  item.category === 'boy' ? 'bg-cyan-950 text-cyan-300 border border-cyan-800' :
+                  item.category === 'women' ? 'bg-purple-950 text-purple-300 border border-purple-800' :
+                  'bg-pink-950 text-pink-300 border border-pink-800'
+                }">
+                  ${item.genderBadge}
+                </span>
+                ${isSelected ? '<span class="text-[9px] text-amber-400 font-bold">✓ ရွေးထားသည်</span>' : ''}
+              </div>
+              <p class="text-[11px] text-slate-300 truncate mt-0.5">${item.role}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onclick="playVoicePreview('${item.id}', event)"
+            class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-bold shrink-0 flex items-center gap-1 transition-all ${
+              isPreviewing
+                ? 'bg-amber-500 text-slate-950 animate-pulse'
+                : 'bg-slate-800 hover:bg-amber-950 text-amber-300 border border-amber-500/30'
+            }"
+            title="${item.name} ၏ အသံကို စမ်းဖွင့်မည်"
+          >
+            <span>${isPreviewing ? '⏹' : '🔈'}</span>
+            <span class="hidden sm:inline">${isPreviewing ? 'ရပ်မည်' : 'အစမ်းနားထောင်'}</span>
+          </button>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function selectVoice(id) {
+      selectedId = id;
+      const persona = PERSONAS.find(p => p.id === id);
+      document.getElementById("selectedBadge").innerText = `ရွေးထားသည်: ${persona.name}`;
+      const activeCat = document.querySelector(".cat-btn.bg-amber-500")?.dataset.cat || "all";
+      renderVoices(activeCat);
+    }
+
+    function filterCat(cat) {
+      document.querySelectorAll(".cat-btn").forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = "cat-btn px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold";
+        } else {
+          btn.className = "cat-btn px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300";
+        }
+      });
+      renderVoices(cat);
+    }
+
+    async function playVoicePreview(id, event) {
+      if (event) event.stopPropagation();
+
+      if (playingPreviewId === id) {
+        previewAudioEl.pause();
+        playingPreviewId = null;
+        renderVoices(document.querySelector(".cat-btn.bg-amber-500")?.dataset.cat || "all");
+        return;
+      }
+
+      playingPreviewId = id;
+      renderVoices(document.querySelector(".cat-btn.bg-amber-500")?.dataset.cat || "all");
+
+      try {
+        const res = await fetch(`${API_BASE}/api/preview/${id}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          previewAudioEl.src = URL.createObjectURL(blob);
+          await previewAudioEl.play();
+          return;
+        }
+      } catch (e) {}
+
+      playingPreviewId = null;
+      renderVoices(document.querySelector(".cat-btn.bg-amber-500")?.dataset.cat || "all");
+      alert("Vercel အသံချိတ်ဆက်မှု မအောင်မြင်သေးပါ။ ခဏစောင့်ပြီး ပြန်လည်စမ်းသပ်ပေးပါ။");
+    }
+
+    previewAudioEl.onended = () => {
+      playingPreviewId = null;
+      renderVoices(document.querySelector(".cat-btn.bg-amber-500")?.dataset.cat || "all");
+    };
+
+    function updateLabels() {
+      const s = parseInt(document.getElementById("speedRange").value);
+      const p = parseInt(document.getElementById("pitchRange").value);
+      document.getElementById("speedVal").innerText = s === 0 ? "မူရင်း" : (s > 0 ? `+${s}%` : `${s}%`);
+      document.getElementById("pitchVal").innerText = p === 0 ? "မူရင်း" : (p > 0 ? `+${p}Hz` : `${p}Hz`);
+    }
+
+    textInputEl.addEventListener("input", () => {
+      document.getElementById("charCount").innerText = `${textInputEl.value.length} အက္ခရာ`;
+    });
+
+    function clearText() {
+      textInputEl.value = "";
+      document.getElementById("charCount").innerText = "၀ အက္ခရာ";
+      textInputEl.focus();
+    }
+
+    async function handleGenerate() {
+      const text = textInputEl.value.trim();
+      if (!text) return alert("စာသား အရင်ရိုက်ထည့်ပေးပါ");
+
+      const btn = document.getElementById("generateBtn");
+      const spinner = document.getElementById("generateSpinner");
+      const btnText = document.getElementById("generateText");
+
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+      btnText.innerText = "Cloud ပေါ်တွင် အသံဖန်တီးနေပါသည်...";
+
+      const persona = PERSONAS.find(p => p.id === selectedId);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: text,
+            persona_id: selectedId,
+            user_rate_offset: parseInt(document.getElementById("speedRange").value),
+            user_pitch_offset: parseInt(document.getElementById("pitchRange").value)
+          })
+        });
+
+        if (res.ok) {
+          currentBlob = await res.blob();
+          const url = URL.createObjectURL(currentBlob);
+          mainAudioEl.src = url;
+          document.getElementById("playerTitle").innerText = `${persona.name} (${persona.genderBadge}) ၏ အသံဖိုင်`;
+          document.getElementById("playerSection").classList.remove("hidden");
+          await mainAudioEl.play();
+        } else {
+          throw new Error();
+        }
+      } catch (err) {
+        alert("အသံဖန်တီး၍ မရသေးပါ။ စာသားအရှည် သို့မဟုတ် Cloud ချိတ်ဆက်မှုကို ပြန်လည်စစ်ဆေးပေးပါ။");
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add("hidden");
+        btnText.innerText = "🎙️ အသံဖန်တီးမည် (Generate Voice)";
+      }
+    }
+
+    function downloadCurrentMp3() {
+      if (!currentBlob) return;
+      const persona = PERSONAS.find(p => p.id === selectedId);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(currentBlob);
+      a.download = `TTS_Pro_${persona.name}_${Date.now()}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Init
+    renderVoices("all");
+    updateLabels();
+    checkCloudConnection();
+  </script>
+</body>
+</html>
