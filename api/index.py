@@ -129,7 +129,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
-                <!-- Re-select button -->
                 <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
                   🔄 အသစ်လဲမည်
                 </label>
@@ -170,13 +169,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <!-- Duration Calculation Banner -->
               <div class="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60 text-xs text-blue-300 flex items-center justify-between">
                 <div>
-                  <span class="text-[10px] text-slate-400 block">မူရင်းအလျား ➔ Script ကြာချိန်</span>
+                  <span class="text-[10px] text-slate-400 block">မူရင်းအလျား ➔ Recap စာညွှန်း</span>
                   <span id="videoDurationLabel" class="font-bold font-mono text-slate-200">00:00</span>
                   <span class="text-slate-400 font-mono"> ➔ </span>
                   <span id="targetDurationLabel" class="font-bold font-mono text-emerald-400">00:30 (+30s)</span>
                 </div>
                 <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-1 rounded-lg font-bold">
-                  Recap Style (+30s)
+                  သဘာဝဇာတ်ကြောင်းပြန်
                 </span>
               </div>
             </div>
@@ -189,7 +188,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </label>
               <div class="p-2.5 rounded-xl bg-[#070b14] border border-slate-800 text-xs text-slate-200 flex items-center justify-between">
                 <span class="font-bold text-blue-400">သဘာဝကျ Movie Recap စကားပြောဟန်</span>
-                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">လူတိုင်းနားလည်လွယ်သော မြန်မာစကား</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">စကားထပ်ခြင်း ကင်းစင်</span>
               </div>
             </div>
 
@@ -588,7 +587,54 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // Dynamic Groq Translation with Live Active Model Discovery & Anti-Repetition
+    // Absolute Anti-Loop & Repetition Truncation Engine
+    function cleanBurmeseRepeats(text) {
+      if (!text) return "";
+      let cleaned = text.trim();
+
+      // 1. Regex cleanup of any phrase (3 to 60 chars) repeating 2 or more times
+      cleaned = cleaned.replace(/(.{3,60}?)\s*(?:\1\s*){2,}/gu, '$1');
+
+      // 2. Token-level loop detector: if the exact same phrase repeats at the end, truncate it
+      const words = cleaned.split(/\s+/);
+      const resultWords = [];
+      let lastWord = "";
+      let duplicateStreak = 0;
+
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i].trim();
+        if (w === lastWord && w.length > 2) {
+          duplicateStreak++;
+          if (duplicateStreak >= 2) {
+            // Stop appending once infinite loop is encountered!
+            continue;
+          }
+        } else {
+          duplicateStreak = 0;
+          lastWord = w;
+        }
+        resultWords.push(words[i]);
+      }
+
+      cleaned = resultWords.join(" ");
+
+      // 3. Sentence-level deduplication
+      const sentences = cleaned.split(/(?<=[။!?\n])/);
+      const finalSentences = [];
+      const seen = new Set();
+      for (const s of sentences) {
+        const trimmed = s.trim();
+        if (trimmed.length > 5) {
+          if (seen.has(trimmed)) continue;
+          seen.add(trimmed);
+        }
+        finalSentences.push(s);
+      }
+
+      return finalSentences.join("").trim();
+    }
+
+    // Dynamic Groq Translation with Live Active Model Discovery & Controlled Anti-Loop Settings
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
       let liveModels = [];
       try {
@@ -608,11 +654,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         }
       } catch (err) {}
 
+      // Prioritized order: Highest capability multilingual models on Groq
       const priority = [
         "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
+        "qwen/qwen3.8-27b",
         "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b"
+        "openai/gpt-oss-20b",
+        "llama-3.1-8b-instant"
       ];
 
       const candidateModels = [];
@@ -646,16 +694,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userContent }
               ],
-              temperature: 0.3,
-              presence_penalty: 0.5,
-              frequency_penalty: 0.5
+              temperature: 0.35,
+              presence_penalty: 0.6,
+              frequency_penalty: 0.6,
+              max_tokens: 1600
             })
           });
 
           if (res.ok) {
             const data = await res.json();
             const content = data.choices?.[0]?.message?.content || "";
-            if (content) return content.trim();
+            if (content) return cleanBurmeseRepeats(content);
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastError = errJson.error?.message || `Model ${modelName} returned status ${res.status}`;
@@ -700,22 +749,24 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           });
         }
 
-        outputText.value = "Whisper AI ဖြင့် မည်သည့်ဘာသာစကားဖြင့် ပြောထားသည်ကို စိစစ်ပြီး အဓိပ္ပာယ်အပြည့်အစုံကို ဖတ်ယူနေပါသည်...";
-        btnText.innerText = "Whisper AI ဖြင့် အဓိပ္ပာယ်ဖတ်နေပါသည်...";
+        // ==========================================
+        // STEP 1: VOICE TO TEXT (ACCURATE TRANSCRIPTION)
+        // ==========================================
+        outputText.value = "အဆင့် ၁/၂: Whisper AI ဖြင့် ဗီဒီယိုပါ စကားပြောသံအားလုံးကို တိကျစွာ စာသားပြောင်းနေပါသည်...";
+        btnText.innerText = "Whisper ဖြင့် စကားလုံးများ ဖတ်နေပါသည်...";
 
         const formData = new FormData();
         formData.append("file", audioToSend);
         formData.append("model", "whisper-large-v3");
         formData.append("response_format", "verbose_json");
 
-        // Try Whisper Translation endpoint first (translates ANY language like Chinese, Spanish, etc. into crystal-clear English)
+        // Use translation endpoint first to understand non-English/non-Burmese speech directly
         let whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
           method: "POST",
           headers: { "Authorization": `Bearer ${apiKey}` },
           body: formData
         });
 
-        // Fallback to transcriptions if translations not supported or fails
         if (!whisperRes.ok) {
           whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
             method: "POST",
@@ -740,51 +791,50 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           }).join("\n");
         }
 
-        btnText.innerText = "မြန်မာ Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည် (+30s)...";
-        outputText.value = "ဗီဒီယိုပါ ဇာတ်လမ်းကို နားလည်ပြီး လူတိုင်းနားလည်လွယ်သည့် သဘာဝကျသော မြန်မာ Movie Recap ဇာတ်ကြောင်းပြန်အဖြစ် ရေးဖွဲ့နေပါသည်...";
+        // ==========================================
+        // STEP 2: NATURAL BURMESE MOVIE RECAP SCRIPT
+        // ==========================================
+        btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း အချောသပ်နေပါသည်...";
+        outputText.value = "အဆင့် ၂/၂: ဇာတ်လမ်းကို နားလည်ပြီး လူတိုင်းနားလည်လွယ်သည့် သဘာဝကျသော Movie Recap အသံထွက် ဇာတ်ညွှန်းအဖြစ် အချောသပ် ပြန်လည်ရေးသားနေပါသည်...";
 
-        const baseSecs = videoDurationSeconds || 60;
-        const targetSecs = baseSecs + 30;
-
-        // Natural, Fluent Spoken Burmese Storytelling Prompt
         const systemPrompt = `
-You are a professional Burmese Movie Recap Storyteller (ရုပ်ရှင်ဇာတ်ကြောင်းပြန် ကျွမ်းကျင်သူ).
-Your job is to read the story from the video and rewrite it into an engaging, thrilling, natural Burmese Movie Recap voiceover script.
+You are an expert Burmese Movie Recap Narrator and Storyteller.
+You have the complete transcribed voice-to-text content of a video.
+Your task is to retell this video plot into an authentic, natural, and captivating Burmese Movie Recap narration script for voiceover.
 
-CRITICAL VOICE & LANGUAGE RULES:
-1. PURE NATURAL BURMESE STORYTELLING (လူတိုင်းနားလည်လွယ်သော သဘာဝစကားပြောဟန်):
-   - DO NOT translate word-by-word literally. DO NOT output awkward translation gibberish like "တစ်ကောင်ကောင်မလေး", "တက်သွားတယ်", "အလွတ်တစ်ကောင်", "အိမ်ထောင်စု အုပ်ထိန်းသူ".
-   - Instead, use real, everyday Burmese conversational storytelling words that real people use:
-     * ဇာတ်လမ်းစစချင်းမှာတော့... / ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...
-     * ကောင်မလေးက... / ကောင်လေးက... / ဒီလူက...
-     * အိမ်ထဲကို ရောက်လာတဲ့အချိန်မှာပဲ...
-     * မထင်မှတ်ဘဲနဲ့ ဘာဖြစ်သွားလဲဆိုရင်...
-     * တကယ်တော့ သူတို့တွေက...
-     * အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...
-     * နောက်ဆုံးမှာတော့...
+CRITICAL INSTRUCTIONS:
+1. NATURAL SPOKEN BURMESE (လူတိုင်းနားလည်လွယ်သော သဘာဝစကားပြောဟန်):
+   - Explain what actually happened in the video like a great YouTube movie recap creator telling the story to an audience.
+   - Use natural storytelling connectors: "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "တကယ်တော့ ဖြစ်ပျက်သွားတာက...", "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...", "နောက်ဆုံးမှာတော့...".
+   - DO NOT translate word-by-word into awkward phrases (NO "တစ်ကောင်ကောင်မလေး", NO "အလွတ်တစ်ကောင်", NO "အိမ်ထောင်စု အုပ်ထိန်းသူ"). Use clear, everyday Burmese that real people speak.
 
-2. GENDER-NEUTRAL NARRATOR VOICE:
-   - Do NOT use "ကျွန်တော်" (male) or "ကျွန်မ" (female). Do NOT use "ခင်ဗျာ" or "ရှင်".
-   - The script must be completely neutral so ANY narrator (male or female) can read it aloud smoothly.
+2. GENDER-NEUTRAL NARRATION:
+   - DO NOT use "ကျွန်တော်" (male) or "ကျွန်မ" (female).
+   - DO NOT use "ခင်ဗျာ" or "ရှင်".
+   - The script must flow naturally so that BOTH male and female voice actors can read it aloud smoothly.
 
-3. +30 SECONDS EXTENDED DURATION:
-   - Make the storytelling vivid and engaging, describing the scene's tension, atmosphere, and characters' actions so the narration comfortably plays about 30 seconds longer than the original clip (${targetSecs} seconds total pace).
+3. ABSOLUTE BAN ON LOOPS & REPETITION:
+   - Progress the story naturally through its beginning, middle, and climax.
+   - When the story in the video is finished, conclude the narration cleanly.
+   - NEVER repeat words, phrases, or clauses endlessly. Stop writing as soon as the story ends.
 
-4. CLEAN SCRIPT ONLY (ZERO ENGLISH & ZERO INTRO):
-   - No English words.
-   - No intro or titles like "Here is the recap" or "Title:".
-   - Start immediately with the first Burmese spoken storytelling sentence.
-5. TIMESTAMPS:
-   - ${includeTimestamps ? "Keep timestamps like [00:00], [00:30] at the start of scenes." : "Do NOT include any timestamps. Write in clean, coherent paragraphs."}
+4. EXTENDED PACING:
+   - Add vivid descriptions of the scene's tension, characters' decisions, and emotions so the narration naturally plays ~30 seconds longer than the original clip without artificially repeating words.
+
+5. SCRIPT ONLY:
+   - Zero English words.
+   - Zero intros ("Here is...", "Recap:"), Zero titles. Output ONLY the pure spoken Burmese voiceover paragraphs.
+6. TIMESTAMPS:
+   - ${includeTimestamps ? "Keep timestamps like [00:00], [00:30] at the start of scenes." : "Do NOT include any timestamps. Format into clean, readable storytelling paragraphs."}
 
 Write the natural, thrilling Burmese Movie Recap script now:
         `.trim();
 
-        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `Video Plot & Story Information:\n${understoodText}`);
+        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `Voice-to-Text Content from Video:\n${understoodText}`);
 
         if (finalScript) {
-          outputText.value = finalScript.trim();
-          const words = finalScript.trim().split(/\s+/).length;
+          outputText.value = finalScript;
+          const words = finalScript.split(/\s+/).length;
           document.getElementById("scriptWordCount").innerText = `${words} စကားလုံး`;
           showToast("Movie Recap စတိုင်လ် မြန်မာဇာတ်ညွှန်း အောင်မြင်စွာ ထွက်ရှိပါပြီ", "success");
         } else {
