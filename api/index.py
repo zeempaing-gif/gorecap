@@ -70,6 +70,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </header>
 
+  <!-- Real Native File Input (Attached via Label) -->
   <input
     type="file"
     id="videoFileInput"
@@ -128,11 +129,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
+                <!-- Re-select button -->
                 <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
                   🔄 အသစ်လဲမည်
                 </label>
               </div>
 
+              <!-- Native Video Player -->
               <video
                 id="previewVideoEl"
                 controls
@@ -143,6 +146,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 class="w-full rounded-xl max-h-52 bg-black border border-slate-800 shadow-inner"
               ></video>
 
+              <!-- Audio Player -->
               <div id="audioPreviewContainer" class="hidden space-y-2 p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div class="flex items-center gap-2 text-xs text-amber-300 font-bold">
                   <span>🎵</span>
@@ -151,6 +155,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 <audio id="previewAudioEl" controls class="w-full"></audio>
               </div>
 
+              <!-- Video Metadata Grid -->
               <div class="grid grid-cols-2 gap-2 text-xs">
                 <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
                   <span class="text-[10px] text-slate-400 block">ဖိုင်အမည်:</span>
@@ -162,6 +167,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 </div>
               </div>
 
+              <!-- Duration Calculation Banner -->
               <div class="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60 text-xs text-blue-300 flex items-center justify-between">
                 <div>
                   <span class="text-[10px] text-slate-400 block">မူရင်းအလျား ➔ Recap စာညွှန်း</span>
@@ -175,7 +181,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- AI Engine Selector -->
+            <!-- AI Engine Selector (Groq vs Gemini) -->
             <div class="space-y-1.5 pt-1">
               <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
                 <span class="flex items-center gap-1.5">
@@ -284,7 +290,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="relative flex-1">
               <textarea
                 id="transcriptOutputText"
-                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် English လုံးဝမပါဘဲ Brian, Andrew, နီလာ တို့ဖြင့် အဆင်သင့်ဖတ်နိုင်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
+                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် English လုံးဝမပါဘဲ Narrator တိုက်ရိုက်ဖတ်နိုင်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
                 class="w-full h-full min-h-[360px] bg-[#070b14] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll font-sans"
               ></textarea>
             </div>
@@ -304,7 +310,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 onclick="sendScriptToTts()"
                 class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
               >
-                <span>🎙️️</span>
+                <span>🎙</span>
                 <span>TTS အသံထုတ်ခန်းသို့ ပို့မည်</span>
               </button>
             </div>
@@ -315,22 +321,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
 
     <!-- ========================================== -->
-    <!-- SECTION 2: TTS STUDIO (BRIAN & ANDREW ADDED) -->
+    <!-- SECTION 2: TTS STUDIO (EXACT 13 VOICES)    -->
     <!-- ========================================== -->
     <div id="sectionTts" class="hidden space-y-6">
 
-      <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-transparent border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 class="text-sm font-bold text-amber-300 flex items-center gap-1.5">
+          <h2 class="text-sm font-bold text-blue-300 flex items-center gap-1.5">
             <span>✨</span>
-            <span>Brian, Andrew အပါအဝင် အဆင့်မြင့် မြန်မာအသံဖန်တီးခန်း</span>
+            <span>မြန်မာအသံ ကာရိုက်တာ (၁၃) မျိုးဖြင့် အသံဖန်တီးခန်း</span>
           </h2>
           <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">
-            Crikk ကဲ့သို့ Brian Multilingual, Andrew, Florian, Nilar, Thiha အသံများဖြင့် မြန်မာစာသားများကို တိုက်ရိုက် MP3 ထုတ်ယူပါ
+            စာသားများကို ရိုက်ထည့်၍ဖြစ်စေ၊ Transcript မှ ရရှိလာသော ဇာတ်ညွှန်းကိုဖြစ်စေ MP3 အသံဖိုင် တိုက်ရိုက် ထုတ်ယူပါ
           </p>
         </div>
-        <div id="activeVoicePill" class="text-xs font-bold text-amber-300 bg-amber-950/80 border border-amber-800/80 px-3 py-1.5 rounded-xl shrink-0">
-          ရွေးထားသည်: Brian Multilingual
+        <div id="activeVoicePill" class="text-xs font-bold text-blue-300 bg-blue-950/80 border border-blue-800/80 px-3 py-1.5 rounded-xl shrink-0">
+          ရွေးထားသည်: Tayza
         </div>
       </div>
 
@@ -341,10 +347,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
             <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">အသံကဏ္ဍခွဲများ</span>
             <div class="flex gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-[11px]">
-              <button onclick="filterVoices('all')" class="cat-pill px-2 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all" data-cat="all">အားလုံး</button>
-              <button onclick="filterVoices('multilingual')" class="cat-pill px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="multilingual">🌟 Crikk အသံများ</button>
-              <button onclick="filterVoices('men')" class="cat-pill px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="men">အမျိုးသား</button>
-              <button onclick="filterVoices('women')" class="cat-pill px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="women">အမျိုးသမီး</button>
+              <button onclick="filterVoices('all')" class="cat-pill px-2.5 py-1 rounded-lg bg-blue-600 text-white font-bold transition-all" data-cat="all">အားလုံး (13)</button>
+              <button onclick="filterVoices('men')" class="cat-pill px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="men">အမျိုးသား (7)</button>
+              <button onclick="filterVoices('women')" class="cat-pill px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="women">အမျိုးသမီး (6)</button>
             </div>
           </div>
           <div id="voiceCardsList" class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1.5 custom-scroll"></div>
@@ -356,7 +361,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-300">မြန်မာစာသား ထည့်သွင်းရန်</span>
               <div class="flex items-center gap-2 text-xs text-slate-400">
-                <span id="charCount" class="font-mono text-[11px] text-amber-400 font-semibold">၀ အက္ခရာ</span>
+                <span id="charCount" class="font-mono text-[11px] text-blue-400 font-semibold">၀ အက္ခရာ</span>
                 <span>•</span>
                 <button onclick="clearText()" class="text-rose-400 hover:underline">ဖျက်မည်</button>
               </div>
@@ -366,23 +371,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               id="textInput"
               rows="6"
               placeholder="အသံဖန်တီးလိုသော မြန်မာစာသားများကို ရိုက်ထည့်ပါ..."
-              class="w-full bg-[#030712] border border-slate-800 rounded-xl p-3.5 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500/80 transition-all resize-y"
-            >အချစ်လေးရေ ဘာလုပ်နေလဲ</textarea>
+              class="w-full bg-[#030712] border border-slate-800 rounded-xl p-3.5 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-all resize-y"
+            >သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။</textarea>
 
             <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
               <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
                 <div class="flex justify-between text-xs mb-1.5">
                   <span class="text-slate-400">စကားပြောနှုန်း</span>
-                  <span id="speedVal" class="text-amber-400 font-mono font-bold">မူရင်း</span>
+                  <span id="speedVal" class="text-blue-400 font-mono font-bold">မူရင်း</span>
                 </div>
-                <input id="speedRange" type="range" min="-20" max="20" step="2" value="0" class="w-full accent-amber-500" oninput="updateTuningLabels()" />
+                <input id="speedRange" type="range" min="-20" max="20" step="2" value="0" class="w-full accent-blue-500" oninput="updateTuningLabels()" />
               </div>
               <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
                 <div class="flex justify-between text-xs mb-1.5">
                   <span class="text-slate-400">အသံအမြင့် (Pitch)</span>
-                  <span id="pitchVal" class="text-amber-400 font-mono font-bold">မူရင်း</span>
+                  <span id="pitchVal" class="text-blue-400 font-mono font-bold">မူရင်း</span>
                 </div>
-                <input id="pitchRange" type="range" min="-15" max="15" step="1" value="0" class="w-full accent-amber-500" oninput="updateTuningLabels()" />
+                <input id="pitchRange" type="range" min="-15" max="15" step="1" value="0" class="w-full accent-blue-500" oninput="updateTuningLabels()" />
               </div>
             </div>
 
@@ -390,7 +395,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               id="generateBtn"
               type="button"
               onclick="handleGenerateVoice()"
-              class="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:brightness-110 active:scale-[0.99] text-slate-950 font-bold text-sm shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all"
+              class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-bold text-sm shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2.5 transition-all"
             >
               <span id="genSpinner" class="hidden animate-spin">🌀</span>
               <span id="genText">🎙 အသံဖန်တီးမည် (Generate Speech)</span>
@@ -398,11 +403,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
 
           <!-- Audio Player Section -->
-          <div id="playerSection" class="hidden bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-500/40 rounded-2xl p-5 space-y-4 shadow-2xl">
+          <div id="playerSection" class="hidden bg-gradient-to-b from-slate-900 to-slate-950 border border-blue-500/40 rounded-2xl p-5 space-y-4 shadow-2xl">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span id="playerVoiceTitle" class="text-xs font-bold text-amber-300">အသံဖိုင် အဆင်သင့်ဖြစ်ပါပြီ</span>
+                <span id="playerVoiceTitle" class="text-xs font-bold text-blue-300">အသံဖိုင် အဆင်သင့်ဖြစ်ပါပြီ</span>
               </div>
               <span class="text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full">MP3 Ready</span>
             </div>
@@ -440,7 +445,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       } else {
         transSec.classList.add("hidden");
         ttsSec.classList.remove("hidden");
-        ttsBtn.className = "px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all flex items-center gap-1.5";
+        ttsBtn.className = "px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold transition-all flex items-center gap-1.5";
         transBtn.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
       }
     }
@@ -648,6 +653,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
+    // ==========================================
+    // RIGOROUS SCRIPT SANITIZER (NO ENGLISH, NO HEADERS, NO CHECKLISTS)
+    // ==========================================
     function sanitizeMovieRecapScript(raw) {
       if (!raw) return "";
 
@@ -957,6 +965,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           }
         }
 
+        // ==========================================
+        // STEP 2: PROFESSIONAL BURMESE RECAP SCRIPT (ZERO META-TEXT)
+        // ==========================================
         btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
         outputText.value = "အဆင့် ၂/၂: အပိုစာသား လုံးဝမပါသော သန့်ရှင်းသည့် Movie Recap အသံထွက် ဇာတ်ညွှန်းအဖြစ် အချောသပ် ရေးသားနေပါသည်...";
 
@@ -1053,102 +1064,129 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
     }
 
     // ==========================================
-    // TTS STUDIO LOGIC (CRIKK VOICES INCLUDED)
+    // EXACT 13 CHARACTER VOICES CATALOG
     // ==========================================
     const PERSONAS = [
       {
-        id: "brian-multi",
-        name: "Brian Multilingual",
-        category: "multilingual",
+        id: "nilar",
+        name: "Nilar",
+        gender: "women",
+        icon: "🌸",
+        badge: "အမျိုးသမီး",
+        role: "ကြည်လင်ချိုသာသော ဇာတ်ကြောင်းပြောသံ (မူရင်းမြန်မာ)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+      },
+      {
+        id: "thiha",
+        name: "Thiha",
+        gender: "men",
         icon: "🎙️",
-        badge: "Crikk အထူးသံ",
-        role: "ရင့်ကျက်ပြတ်သားသော နာမည်ကြီး Movie Recap အသံ (Brian)",
-        sample: "မင်္ဂလာပါ၊ ကျွန်တော် Brian ဖြစ်ပါတယ်။ Recap Go မှာ မြန်မာစကားပြော ပြန်လည်တင်ဆက်ပေးပါ့မယ်။"
+        badge: "အမျိုးသား",
+        role: "တည်ကြည်လေးနက်သော အမျိုးသားအသံ (မူရင်းမြန်မာ)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
       },
       {
-        id: "andrew-multi",
-        name: "Andrew Multilingual",
-        category: "multilingual",
-        icon: "🧑",
-        badge: "Crikk အထူးသံ",
-        role: "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန် (Andrew)",
-        sample: "မင်္ဂလာပါ၊ ကျွန်တော် Andrew ဖြစ်ပါတယ်။ ရုပ်ရှင်ဇာတ်လမ်းတွဲများကို နွေးထွေးစွာ ပြောပြပေးပါ့မယ်။"
-      },
-      {
-        id: "ava-multi",
-        name: "Ava Multilingual",
-        category: "multilingual",
-        icon: "👧",
-        badge: "Crikk အထူးသံ",
-        role: "ချိုသာကြည်လင် ခေတ်မီဆန်းသစ်သော အမျိုးသမီးသံ (Ava)",
-        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မက Ava ဖြစ်ပါတယ်။ သဘာဝကျပြီး နားထောင်လို့ကောင်းတဲ့ အသံနဲ့ ပြောပြပေးသွားမှာပါ။"
-      },
-      {
-        id: "florian-multi",
-        name: "Florian Multilingual",
-        category: "multilingual",
+        id: "phyo-ngwe-soe",
+        name: "Phyo Ngwe Soe",
+        gender: "men",
         icon: "⚡",
-        badge: "Crikk အထူးသံ",
+        badge: "အမျိုးသား",
         role: "စိတ်လှုပ်ရှားဖွယ် Action ဇာတ်လမ်းပြောဟန် (Florian)",
-        sample: "မင်္ဂလာပါ၊ ကျွန်တော် Florian ဖြစ်ပါတယ်။ အက်ရှင်ဇာတ်လမ်းများကို အားမာန်အပြည့်နဲ့ တင်ဆက်ပေးပါ့မယ်။"
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
       },
       {
-        id: "seraphina-multi",
-        name: "Seraphina Multilingual",
-        category: "multilingual",
-        icon: "🌸",
-        badge: "Crikk အထူးသံ",
+        id: "sinn-tiyar",
+        name: "Sinn Tiyar",
+        gender: "women",
+        icon: "✨",
+        badge: "အမျိုးသမီး",
         role: "ညင်သာအေးချမ်းသော စာပေ/ပုံပြင်ဖတ်ကြားသံ (Seraphina)",
-        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မက Seraphina ပါ။ ညင်သာအေးချမ်းတဲ့ အသံလေးနဲ့ ပြောပြပေးသွားပါ့မယ်ရှင်။"
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
       },
       {
-        id: "nay-toe",
-        name: "နေတိုး",
-        category: "men",
-        icon: "👦",
-        badge: "လူငယ်အမျိုးသား",
-        role: "တက်ကြွ လန်းဆန်းသော လူငယ်သံ (Movie Recap အကောင်းဆုံး)",
-        sample: "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"
-      },
-      {
-        id: "tha-zin",
-        name: "သဇင် (Nilar Base)",
-        category: "women",
+        id: "chue-lay",
+        name: "Chue Lay",
+        gender: "women",
         icon: "👧",
-        badge: "မိန်းကလေးငယ်",
-        role: "သွက်လက် ချိုသာသော အပျိုမလေးသံ (TikTok / Shorts)",
-        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"
+        badge: "အမျိုးသမီး",
+        role: "ချိုသာကြည်လင် ခေတ်မီဆန်းသစ်သော အမျိုးသမီးသံ (Ava)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
       },
       {
-        id: "tay-za",
-        name: "တေဇ (Thiha Base)",
-        category: "men",
+        id: "aung-ye-linn",
+        name: "Aung Ye' Linn",
+        gender: "men",
         icon: "🧑",
-        badge: "လူငယ်အမျိုးသား",
-        role: "သဘာဝကျပြီး ရှင်းလင်းပြတ်သားသော ဇာတ်ကြောင်းပြောဟန်",
-        sample: "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"
+        badge: "အမျိုးသား",
+        role: "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန် (Andrew)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
       },
       {
-        id: "may-hnin",
-        name: "မေနှင်း (Nilar)",
-        category: "women",
-        icon: "🌸",
-        badge: "မိန်းကလေးငယ်",
-        role: "ကြည်လင် အေးချမ်းသော ကောင်မလေးသံ (ဝတ္ထုဖတ်/စာအုပ်)",
-        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"
+        id: "n-kai-yar",
+        name: "N Kai Yar",
+        gender: "women",
+        icon: "🎀",
+        badge: "အမျိုးသမီး",
+        role: "နုပျိုသွက်လက်သော အသံဟန် (Emma)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
       },
       {
-        id: "u-han",
-        name: "ဦးဟန် (Thiha)",
-        category: "men",
-        icon: "👨",
-        badge: "လူကြီးအမျိုးသား",
-        role: "တည်ကြည် ခန့်ညားသော လူကြီးသံ (သတင်း/အသိပညာပေး)",
-        sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"
+        id: "tayza",
+        name: "Tayza",
+        gender: "men",
+        icon: "🎬",
+        badge: "အမျိုးသား",
+        role: "ရင့်ကျက်ပြတ်သားသော နာမည်ကြီး Movie Recap အသံ (Brian)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+      },
+      {
+        id: "nay-win",
+        name: "Nay Win",
+        gender: "men",
+        icon: "🕺",
+        badge: "အမျိုးသား",
+        role: "လန်းဆန်းတက်ကြွသော လူငယ်စကားပြောဟန် (Remy)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+      },
+      {
+        id: "eaindra-bo",
+        name: "Eaindra Bo",
+        gender: "women",
+        icon: "👑",
+        badge: "အမျိုးသမီး",
+        role: "ပရော်ဖက်ရှင်နယ် တင်ဆက်သူပုံစံ အမျိုးသမီးသံ (Vivienne)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+      },
+      {
+        id: "bunny-phyoe",
+        name: "Bunny Phyoe",
+        gender: "men",
+        icon: "🎧",
+        badge: "အမျိုးသား",
+        role: "နက်ရှိုင်းစွဲမက်ဖွယ် ဩဇာပြည့်ဝသောအသံ (Giuseppe)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+      },
+      {
+        id: "ji-chaung-wook",
+        name: "Ji Chaung Wook",
+        gender: "men",
+        icon: "🇰🇷",
+        badge: "အမျိုးသား",
+        role: "နူးညံ့သိမ်မွေ့သော စီးရီးဇာတ်လမ်းပြောသံ (Hyunsu)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+      },
+      {
+        id: "aye-thidar",
+        name: "Aye Thidar",
+        gender: "women",
+        icon: "🌺",
+        badge: "အမျိုးသမီး",
+        role: "တက်ကြွပျော်ရွှင်ဖွယ် ခေတ်မီအမျိုးသမီးသံ (Thalita)",
+        sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
       }
     ];
 
-    let selectedId = "brian-multi";
+    let selectedId = "tayza";
     let playingPreviewId = null;
     let generatedBlob = null;
 
@@ -1159,7 +1197,7 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
     function renderVoiceCards(category = "all") {
       const listContainer = document.getElementById("voiceCardsList");
       listContainer.innerHTML = "";
-      const filtered = category === "all" ? PERSONAS : PERSONAS.filter(p => p.category === category);
+      const filtered = category === "all" ? PERSONAS : PERSONAS.filter(p => p.gender === category);
 
       filtered.forEach(p => {
         const isSelected = p.id === selectedId;
@@ -1168,7 +1206,7 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
         const card = document.createElement("div");
         card.className = `p-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 cursor-pointer ${
           isSelected 
-            ? "bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50 shadow-lg shadow-amber-500/10" 
+            ? "bg-blue-500/10 border-blue-500 ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/10" 
             : "bg-slate-950/50 border-slate-800 hover:border-slate-700 hover:bg-slate-900/40"
         }`;
         card.onclick = () => selectVoice(p.id);
@@ -1182,13 +1220,12 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
               <div class="flex items-center gap-1.5">
                 <span class="font-bold text-xs sm:text-sm text-slate-100">${p.name}</span>
                 <span class="text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                  p.category === 'multilingual' ? 'bg-amber-950 text-amber-300 border border-amber-800/80' :
-                  p.category === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800/80' :
+                  p.gender === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800/80' :
                   'bg-pink-950 text-pink-300 border border-pink-800/80'
                 }">
                   ${p.badge}
                 </span>
-                ${isSelected ? '<span class="text-[9px] text-amber-400 font-bold ml-1">✓ ရွေးထားသည်</span>' : ''}
+                ${isSelected ? '<span class="text-[9px] text-blue-400 font-bold ml-1">✓ ရွေးထားသည်</span>' : ''}
               </div>
               <p class="text-[11px] text-slate-400 truncate mt-0.5">${p.role}</p>
             </div>
@@ -1198,7 +1235,7 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
             type="button"
             onclick="togglePreview('${p.id}', event)"
             class="px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 flex items-center gap-1 transition-all ${
-              isPreviewing ? 'bg-amber-500 text-slate-950 animate-pulse' : 'bg-slate-800/90 hover:bg-amber-950/60 text-amber-300 border border-amber-500/30'
+              isPreviewing ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-800/90 hover:bg-blue-950/60 text-blue-300 border border-blue-500/30'
             }"
           >
             <span>${isPreviewing ? '⏹' : '🔈'}</span>
@@ -1213,14 +1250,14 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
       selectedId = id;
       const p = PERSONAS.find(x => x.id === id);
       document.getElementById("activeVoicePill").innerText = `ရွေးထားသည်: ${p.name}`;
-      const activeCat = document.querySelector(".cat-pill.bg-amber-500")?.dataset.cat || "all";
+      const activeCat = document.querySelector(".cat-pill.bg-blue-600")?.dataset.cat || "all";
       renderVoiceCards(activeCat);
     }
 
     function filterVoices(cat) {
       document.querySelectorAll(".cat-pill").forEach(btn => {
         if (btn.dataset.cat === cat) {
-          btn.className = "cat-pill px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all";
+          btn.className = "cat-pill px-2.5 py-1 rounded-lg bg-blue-600 text-white font-bold transition-all";
         } else {
           btn.className = "cat-pill px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all";
         }
@@ -1233,12 +1270,12 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
       if (playingPreviewId === id) {
         previewAudioEl.pause();
         playingPreviewId = null;
-        renderVoiceCards(document.querySelector(".cat-pill.bg-amber-500")?.dataset.cat || "all");
+        renderVoiceCards(document.querySelector(".cat-pill.bg-blue-600")?.dataset.cat || "all");
         return;
       }
 
       playingPreviewId = id;
-      renderVoiceCards(document.querySelector(".cat-pill.bg-amber-500")?.dataset.cat || "all");
+      renderVoiceCards(document.querySelector(".cat-pill.bg-blue-600")?.dataset.cat || "all");
 
       try {
         let res = await fetch(`/api/preview/${id}`);
@@ -1252,13 +1289,13 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
       } catch (err) {}
 
       playingPreviewId = null;
-      renderVoiceCards(document.querySelector(".cat-pill.bg-amber-500")?.dataset.cat || "all");
+      renderVoiceCards(document.querySelector(".cat-pill.bg-blue-600")?.dataset.cat || "all");
       showToast("အသံစမ်းဖွင့်၍ မရသေးပါ", "error");
     }
 
     previewAudioEl.onended = () => {
       playingPreviewId = null;
-      renderVoiceCards(document.querySelector(".cat-pill.bg-amber-500")?.dataset.cat || "all");
+      renderVoiceCards(document.querySelector(".cat-pill.bg-blue-600")?.dataset.cat || "all");
     };
 
     function updateTuningLabels() {
@@ -1360,24 +1397,131 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
 </html>
 """
 
-# Microsoft Official Neural Voices (Including Crikk's Multilingual Voices for Burmese Cross-Lingual Speech)
+# The Exact 13 Voices with Assigned Character Names and Gender Greetings
 PERSONA_VOICES = [
-    {"id": "brian-multi", "base_voice": "en-US-BrianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် Brian ဖြစ်ပါတယ်။ Recap Go မှာ မြန်မာစကားပြော ပြန်လည်တင်ဆက်ပေးပါ့မယ်။"},
-    {"id": "andrew-multi", "base_voice": "en-US-AndrewMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် Andrew ဖြစ်ပါတယ်။ ရုပ်ရှင်ဇာတ်လမ်းတွဲများကို နွေးထွေးစွာ ပြောပြပေးပါ့မယ်။"},
-    {"id": "ava-multi", "base_voice": "en-US-AvaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မက Ava ဖြစ်ပါတယ်။ သဘာဝကျပြီး နားထောင်လို့ကောင်းတဲ့ အသံနဲ့ ပြောပြပေးသွားမှာပါ။"},
-    {"id": "florian-multi", "base_voice": "de-DE-FlorianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် Florian ဖြစ်ပါတယ်။ အက်ရှင်ဇာတ်လမ်းများကို အားမာန်အပြည့်နဲ့ တင်ဆက်ပေးပါ့မယ်။"},
-    {"id": "seraphina-multi", "base_voice": "de-DE-SeraphinaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မက Seraphina ပါ။ ညင်သာအေးချမ်းတဲ့ အသံလေးနဲ့ ပြောပြပေးသွားပါ့မယ်ရှင်။"},
-    {"id": "nay-toe", "base_voice": "my-MM-ThihaNeural", "base_rate": "+4%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "tha-zin", "base_voice": "my-MM-NilarNeural", "base_rate": "+3%", "base_pitch": "+6Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"},
-    {"id": "tay-za", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "may-hnin", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"},
-    {"id": "u-han", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"}
+    {
+        "id": "nilar",
+        "name": "Nilar",
+        "gender": "women",
+        "base_voice": "my-MM-NilarNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+    },
+    {
+        "id": "thiha",
+        "name": "Thiha",
+        "gender": "men",
+        "base_voice": "my-MM-ThihaNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+    },
+    {
+        "id": "phyo-ngwe-soe",
+        "name": "Phyo Ngwe Soe",
+        "gender": "men",
+        "base_voice": "de-DE-FlorianMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+    },
+    {
+        "id": "sinn-tiyar",
+        "name": "Sinn Tiyar",
+        "gender": "women",
+        "base_voice": "de-DE-SeraphinaMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+    },
+    {
+        "id": "chue-lay",
+        "name": "Chue Lay",
+        "gender": "women",
+        "base_voice": "en-US-AvaMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+    },
+    {
+        "id": "aung-ye-linn",
+        "name": "Aung Ye' Linn",
+        "gender": "men",
+        "base_voice": "en-US-AndrewMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+    },
+    {
+        "id": "n-kai-yar",
+        "name": "N Kai Yar",
+        "gender": "women",
+        "base_voice": "en-US-EmmaMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+    },
+    {
+        "id": "tayza",
+        "name": "Tayza",
+        "gender": "men",
+        "base_voice": "en-US-BrianMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+    },
+    {
+        "id": "nay-win",
+        "name": "Nay Win",
+        "gender": "men",
+        "base_voice": "fr-FR-RemyMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+    },
+    {
+        "id": "eaindra-bo",
+        "name": "Eaindra Bo",
+        "gender": "women",
+        "base_voice": "fr-FR-VivienneMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+    },
+    {
+        "id": "bunny-phyoe",
+        "name": "Bunny Phyoe",
+        "gender": "men",
+        "base_voice": "it-IT-GiuseppeMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+    },
+    {
+        "id": "ji-chaung-wook",
+        "name": "Ji Chaung Wook",
+        "gender": "men",
+        "base_voice": "ko-KR-HyunsuMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
+    },
+    {
+        "id": "aye-thidar",
+        "name": "Aye Thidar",
+        "gender": "women",
+        "base_voice": "pt-BR-ThalitaMultilingualNeural",
+        "base_rate": "+0%",
+        "base_pitch": "+0Hz",
+        "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"
+    }
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
 class GenerateTTSRequest(BaseModel):
     text: str
-    persona_id: str = "brian-multi"
+    persona_id: str = "tayza"
     user_rate_offset: int = 0
     user_pitch_offset: int = 0
 
