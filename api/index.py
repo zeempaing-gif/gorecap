@@ -435,7 +435,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <audio id="previewAudio" class="hidden"></audio>
 
   <script>
-    // Tab Switching Logic
     function switchMainTab(tab) {
       const ttsSec = document.getElementById("sectionTts");
       const transSec = document.getElementById("sectionTranscript");
@@ -455,7 +454,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    // Toast Notification System
     function showToast(msg, type = "info") {
       const container = document.getElementById("toastContainer");
       const toast = document.createElement("div");
@@ -499,7 +497,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    // Load saved API keys from local storage
     const savedGroqKey = localStorage.getItem("groq_api_key") || "";
     if (savedGroqKey) {
       document.getElementById("groqApiKeyInput").value = savedGroqKey;
@@ -669,7 +666,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return txt.trim();
     }
 
-    // Dynamic Groq Translation (Strict zero-penalty to keep clean Burmese)
+    // Dynamic Groq Translation
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
       let liveModels = [];
       try {
@@ -750,12 +747,38 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
     }
 
-    // Google Gemini Direct Call (Supports gemini-2.0-flash / gemini-1.5-flash)
+    // Dynamic Google Gemini Caller (Auto-fetches active non-deprecated models)
+    async function getAvailableGeminiModels(apiKey) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (res.ok) {
+          const data = await res.json();
+          const list = (data.models || [])
+            .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+            .map(m => m.name.replace("models/", ""))
+            .filter(name => !name.includes("2.5") && !name.includes("embedding") && !name.includes("imagen") && !name.includes("veo"));
+          
+          if (list.length > 0) return list;
+        }
+      } catch (e) {}
+
+      // Fallback prioritized list of modern supported Gemini models
+      return [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-3.8-flash",
+        "gemini-3.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-1.5-pro"
+      ];
+    }
+
     async function callGeminiDirect(apiKey, systemPrompt, userContent) {
-      const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"];
+      const activeModels = await getAvailableGeminiModels(apiKey);
       let lastErr = null;
 
-      for (const m of candidateModels) {
+      for (const m of activeModels) {
         try {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
           const res = await fetch(url, {
@@ -775,6 +798,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastErr = errJson.error?.message || `Model ${m} status ${res.status}`;
+            console.warn(`Gemini model ${m} failed:`, lastErr);
           }
         } catch (e) {
           lastErr = e.message;
@@ -790,7 +814,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         return;
       }
 
-      // Read and sanitize keys (strip any accidental whitespaces)
       const groqKey = document.getElementById("groqApiKeyInput").value.trim().replace(/[\s\r\n\t]/g, '');
       const geminiKey = document.getElementById("geminiApiKeyInput").value.trim().replace(/[\s\r\n\t]/g, '');
 
@@ -840,11 +863,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             reader.readAsDataURL(audioToSend);
           });
 
-          // Try Gemini audio perception across available flash models
-          const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"];
+          const activeModels = await getAvailableGeminiModels(geminiKey);
           let lastErr = null;
 
-          for (const m of candidateModels) {
+          for (const m of activeModels) {
             try {
               const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {
                 method: "POST",
@@ -866,6 +888,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               } else {
                 const errJson = await gemRes.json().catch(() => ({}));
                 lastErr = errJson.error?.message || `Status ${gemRes.status}`;
+                console.warn(`Audio perception with ${m} failed:`, lastErr);
               }
             } catch (e) {
               lastErr = e.message;
@@ -922,9 +945,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         // ==========================================
         btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
         outputText.value = "အဆင့် ၂/၂: ဇာတ်လမ်းကို နားလည်ပြီး နာမ်စားအသုံးအနှုန်း မှန်ကန်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်းအဖြစ် အချောသပ် ရေးသားနေပါသည်...";
-
-        const baseSecs = videoDurationSeconds || 60;
-        const targetSecs = baseSecs + 30;
 
         const systemPrompt = `
 သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
@@ -1237,7 +1257,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       showToast("MP3 ဒေါင်းလုဒ် ဆွဲပြီးပါပြီ", "success");
     }
 
-    // Initialize View & Active Engine
     renderVoiceCards("all");
     updateTuningLabels();
     selectAiEngine(currentEngine);
