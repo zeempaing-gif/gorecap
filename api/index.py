@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, HTMLResponse
 from pydantic import BaseModel
 
-app = FastAPI(title="TTS Pro & Groq 200MB Transcript AI")
+app = FastAPI(title="Recap Go AI - Burmese Script & TTS Studio")
 
 # Configure CORS
 app.add_middleware(
@@ -21,7 +21,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TTS Pro & Groq 200MB Video Transcript</title>
+  <title>Recap Go • AI Script & Voice Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,7 +48,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base font-bold tracking-tight text-white">WT Tale Forge & TTS Pro</h1>
+            <h1 class="text-base font-bold tracking-tight text-white">Recap Go</h1>
             <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
               Max 200MB
             </span>
@@ -71,11 +71,20 @@ HTML_CONTENT = """<!DOCTYPE html>
     </div>
   </header>
 
+  <!-- Hidden Native File Input (Directly invoked via JS to avoid mobile click blocks) -->
+  <input
+    type="file"
+    id="videoFileInput"
+    accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv"
+    class="fixed -top-[9999px] -left-[9999px] opacity-0 pointer-events-none"
+    onchange="handleVideoSelected(event)"
+  />
+
   <!-- Main Body Content -->
   <main class="max-w-5xl w-full p-4 sm:p-6 space-y-6 flex-1">
 
     <!-- ========================================== -->
-    <!-- SECTION 1: TRANSCRIPT (Tale Forge 200MB)   -->
+    <!-- SECTION 1: TRANSCRIPT (Recap Go 200MB)     -->
     <!-- ========================================== -->
     <div id="sectionTranscript" class="space-y-6">
 
@@ -84,7 +93,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         <!-- Left: Upload & Config Controls -->
         <div class="lg:col-span-5 space-y-4">
 
-          <!-- WT Tale Forge Style File Upload Card -->
+          <!-- Upload Dropzone Card -->
           <div class="bg-gradient-to-b from-slate-900/90 to-[#0d1527]/90 border border-slate-800/90 rounded-2xl p-5 space-y-4 shadow-2xl backdrop-blur-sm">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
@@ -94,19 +103,10 @@ HTML_CONTENT = """<!DOCTYPE html>
               <span id="fileBadgeStatus" class="hidden text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">✓ တင်ထားပြီး</span>
             </div>
 
-            <!-- Native File Input -->
-            <input
-              type="file"
-              id="videoFileInput"
-              accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv"
-              class="hidden"
-              onchange="handleVideoSelected(event)"
-            />
-
-            <!-- Sleek Upload Dropzone (WT Tale Forge Style) -->
-            <label
-              for="videoFileInput"
+            <!-- Upload Dropzone Area (Clickable Anywhere) -->
+            <div
               id="uploadDropzone"
+              onclick="triggerFileInput(event)"
               class="border border-dashed border-slate-700/80 hover:border-blue-500/80 rounded-2xl p-7 text-center cursor-pointer transition-all bg-[#070b14]/70 hover:bg-[#0c1322]/80 block group active:scale-[0.99]"
             >
               <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -115,11 +115,15 @@ HTML_CONTENT = """<!DOCTYPE html>
               <p class="text-xs font-bold text-slate-200 mt-3.5" id="uploadPromptText">Drag & drop a video or audio file</p>
               <p class="text-[11px] text-slate-500 mt-1 font-mono">mp4, mov, mp3, wav, m4a · max 200MB</p>
               <div class="mt-4">
-                <span class="inline-block px-4 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold shadow-sm transition-colors">
+                <button
+                  type="button"
+                  onclick="triggerFileInput(event)"
+                  class="px-4 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold shadow-sm transition-colors pointer-events-auto"
+                >
                   Browse
-                </span>
+                </button>
               </div>
-            </label>
+            </div>
 
             <!-- Video Preview Card (Active once selected) -->
             <div id="videoPreviewBox" class="hidden space-y-3 bg-[#070b14]/90 border border-blue-500/40 rounded-2xl p-3.5 shadow-xl transition-all">
@@ -128,9 +132,13 @@ HTML_CONTENT = """<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-blue-300">ရွေးချယ်ထားသော မီဒီယာ (Preview)</span>
                 </div>
-                <label for="videoFileInput" class="text-[11px] text-blue-400 hover:underline cursor-pointer font-bold">
+                <button
+                  type="button"
+                  onclick="triggerFileInput(event)"
+                  class="text-[11px] text-blue-400 hover:underline cursor-pointer font-bold bg-transparent border-none p-0"
+                >
                   🔄 အသစ်လဲမည်
-                </label>
+                </button>
               </div>
 
               <!-- Video Player -->
@@ -167,7 +175,7 @@ HTML_CONTENT = """<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- Language Selector (WT Tale Forge Style) -->
+            <!-- Language Selector -->
             <div class="space-y-1.5 pt-1">
               <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <span>🌐</span>
@@ -209,7 +217,7 @@ HTML_CONTENT = """<!DOCTYPE html>
               <p class="text-[10px] text-slate-500">Free Groq Key ထည့်ပေးပါ (Browser တွင် အလိုအလျောက် သိမ်းထားပေးပါမည်)။</p>
             </div>
 
-            <!-- Transcribe Button (WT Tale Forge Style) -->
+            <!-- Transcribe Button -->
             <button
               id="startTranscriptBtn"
               onclick="handleTranscribeProcess()"
@@ -223,7 +231,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
         </div>
 
-        <!-- Right: Output Script Result (WT Tale Forge Style) -->
+        <!-- Right: Output Script Result -->
         <div class="lg:col-span-7 space-y-4">
           <div class="bg-gradient-to-b from-slate-900/90 to-[#0d1527]/90 border border-slate-800/90 rounded-2xl p-5 space-y-3 shadow-2xl backdrop-blur-sm flex flex-col h-full min-h-[490px]">
             <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
@@ -404,6 +412,18 @@ HTML_CONTENT = """<!DOCTYPE html>
       }
     }
 
+    // Direct File Trigger (Guaranteed to work on all Mobile Browsers)
+    function triggerFileInput(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const input = document.getElementById("videoFileInput");
+      if (input) {
+        input.click();
+      }
+    }
+
     // Toast Notification System
     function showToast(msg, type = "info") {
       const container = document.getElementById("toastContainer");
@@ -444,7 +464,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       
-      // Support up to 200MB!
+      // Support up to 200MB
       if (file.size > 200 * 1024 * 1024) {
         showToast(`ဖိုင်အရွယ်အစား ${sizeMB}MB ဖြစ်နေပါသည်။ အများဆုံး 200MB အထိသာ ခွင့်ပြုထားပါသည်`, "error");
         return;
@@ -723,16 +743,16 @@ HTML_CONTENT = """<!DOCTYPE html>
     // TTS STUDIO LOGIC
     // ==========================================
     const PERSONAS = [
-      { id: "nay-toe", name: "နေတိုး", category: "boy", icon: "👦", badge: "လူငယ်အမျိုးသား", role: "တက်ကြွ လန်းဆန်းသော လူငယ်သံ (Movie Recap အကောင်းဆုံး)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။" },
-      { id: "tha-zin", name: "သဇင်", category: "girl", icon: "👧", badge: "မိန်းကလေးငယ်", role: "သွက်လက် ချိုသာသော အပျိုမလေးသံ (TikTok / Shorts အထူးကောင်း)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်နော်။" },
-      { id: "tay-za", name: "တေဇ", category: "boy", icon: "🧑", badge: "လူငယ်အမျိုးသား", role: "သဘာဝကျပြီး ရှင်းလင်းပြတ်သားသော ဇာတ်ကြောင်းပြောဟန်", sample: "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။" },
-      { id: "may-hnin", name: "မေနှင်း", category: "girl", icon: "🌸", badge: "မိန်းကလေးငယ်", role: "ကြည်လင် အေးချမ်းသော ကောင်မလေးသံ (ဝတ္ထုဖတ်/စာအုပ်)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်နော်။" },
-      { id: "u-han", name: "ဦးဟန်", category: "men", icon: "👨", badge: "လူကြီးအမျိုးသား", role: "တည်ကြည် ခန့်ညားသော လူကြီးသံ (သတင်း/အသိပညာပေး)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။" },
-      { id: "u-kyi", name: "ဦးကြည်", category: "men", icon: "👴", badge: "အဖိုး/လူကြီးသံ", role: "အသံဩဇာပြည့်ဝပြီး လေးနက်သော အဖိုးကြီးသံ (သမိုင်း/ဒဏ္ဍာရီ)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးကြည် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။" },
-      { id: "daw-yin", name: "ဒေါ်ရင်", category: "women", icon: "👩", badge: "အမျိုးသမီးကြီး", role: "နွေးထွေး ကြင်နာတတ်သော မိခင်သံ (တရားတော်/ဘဝအတွေ့အကြုံ)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်ရင် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။" },
-      { id: "daw-soe", name: "ဒေါ်စိုး", category: "women", icon: "🧕", badge: "အမျိုးသမီးကြီး", role: "တည်ငြိမ် ရင့်ကျက်သော အိမ်ထောင်ရှင်အမျိုးသမီးသံ", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်စိုး ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။" },
-      { id: "zaw-zaw", name: "ဇော်ဇော်", category: "boy", icon: "🧒", badge: "ဆယ်ကျော်သက်", role: "သွက်လက် ပေါ့ပါးသော လူငယ်စကားပြောဟန် (Vlog/ဟာသ)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဇော်ဇော် ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။" },
-      { id: "nu-nu", name: "နုနု", category: "girl", icon: "🎀", badge: "ကလေးမလေးသံ", role: "နူးညံ့ ချစ်စဖွယ် ကလေးမလေးသံ (ညအိပ်ရာဝင် ပုံပြင်)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ နုနု ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်ရှင်။" }
+      { id: "nay-toe", name: "နေတိုး", category: "boy", icon: "👦", badge: "လူငယ်အမျိုးသား", role: "တက်ကြွ လန်းဆန်းသော လူငယ်သံ (Movie Recap အကောင်းဆုံး)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
+      { id: "tha-zin", name: "သဇင်", category: "girl", icon: "👧", badge: "မိန်းကလေးငယ်", role: "သွက်လက် ချိုသာသော အပျိုမလေးသံ (TikTok / Shorts အထူးကောင်း)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။" },
+      { id: "tay-za", name: "တေဇ", category: "boy", icon: "🧑", badge: "လူငယ်အမျိုးသား", role: "သဘာဝကျပြီး ရှင်းလင်းပြတ်သားသော ဇာတ်ကြောင်းပြောဟန်", sample: "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
+      { id: "may-hnin", name: "မေနှင်း", category: "girl", icon: "🌸", badge: "မိန်းကလေးငယ်", role: "ကြည်လင် အေးချမ်းသော ကောင်မလေးသံ (ဝတ္ထုဖတ်/စာအုပ်)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။" },
+      { id: "u-han", name: "ဦးဟန်", category: "men", icon: "👨", badge: "လူကြီးအမျိုးသား", role: "တည်ကြည် ခန့်ညားသော လူကြီးသံ (သတင်း/အသိပညာပေး)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
+      { id: "u-kyi", name: "ဦးကြည်", category: "men", icon: "👴", badge: "အဖိုး/လူကြီးသံ", role: "အသံဩဇာပြည့်ဝပြီး လေးနက်သော အဖိုးကြီးသံ (သမိုင်း/ဒဏ္ဍာရီ)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးကြည် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
+      { id: "daw-yin", name: "ဒေါ်ရင်", category: "women", icon: "👩", badge: "အမျိုးသမီးကြီး", role: "နွေးထွေး ကြင်နာတတ်သော မိခင်သံ (တရားတော်/ဘဝအတွေ့အကြုံ)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်ရင် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
+      { id: "daw-soe", name: "ဒေါ်စိုး", category: "women", icon: "🧕", badge: "အမျိုးသမီးကြီး", role: "တည်ငြိမ် ရင့်ကျက်သော အိမ်ထောင်ရှင်အမျိုးသမီးသံ", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်စိုး ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
+      { id: "zaw-zaw", name: "ဇော်ဇော်", category: "boy", icon: "🧒", badge: "ဆယ်ကျော်သက်", role: "သွက်လက် ပေါ့ပါးသော လူငယ်စကားပြောဟန် (Vlog/ဟာသ)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဇော်ဇော် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
+      { id: "nu-nu", name: "နုနု", category: "girl", icon: "🎀", badge: "ကလေးမလေးသံ", role: "နူးညံ့ ချစ်စဖွယ် ကလေးမလေးသံ (ညအိပ်ရာဝင် ပုံပြင်)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ နုနု ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်ရှင်။" }
     ];
 
     let selectedId = "nay-toe";
@@ -932,7 +952,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       const persona = PERSONAS.find(p => p.id === selectedId);
       const a = document.createElement("a");
       a.href = URL.createObjectURL(generatedBlob);
-      a.download = `TTS_Pro_${persona.name}_${Date.now()}.mp3`;
+      a.download = `Recap_Go_${persona.name}_${Date.now()}.mp3`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -949,16 +969,16 @@ HTML_CONTENT = """<!DOCTYPE html>
 """
 
 PERSONA_VOICES = [
-    {"id": "nay-toe", "base_voice": "my-MM-ThihaNeural", "base_rate": "+4%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "tha-zin", "base_voice": "my-MM-NilarNeural", "base_rate": "+3%", "base_pitch": "+6Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်နော်။"},
-    {"id": "tay-za", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "may-hnin", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်နော်။"},
-    {"id": "u-han", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "u-kyi", "base_voice": "my-MM-ThihaNeural", "base_rate": "-6%", "base_pitch": "-18Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးကြည် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "daw-yin", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-8Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်ရင် ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "daw-soe", "base_voice": "my-MM-NilarNeural", "base_rate": "-6%", "base_pitch": "-14Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်စိုး ဖြစ်ပါတယ်။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "zaw-zaw", "base_voice": "my-MM-ThihaNeural", "base_rate": "+7%", "base_pitch": "+12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဇော်ဇော် ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "nu-nu", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+12Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ နုနု ပါ။ ရီကတ်ဂိုးအေအိုင်မှာ ကြိုဆိုပါတယ်ရှင်။"}
+    {"id": "nay-toe", "base_voice": "my-MM-ThihaNeural", "base_rate": "+4%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
+    {"id": "tha-zin", "base_voice": "my-MM-NilarNeural", "base_rate": "+3%", "base_pitch": "+6Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"},
+    {"id": "tay-za", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
+    {"id": "may-hnin", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"},
+    {"id": "u-han", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
+    {"id": "u-kyi", "base_voice": "my-MM-ThihaNeural", "base_rate": "-6%", "base_pitch": "-18Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးကြည် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
+    {"id": "daw-yin", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-8Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်ရင် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
+    {"id": "daw-soe", "base_voice": "my-MM-NilarNeural", "base_rate": "-6%", "base_pitch": "-14Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်စိုး ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
+    {"id": "zaw-zaw", "base_voice": "my-MM-ThihaNeural", "base_rate": "+7%", "base_pitch": "+12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဇော်ဇော် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
+    {"id": "nu-nu", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+12Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ နုနု ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်ရှင်။"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
