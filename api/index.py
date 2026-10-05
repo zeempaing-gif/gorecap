@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, HTMLResponse
 from pydantic import BaseModel
 
-app = FastAPI(title="TTS Pro & Video Transcript AI")
+app = FastAPI(title="TTS Pro & Groq Video Transcript AI")
 
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,7 +21,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TTS Pro & Transcript Studio</title>
+  <title>TTS Pro & Groq Video Transcript</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,28 +44,28 @@ HTML_CONTENT = """<!DOCTYPE html>
     <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-lg shadow-lg shadow-amber-500/20 font-bold text-slate-950">
-          🎙️
+          ⚡
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base font-bold tracking-tight text-white">TTS Pro & Transcript</h1>
+            <h1 class="text-base font-bold tracking-tight text-white">TTS Pro & Groq Transcript</h1>
             <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              AI Studio
+              Groq Powered
             </span>
           </div>
-          <p class="text-[11px] text-slate-400 hidden sm:block">မြန်မာအသံဖန်တီးခန်းနှင့် ဗီဒီယို ဇာတ်ညွှန်းဘာသာပြန်စနစ်</p>
+          <p class="text-[11px] text-slate-400 hidden sm:block">Ultra-fast Groq AI ဗီဒီယို ဇာတ်ညွှန်းဘာသာပြန်နှင့် မြန်မာအသံစနစ်</p>
         </div>
       </div>
 
       <!-- Tab Switcher -->
       <div class="flex bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-bold">
-        <button id="tabTtsBtn" onclick="switchMainTab('tts')" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 transition-all flex items-center gap-1.5">
-          <span>🎙️</span>
-          <span>TTS Studio</span>
-        </button>
-        <button id="tabTranscriptBtn" onclick="switchMainTab('transcript')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+        <button id="tabTranscriptBtn" onclick="switchMainTab('transcript')" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 transition-all flex items-center gap-1.5">
           <span>📝</span>
           <span>Transcript</span>
+        </button>
+        <button id="tabTtsBtn" onclick="switchMainTab('tts')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+          <span>🎙️</span>
+          <span>TTS Studio</span>
         </button>
       </div>
     </div>
@@ -74,19 +75,19 @@ HTML_CONTENT = """<!DOCTYPE html>
   <main class="max-w-5xl w-full p-4 sm:p-6 space-y-6 flex-1">
 
     <!-- ========================================== -->
-    <!-- SECTION 1: TRANSCRIPT (Function အသစ်)        -->
+    <!-- SECTION 1: TRANSCRIPT (Groq AI)            -->
     <!-- ========================================== -->
-    <div id="sectionTranscript" class="hidden space-y-6">
+    <div id="sectionTranscript" class="space-y-6">
 
       <!-- Header Info Banner -->
       <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/5 to-transparent border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-base font-bold text-amber-300 flex items-center gap-2">
-            <span>📝</span>
-            <span>Video Transcript & Burmese Script Generator</span>
+            <span>⚡</span>
+            <span>Groq Video Transcript & Burmese Script Generator</span>
           </h2>
           <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-            မည်သည့် ဘာသာစကားပြော Video ကိုမဆို Upload ပြုလုပ်ပါ။ Video အလျားထက် ၃၀ စက္ကန့် ပိုရှည်သော လူတိုင်းနားလည်လွယ်သည့် သဘာဝကျ မြန်မာဇာတ်ညွှန်းကို ထုတ်ယူပေးပါမည်။
+            မည်သည့် ဘာသာစကားပြော Video ကိုမဆို ထည့်သွင်းပါ။ Groq AI ဖြင့် မူရင်းဗီဒီယိုထက် ၃၀ စက္ကန့် ပိုရှည်သော လူတိုင်းနားလည်လွယ်သည့် သဘာဝကျ မြန်မာဇာတ်ညွှန်း ရေးသားပေးပါမည်။
           </p>
         </div>
         <div class="flex items-center gap-2 text-xs shrink-0 bg-slate-900/90 border border-slate-800 px-3 py-2 rounded-xl text-slate-300">
@@ -100,9 +101,8 @@ HTML_CONTENT = """<!DOCTYPE html>
         <!-- Left: Upload & Config Controls -->
         <div class="lg:col-span-5 space-y-4">
 
-          <!-- Upload Dropzone Card -->
           <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 backdrop-blur-sm shadow-xl">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">၁။ Video ဖိုင် ရွေးချယ်ပါ</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">၁။ Video / Audio ဖိုင် ရွေးချယ်ပါ</span>
 
             <div
               onclick="document.getElementById('videoFileInput').click()"
@@ -113,10 +113,10 @@ HTML_CONTENT = """<!DOCTYPE html>
                 🎥
               </div>
               <p class="text-xs font-bold text-slate-200 mt-3" id="uploadPromptText">Video ဖိုင်ကို ဤနေရာတွင် နှိပ်၍ ရွေးပါ</p>
-              <p class="text-[11px] text-slate-500 mt-1">MP4, MKV, MOV, WebM (မည်သည့်ဘာသာမဆို)</p>
+              <p class="text-[11px] text-slate-500 mt-1">MP4, MKV, WebM, MP3, WAV (Groq Whisper Speed)</p>
             </div>
 
-            <!-- Video Player Preview (Hidden until file selected) -->
+            <!-- Video Player Preview -->
             <div id="videoPreviewBox" class="hidden space-y-2">
               <video id="previewVideoEl" controls class="w-full rounded-xl max-h-48 bg-black border border-slate-800"></video>
               <div class="flex items-center justify-between text-xs px-2 text-slate-400">
@@ -124,7 +124,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 <span id="videoDurationLabel" class="font-bold text-amber-400 font-mono">00:00</span>
               </div>
               <div class="p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-[11px] text-amber-300 flex items-center justify-between">
-                <span>⏱️️ ဖန်တီးမည့် Script အလျား:</span>
+                <span>⏱ ဖန်တီးမည့် Script အလျား:</span>
                 <span id="targetDurationLabel" class="font-bold font-mono">+၃၀ စက္ကန့် ပိုရှည်မည်</span>
               </div>
             </div>
@@ -143,35 +143,35 @@ HTML_CONTENT = """<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- AI API Key (Gemini Free Key) -->
+            <!-- Groq API Key -->
             <div class="pt-3 border-t border-slate-800 space-y-1.5">
               <div class="flex items-center justify-between">
-                <label class="text-[11px] font-bold text-slate-300">Google Gemini API Key (အခမဲ့)</label>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-amber-400 hover:underline">Key အခမဲ့ရယူရန် ↗</a>
+                <label class="text-[11px] font-bold text-slate-300">Groq API Key (console.groq.com)</label>
+                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-amber-400 hover:underline">Key ရယူရန် (Free) ↗</a>
               </div>
               <input
                 type="password"
-                id="geminiApiKeyInput"
-                placeholder="AIzaSy... (Gemini Free Key ထည့်ပါ)"
+                id="groqApiKeyInput"
+                placeholder="gsk_... (Groq API Key ထည့်ပါ)"
                 class="w-full bg-[#030712] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
               />
-              <p class="text-[10px] text-slate-500">Google AI Studio မှ Visa Card မလိုဘဲ အခမဲ့ Key ထုတ်ယူထည့်သွင်းနိုင်ပါသည် (Browser ထဲတွင် အလိုအလျောက် သိမ်းထားပေးပါမည်)။</p>
+              <p class="text-[10px] text-slate-500">Groq Console မှရရှိသော `gsk_` ဖြင့်စသော Key ကို ထည့်ပါ (Browser ထဲတွင် အလိုအလျောက် မှတ်ထားပေးပါမည်)။</p>
             </div>
 
             <!-- Start Process Button -->
             <button
               id="startTranscriptBtn"
-              onclick="generateTranscript()"
+              onclick="generateGroqTranscript()"
               class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:brightness-110 active:scale-[0.99] text-slate-950 font-bold text-xs shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               <span id="transSpinner" class="hidden animate-spin">🌀</span>
-              <span id="transBtnText">✨ စာညွှန်းထုတ်ယူပြီး မြန်မာပြန်မည် (+30s)</span>
+              <span id="transBtnText">⚡ Groq ဖြင့် စာညွှန်းထုတ်ယူမည် (+30s)</span>
             </button>
           </div>
 
         </div>
 
-        <!-- Right: Transcript Output Result Box -->
+        <!-- Right: Output Script Result -->
         <div class="lg:col-span-7 space-y-4">
           <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3 backdrop-blur-sm shadow-xl flex flex-col h-full min-h-[480px]">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -183,16 +183,16 @@ HTML_CONTENT = """<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- Result Script Area -->
+            <!-- Text Box -->
             <div class="relative flex-1">
               <textarea
                 id="transcriptOutputText"
-                placeholder="ဗီဒီယို Upload တင်ပြီးပါက ဤနေရာတွင် အပိုစာသား လုံးဝမပါဝင်သော သဘာဝကျသည့် မြန်မာဘာသာပြန် ဇာတ်ညွှန်းများ ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
-                class="w-full h-full min-h-[360px] bg-[#030712] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-burmese custom-scroll"
+                placeholder="Video ဖိုင် ရွေးချယ်ပြီး Groq ဖြင့် ဘာသာပြန်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် အင်္ဂလိပ်စာလုံး လုံးဝမပါသော သဘာဝကျသည့် မြန်မာဘာသာပြန် ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
+                class="w-full h-full min-h-[360px] bg-[#030712] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 custom-scroll font-sans"
               ></textarea>
             </div>
 
-            <!-- Action Buttons: Copy Script & Send to TTS -->
+            <!-- Buttons -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
               <button
                 type="button"
@@ -200,7 +200,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs border border-amber-500/30 flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
               >
                 <span>📋</span>
-                <span id="copyBtnText">Script အားလုံး ကူးယူမည် (Copy Script)</span>
+                <span id="copyBtnText">Script အားလုံး ကူးယူမည် (One-Click Copy)</span>
               </button>
 
               <button
@@ -209,7 +209,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
               >
                 <span>🎙️</span>
-                <span>TTS အသံဖန်တီးခန်းသို့ ပို့မည်</span>
+                <span>TTS အသံထုတ်ခန်းသို့ ပို့မည်</span>
               </button>
             </div>
           </div>
@@ -219,9 +219,9 @@ HTML_CONTENT = """<!DOCTYPE html>
     </div>
 
     <!-- ========================================== -->
-    <!-- SECTION 2: TTS STUDIO (မူရင်း အသံစနစ်)       -->
+    <!-- SECTION 2: TTS STUDIO                      -->
     <!-- ========================================== -->
-    <div id="sectionTts" class="space-y-6">
+    <div id="sectionTts" class="hidden space-y-6">
 
       <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -230,7 +230,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             <span>မြန်မာအသံ ကာရိုက်တာ (၁၀) မျိုးဖြင့် အသံဖန်တီးခန်း</span>
           </h2>
           <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">
-            စာသားများကို ရိုက်ထည့်၍ဖြစ်စေ၊ Transcript မှ ရရှိလာသော ဇာတ်ညွှန်းကိုဖြစ်စေ အသံဖိုင် တိုက်ရိုက် ထုတ်ယူပါ
+            စာသားများကို ရိုက်ထည့်၍ဖြစ်စေ၊ Transcript မှ ရရှိလာသော ဇာတ်ညွှန်းကိုဖြစ်စေ MP3 အသံဖိုင် တိုက်ရိုက် ထုတ်ယူပါ
           </p>
         </div>
         <div id="activeVoicePill" class="text-xs font-bold text-amber-300 bg-amber-950/80 border border-amber-800/80 px-3 py-1.5 rounded-xl shrink-0">
@@ -351,7 +351,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       }
     }
 
-    // Toast Notification
+    // Toast Notification System
     function showToast(msg, type = "info") {
       const container = document.getElementById("toastContainer");
       const toast = document.createElement("div");
@@ -370,19 +370,19 @@ HTML_CONTENT = """<!DOCTYPE html>
     }
 
     // ==========================================
-    // TRANSCRIPT LOGIC & VIDEO HANDLING
+    // GROQ TRANSCRIPT LOGIC
     // ==========================================
     let currentVideoFile = null;
     let videoDurationSeconds = 0;
 
-    // Load saved Gemini API Key
-    const savedKey = localStorage.getItem("gemini_api_key") || "";
-    if (savedKey) {
-      document.getElementById("geminiApiKeyInput").value = savedKey;
+    // Load saved Groq Key from local storage
+    const savedGroqKey = localStorage.getItem("groq_api_key") || "";
+    if (savedGroqKey) {
+      document.getElementById("groqApiKeyInput").value = savedGroqKey;
     }
 
-    document.getElementById("geminiApiKeyInput").addEventListener("input", (e) => {
-      localStorage.setItem("gemini_api_key", e.target.value.trim());
+    document.getElementById("groqApiKeyInput").addEventListener("input", (e) => {
+      localStorage.setItem("groq_api_key", e.target.value.trim());
     });
 
     function handleVideoSelected(e) {
@@ -406,29 +406,19 @@ HTML_CONTENT = """<!DOCTYPE html>
         const tMins = Math.floor(targetSecs / 60);
         const tSecs = targetSecs % 60;
         document.getElementById("targetDurationLabel").innerText = `${tMins.toString().padStart(2, '0')}:${tSecs.toString().padStart(2, '0')} (+30s ထပ်ဆောင်း)`;
-        showToast("Video အလျားကို အောင်မြင်စွာ တွက်ချက်ပြီးပါပြီ", "success");
+        showToast("Video အလျားကို အောင်မြင်စွာ စစ်ဆေးပြီးပါပြီ", "success");
       };
     }
 
-    // Convert file to base64
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function generateTranscript() {
+    async function generateGroqTranscript() {
       if (!currentVideoFile) {
         showToast("ကျေးဇူးပြု၍ Video ဖိုင် အရင်ရွေးချယ်ပေးပါ", "error");
         return;
       }
 
-      const apiKey = document.getElementById("geminiApiKeyInput").value.trim();
-      if (!apiKey) {
-        showToast("Gemini API Key ထည့်သွင်းပေးရန် လိုအပ်ပါသည် (အခမဲ့ ရယူနိုင်ပါသည်)", "error");
+      const apiKey = document.getElementById("groqApiKeyInput").value.trim();
+      if (!apiKey || !apiKey.startsWith("gsk_")) {
+        showToast("Groq API Key (gsk_...) ကို မှန်ကန်စွာ ထည့်ပေးပါ (console.groq.com/keys)", "error");
         return;
       }
 
@@ -440,73 +430,99 @@ HTML_CONTENT = """<!DOCTYPE html>
 
       btn.disabled = true;
       spinner.classList.remove("hidden");
-      btnText.innerText = "Video ကို ဖတ်ရှုပြီး မြန်မာပြန်နေပါသည် (+30s)...";
-      outputText.value = "AI မှ ဗီဒီယိုပါ အသံနှင့် အကြောင်းအရာများကို ဖတ်ရှုနေပါသည်... စက္ကန့်အနည်းငယ် စောင့်ဆိုင်းပေးပါ...";
+      btnText.innerText = "၁/၂: Groq Whisper ဖြင့် အသံဖတ်နေပါသည်...";
+      outputText.value = "အဆင့် ၁: Groq Whisper Large-V3 စနစ်ဖြင့် Video ထဲမှ စကားပြောသံများကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
 
       try {
-        const base64Data = await fileToBase64(currentVideoFile);
-        const mimeType = currentVideoFile.type || "video/mp4";
+        // Step 1: Transcribe Audio using Groq Whisper API
+        const formData = new FormData();
+        formData.append("file", currentVideoFile);
+        formData.append("model", "whisper-large-v3");
+        formData.append("response_format", includeTimestamps ? "verbose_json" : "json");
 
+        const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: formData
+        });
+
+        if (!whisperRes.ok) {
+          const errData = await whisperRes.json().catch(() => ({}));
+          throw new Error(errData.error?.message || "Groq Whisper ချိတ်ဆက်မှု မအောင်မြင်ပါ (ဖိုင်အရွယ်အစား 25MB ထက် မကျော်လွန်စေရန် ဂရုပြုပါ)");
+        }
+
+        const whisperData = await whisperRes.json();
+        let originalText = whisperData.text || "";
+
+        if (includeTimestamps && whisperData.segments) {
+          originalText = whisperData.segments.map(s => {
+            const startM = Math.floor(s.start / 60).toString().padStart(2, '0');
+            const startS = Math.floor(s.start % 60).toString().padStart(2, '0');
+            return `[${startM}:${startS}] ${s.text}`;
+          }).join("\n");
+        }
+
+        btnText.innerText = "၂/၂: Groq Llama ဖြင့် မြန်မာဘာသာပြန်နေပါသည် (+30s)...";
+        outputText.value = "အဆင့် ၂: အပိုစာသားနှင့် အင်္ဂလိပ်စာလုံး လုံးဝမပါဘဲ ဗီဒီယိုအလျားထက် စက္ကန့် ၃၀ ပိုရှည်အောင် မြန်မာစကားပြေအဖြစ် ပြန်ဆိုနေပါသည်...";
+
+        // Step 2: Translate and expand by +30 seconds using Groq LLaMA 3.3 70B
         const targetSecs = videoDurationSeconds + 30;
-        const targetMins = (targetSecs / 60).toFixed(1);
+        const targetWords = Math.max(120, Math.round(targetSecs * 2.8));
 
-        // System Instruction specifically crafted for the user's constraints
-        const promptInstruction = `
-သင်သည် ပရော်ဖက်ရှင်နယ် ဗီဒီယို ဇာတ်ညွှန်းပြန်ဆိုရေးသားသူ ဖြစ်သည်။
-ဤဗီဒီယိုတွင် ပြောဆိုသွားသမျှ စကားများနှင့် အကြောင်းအရာများကို အောက်ပါ စည်းကမ်းချက် (၄) ချက်အတိုင်း တိကျစွာ လိုက်နာ၍ မြန်မာလို ပြန်ဆိုပေးပါ:
+        const systemPrompt = `
+သင်သည် အဆင့်မြင့် ရုပ်ရှင်ဇာတ်ညွှန်းနှင့် ဗီဒီယို ဘာသာပြန် ကျွမ်းကျင်သူ ဖြစ်သည်။
+ပေးထားသော Video ဇာတ်ကြောင်း စကားများကို အောက်ပါ တိကျသော စည်းမျဉ်း (၄) ချက်အတိုင်း မြန်မာလို ပြန်ဆိုပေးပါ:
 
-၁။ အပိုစာသားနှင့် English စာလုံး လုံးဝ (လုံးဝ) မထည့်ပါနှင့်။ (ဥပမာ "Here is the translation", "Title:", "Summary:" စသည့် စကားလုံးများ၊ စာညွှန်းခေါင်းစဉ်များ လုံးဝမပါရ)။
-၂။ မူရင်းဗီဒီယို ကြာချိန်ထက် စက္ကန့် ၃၀ ခန့် ပိုရှည်အောင် (ခန့်မှန်းခြေ စုစုပေါင်း ${targetMins} မိနစ်စာ သို့မဟုတ် ${Math.round(targetSecs * 2.5)} စကားလုံးခန့်) အကြောင်းအရာကို အသေးစိတ် ပြည့်စုံစွာ ဇာတ်ကြောင်းပြန် စာသားအဖြစ် ရေးပေးရမည်။
+၁။ အပိုစာသားနှင့် English စာသား လုံးဝ (လုံးဝ) မထည့်ပါနှင့်။ (ဥပမာ "Here is the Burmese translation:", "Title:", "Summary:" စသည့် စကားလုံးများ၊ နိဒါန်းစာများနှင့် အင်္ဂလိပ်စာလုံးများ လုံးဝမပါရ)။
+၂။ မူရင်းဗီဒီယို ကြာချိန်ထက် စက္ကန့် ၃၀ စာခန့် ပိုရှည်စေရန်အတွက် အကြောင်းအရာကို ပြည့်စုံသန့်ရှင်းစွာ အသေးစိတ် ချဲ့ထွင်၍ မြန်မာစကားလုံး ခန့်မှန်းခြေ ${targetWords} စကားလုံး ဝန်းကျင်အထိ ပါဝင်အောင် ဇာတ်ကြောင်းပြန် စာသားအဖြစ် ရေးပေးရမည်။
 ၃။ လူတိုင်း နားလည်လွယ်သော သဘာဝကျသည့် မြန်မာစကားပြော ပြေပြေပြစ်ပြစ် ဖြစ်ရမည်။
-၄။ ${includeTimestamps ? "မိနစ် အချိန်မှတ် (Time Stamp) များကို ဥပမာ [00:00], [01:00] ပုံစံဖြင့် ဝါကျအလိုက် ထည့်သွင်းပေးပါ။" : "မိနစ် အချိန်မှတ် (Time Stamp) များကို လုံးဝ မထည့်ပါနှင့်၊ သဘာဝကျသော စာပိုဒ်များဖြင့်သာ ရေးပေးပါ။"}
+၄။ ${includeTimestamps ? "အချိန်မှတ် (Time Stamp) များကို ဥပမာ [00:00], [00:30] ပုံစံဖြင့် ဝါကျများရှေ့တွင် ဆက်လက် ထည့်သွင်းပေးပါ။" : "အချိန်မှတ် (Time Stamp) များကို လုံးဝ မထည့်ပါနှင့်၊ သဘာဝကျသော စာပိုဒ်များဖြင့်သာ ရေးပေးပါ။"}
 
-အထက်ပါ စည်းမျဉ်းများအတိုင်း စစ်မှန်သော မြန်မာဘာသာပြန် ဇာတ်ညွှန်း စာသားစစ်စစ်ကိုသာ ချက်ချင်း ထုတ်ပေးပါ:
+အထက်ပါ စည်းမျဉ်းအတိုင်း မြန်မာစာသား စစ်စစ်ကိုသာ တိုက်ရိုက် ထုတ်ပေးပါ:
         `.trim();
 
-        // Direct call to Gemini 2.5 Flash
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        const llmRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: promptInstruction },
-                  {
-                    inline_data: {
-                      mime_type: mimeType,
-                      data: base64Data
-                    }
-                  }
-                ]
-              }
-            ]
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: `မူရင်း ဗီဒီယို စာသားများ:\n${originalText}` }
+            ],
+            temperature: 0.6
           })
         });
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error?.message || "AI ချိတ်ဆက်မှု မအောင်မြင်ပါ");
+        if (!llmRes.ok) {
+          const errData = await llmRes.json().catch(() => ({}));
+          throw new Error(errData.error?.message || "Groq Translation မအောင်မြင်ပါ");
         }
 
-        const data = await response.json();
-        const generatedScript = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const llmData = await llmRes.json();
+        const finalScript = llmData.choices?.[0]?.message?.content || "";
 
-        if (generatedScript) {
-          outputText.value = generatedScript.trim();
-          const words = generatedScript.trim().split(/\s+/).length;
+        if (finalScript) {
+          outputText.value = finalScript.trim();
+          const words = finalScript.trim().split(/\s+/).length;
           document.getElementById("scriptWordCount").innerText = `${words} စကားလုံး`;
-          showToast("မြန်မာဇာတ်ညွှန်း အောင်မြင်စွာ ထွက်ရှိပါပြီ", "success");
+          showToast("Groq ဖြင့် မြန်မာဇာတ်ညွှန်း အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ", "success");
         } else {
-          throw new Error("စာသား ပြန်ဆို၍ မရပါ");
+          throw new Error("စာသား ရယူ၍ မရပါ");
         }
+
       } catch (err) {
-        outputText.value = `ချို့ယွင်းချက် ဖြစ်ပေါ်သွားပါသည်: ${err.message}\n(မှတ်ချက်: ဗီဒီယိုဖိုင် အရွယ်အစား ကြီးမားပါက သို့မဟုတ် Gemini API Key မှားယွင်းပါက ဖြစ်တတ်ပါသည်)`;
+        outputText.value = `ချို့ယွင်းချက် ဖြစ်ပေါ်သွားပါသည်: ${err.message}`;
         showToast(err.message, "error");
       } finally {
         btn.disabled = false;
         spinner.classList.add("hidden");
-        btnText.innerText = "✨ စာညွှန်းထုတ်ယူပြီး မြန်မာပြန်မည် (+30s)";
+        btnText.innerText = "⚡ Groq ဖြင့် စာညွှန်းထုတ်ယူမည် (+30s)";
       }
     }
 
@@ -520,7 +536,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         showToast("ဇာတ်ညွှန်းစာသား အားလုံးကို ကူးယူပြီးပါပြီ (Copied)", "success");
         const btnText = document.getElementById("copyBtnText");
         btnText.innerText = "✓ ကူးယူပြီးပါပြီ!";
-        setTimeout(() => btnText.innerText = "Script အားလုံး ကူးယူမည် (Copy Script)", 2000);
+        setTimeout(() => btnText.innerText = "Script အားလုံး ကူးယူမည် (One-Click Copy)", 2000);
       });
     }
 
@@ -530,12 +546,11 @@ HTML_CONTENT = """<!DOCTYPE html>
         showToast("TTS သို့ ပို့ရန် စာသား မရှိသေးပါ", "error");
         return;
       }
-      // Remove timestamps if any before sending to TTS
       const cleanTextForTts = text.replace(/\[\d{2}:\d{2}\]/g, '').trim();
       document.getElementById("textInput").value = cleanTextForTts;
       document.getElementById("charCount").innerText = `${cleanTextForTts.length} အက္ခရာ`;
       switchMainTab("tts");
-      showToast("စာသားများကို TTS အသံထုတ်ခန်းသို့ ထည့်သွင်းပေးလိုက်ပါပြီ", "success");
+      showToast("စာသားများကို TTS အသံထုတ်ခန်းသို့ ထည့်သွင်းပြီးပါပြီ", "success");
     }
 
     // ==========================================
@@ -758,7 +773,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       showToast("MP3 ဒေါင်းလုဒ် ဆွဲပြီးပါပြီ", "success");
     }
 
-    // Initialize
+    // Initialize View
     renderVoiceCards("all");
     updateTuningLabels();
     document.getElementById("charCount").innerText = `${textInputEl.value.length} အက္ခရာ`;
@@ -796,7 +811,6 @@ def read_api_root():
     return HTMLResponse(content=HTML_CONTENT)
 
 @app.get("/api/health")
-@app.get("/health")
 def health():
     return {"status": "ok"}
 
