@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 app = FastAPI(title="Recap Go AI - Burmese Script & TTS Studio")
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,7 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-HTML_CONTENT = """<!DOCTYPE html>
+HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="my" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -34,7 +33,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     .switch-checkbox:checked + .switch-label .switch-dot { transform: translateX(100%); background-color: #ffffff; }
   </style>
 </head>
-<body class="bg-[#0b1120] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white">
+<body class="bg-[#080d1a] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white">
 
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
@@ -48,7 +47,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base font-bold tracking-tight text-white font-sans">Recap Go</h1>
+            <h1 class="text-base font-bold tracking-tight text-white">Recap Go</h1>
             <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
               Max 200MB
             </span>
@@ -71,6 +70,14 @@ HTML_CONTENT = """<!DOCTYPE html>
     </div>
   </header>
 
+  <!-- Real Native File Input (Attached via Label) -->
+  <input
+    type="file"
+    id="videoFileInput"
+    accept="video/*,audio/*"
+    class="hidden"
+  />
+
   <!-- Main Body Content -->
   <main class="max-w-5xl w-full p-4 sm:p-6 space-y-6 flex-1">
 
@@ -84,93 +91,75 @@ HTML_CONTENT = """<!DOCTYPE html>
         <!-- Left: Upload & Config Controls -->
         <div class="lg:col-span-5 space-y-4">
 
-          <!-- Upload Dropzone Card -->
-          <div class="bg-gradient-to-b from-slate-900/90 to-[#0d1527]/90 border border-slate-800/90 rounded-2xl p-5 space-y-4 shadow-2xl backdrop-blur-sm">
+          <div class="bg-gradient-to-b from-slate-900/95 to-[#0d1527]/95 border border-slate-800/90 rounded-2xl p-5 space-y-4 shadow-2xl backdrop-blur-sm">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <span class="text-blue-400 text-sm">📤</span>
                 <span>File Upload</span>
               </span>
               <span id="fileBadgeStatus" class="hidden text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-700 animate-pulse">
-                ✓ ဗီဒီယို ရောက်ရှိပြီး
+                ✓ Video ရောက်ရှိပြီး
               </span>
             </div>
 
-            <!-- Upload Dropzone Container -->
-            <div
-              id="uploadDropzone"
-              class="relative border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-2xl p-6 text-center transition-all bg-[#070b14]/80 hover:bg-[#0c1322] group cursor-pointer overflow-hidden"
+            <!-- Upload Dropzone Label Container (Native Label click triggers file picker on ALL mobile devices) -->
+            <label
+              id="uploadDropzoneLabel"
+              for="videoFileInput"
+              class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#070b14]/90 hover:bg-[#0c1322] block group"
             >
-              <!-- 100% overlay native file input -->
-              <input
-                type="file"
-                id="videoFileInput"
-                accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv"
-                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
-                onchange="handleVideoSelected(event)"
-              />
-
-              <!-- Visual prompt inside dropzone -->
-              <div class="pointer-events-none relative z-10 space-y-2">
-                <div id="uploadIconBox" class="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <div class="space-y-2 pointer-events-none">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   📁
                 </div>
                 <p class="text-xs font-bold text-slate-100" id="uploadPromptText">Drag & drop a video or audio file</p>
-                <p class="text-[11px] text-slate-400 font-mono" id="uploadSubText">mp4, mov, mp3, wav, m4a · max 200MB</p>
+                <p class="text-[11px] text-slate-400 font-mono">mp4, mov, mp3, wav, m4a · max 200MB</p>
                 <div class="pt-2">
-                  <span id="browseBtnLabel" class="inline-block px-4 py-2 rounded-xl bg-blue-600 group-hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all">
+                  <span class="inline-block px-4 py-2 rounded-xl bg-blue-600 group-hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all">
                     Browse (ဖိုင်ရွေးမည်)
                   </span>
                 </div>
               </div>
-            </div>
+            </label>
 
-            <!-- Video Preview Box (Becomes visible immediately upon selection) -->
-            <div id="videoPreviewBox" class="hidden space-y-3 bg-[#070b14] border-2 border-blue-500/60 rounded-2xl p-3.5 shadow-2xl transition-all">
+            <!-- Video Preview Card (Renders IMMEDIATELY on file selection) -->
+            <div id="videoPreviewBox" class="hidden space-y-3 bg-[#050914] border-2 border-blue-500 rounded-2xl p-3.5 shadow-2xl transition-all">
               <div class="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div class="flex items-center gap-2">
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span class="text-xs font-bold text-emerald-300">တင်ထားသော မီဒီယာ အဆင်သင့်ဖြစ်ပါပြီ</span>
+                  <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
-
-                <!-- Re-select Button with native overlay -->
-                <div class="relative inline-block cursor-pointer">
-                  <span class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
-                    🔄 အသစ်လဲမည်
-                  </span>
-                  <input
-                    type="file"
-                    accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
-                    onchange="handleVideoSelected(event)"
-                  />
-                </div>
+                <!-- Re-select button -->
+                <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
+                  🔄 အသစ်လဲမည်
+                </label>
               </div>
 
-              <!-- Native Video / Audio Player -->
+              <!-- Native Video Player (Playsinline + muted for mobile rendering) -->
               <video
                 id="previewVideoEl"
                 controls
                 playsinline
+                webkit-playsinline="true"
                 muted
                 preload="auto"
                 class="w-full rounded-xl max-h-52 bg-black border border-slate-800 shadow-inner"
               ></video>
 
-              <!-- Codec Fallback Banner (for unsupported video containers like MKV on native Safari/Chrome) -->
-              <div id="codecFallbackBox" class="hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center gap-2.5">
-                <span class="text-xl">🎵</span>
-                <div class="flex-1 min-w-0">
-                  <span class="text-[11px] text-slate-300 font-bold block truncate" id="codecFileName">file.mkv</span>
-                  <span class="text-[10px] text-emerald-400">အသံဖိုင် သီးသန့် ထုတ်ယူပြီး Transcript လုပ်ရန် အသင့်ဖြစ်ပါသည်</span>
+              <!-- Audio Player (In case audio format like mp3/m4a was chosen) -->
+              <div id="audioPreviewContainer" class="hidden space-y-2 p-3 rounded-xl bg-slate-900 border border-slate-800">
+                <div class="flex items-center gap-2 text-xs text-amber-300 font-bold">
+                  <span>🎵</span>
+                  <span>Audio အသံဖိုင် စမ်းဖွင့်ရန်</span>
                 </div>
+                <audio id="previewAudioEl" controls class="w-full"></audio>
               </div>
 
               <!-- Video Metadata Grid -->
               <div class="grid grid-cols-2 gap-2 text-xs">
                 <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
                   <span class="text-[10px] text-slate-400 block">ဖိုင်အမည်:</span>
-                  <span id="videoFileNameLabel" class="font-bold text-slate-200 truncate block text-[11px]">video.mp4</span>
+                  <span id="videoFileNameLabel" class="font-bold text-slate-100 truncate block text-[11px]">video.mp4</span>
                 </div>
                 <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
                   <span class="text-[10px] text-slate-400 block">ဖိုင်အရွယ်အစား:</span>
@@ -178,6 +167,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 </div>
               </div>
 
+              <!-- Duration Calculation Banner -->
               <div class="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60 text-xs text-blue-300 flex items-center justify-between">
                 <div>
                   <span class="text-[10px] text-slate-400 block">မူရင်းအလျား ➔ Script ကြာချိန်</span>
@@ -197,11 +187,9 @@ HTML_CONTENT = """<!DOCTYPE html>
                 <span>🌐</span>
                 <span>Language ထွက်မည့် ဘာသာစကား</span>
               </label>
-              <div class="relative">
-                <select id="languageSelect" class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 font-bold focus:outline-none focus:border-blue-500">
-                  <option value="burmese">Burmese မြန်မာ (သဘာဝစကားပြော & +30s Extended)</option>
-                </select>
-              </div>
+              <select id="languageSelect" class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 font-bold focus:outline-none focus:border-blue-500">
+                <option value="burmese">Burmese မြန်မာ (သဘာဝစကားပြော & +30s Extended)</option>
+              </select>
             </div>
 
             <!-- Add Timestamp Toggle Switch -->
@@ -240,7 +228,7 @@ HTML_CONTENT = """<!DOCTYPE html>
               class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-bold text-sm shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2.5 transition-all disabled:opacity-50"
             >
               <span id="transSpinner" class="hidden animate-spin">🌀</span>
-              <span id="transIcon" class="text-base">🎙️️</span>
+              <span id="transIcon" class="text-base">🎙️</span>
               <span id="transBtnText">Transcribe (စာညွှန်းထုတ်ယူမည်)</span>
             </button>
           </div>
@@ -437,7 +425,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         type === 'success' ? 'bg-emerald-950 border-emerald-800 text-emerald-200' :
         'bg-slate-900 border-slate-700 text-slate-200'
       }`;
-      toast.innerHTML = `<span>${type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ️'}</span><span>${msg}</span>`;
+      toast.innerHTML = `<span>${type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ️️'}</span><span>${msg}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 20);
       setTimeout(() => {
@@ -462,8 +450,10 @@ HTML_CONTENT = """<!DOCTYPE html>
       localStorage.setItem("groq_api_key", e.target.value.trim());
     });
 
-    function handleVideoSelected(e) {
-      const file = e.target.files && e.target.files[0];
+    // Native file change listener (Direct Event Binding)
+    const fileInputEl = document.getElementById("videoFileInput");
+    fileInputEl.addEventListener("change", function(e) {
+      const file = this.files && this.files[0];
       if (!file) return;
 
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
@@ -471,72 +461,66 @@ HTML_CONTENT = """<!DOCTYPE html>
       // Support up to 200MB
       if (file.size > 200 * 1024 * 1024) {
         showToast(`ဖိုင်အရွယ်အစား ${sizeMB}MB ဖြစ်နေပါသည်။ အများဆုံး 200MB အထိသာ ခွင့်ပြုထားပါသည်`, "error");
-        e.target.value = "";
+        this.value = "";
         return;
       }
 
       currentUploadedFile = file;
 
-      // 1. Update Dropzone UI Status
+      // 1. Update Dropzone UI Text
       document.getElementById("uploadPromptText").innerText = `✓ ${file.name}`;
-      document.getElementById("uploadPromptText").className = "text-xs font-bold text-emerald-400 truncate max-w-[280px] mx-auto";
-      document.getElementById("uploadSubText").innerText = `အရွယ်အစား: ${sizeMB} MB (တင်သွင်းပြီး)`;
-      document.getElementById("browseBtnLabel").innerText = "🔄 အသစ်လဲမည် (Change File)";
-      document.getElementById("browseBtnLabel").className = "inline-block px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-300 font-bold text-xs border border-blue-500/30 transition-all";
-      document.getElementById("uploadIconBox").innerText = "✅";
       document.getElementById("fileBadgeStatus").classList.remove("hidden");
 
-      // 2. Update Metadata Card Labels
+      // 2. Update Details Grid
       document.getElementById("videoFileNameLabel").innerText = file.name;
       document.getElementById("videoFileSizeLabel").innerText = `${sizeMB} MB`;
-      document.getElementById("codecFileName").innerText = file.name;
 
-      // 3. Setup Video Player Preview
-      const videoEl = document.getElementById("previewVideoEl");
-      const fallbackBox = document.getElementById("codecFallbackBox");
+      // 3. Show Preview Box & Hide Upload Prompt
       const previewCard = document.getElementById("videoPreviewBox");
+      const dropzoneLabel = document.getElementById("uploadDropzoneLabel");
+      const videoEl = document.getElementById("previewVideoEl");
+      const audioContainer = document.getElementById("audioPreviewContainer");
+      const audioEl = document.getElementById("previewAudioEl");
 
       previewCard.classList.remove("hidden");
-
-      // Scroll smoothly to preview
-      setTimeout(() => {
-        previewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 100);
+      dropzoneLabel.classList.add("hidden");
 
       const objectUrl = URL.createObjectURL(file);
-      videoEl.src = objectUrl;
-      videoEl.muted = true;
-      videoEl.playsInline = true;
 
-      // When video metadata is ready
-      videoEl.onloadedmetadata = () => {
-        videoDurationSeconds = Math.round(videoEl.duration) || 60;
-        updateDurationBadges(videoDurationSeconds);
-        fallbackBox.classList.add("hidden");
-        videoEl.classList.remove("hidden");
-
-        // Force browser to render first frame visually on mobile
-        try {
-          videoEl.currentTime = 0.1;
-        } catch (err) {}
-      };
-
-      // In case video container isn't natively decodable (e.g. MKV or audio format)
-      videoEl.onerror = () => {
+      if (file.type.startsWith("audio/")) {
         videoEl.classList.add("hidden");
-        fallbackBox.classList.remove("hidden");
+        audioContainer.classList.remove("hidden");
+        audioEl.src = objectUrl;
+        audioEl.onloadedmetadata = () => {
+          videoDurationSeconds = Math.round(audioEl.duration) || 60;
+          updateDurationBadges(videoDurationSeconds);
+        };
+      } else {
+        audioContainer.classList.add("hidden");
+        videoEl.classList.remove("hidden");
+        videoEl.src = objectUrl;
+        videoEl.muted = true;
+        videoEl.load();
+
+        videoEl.onloadedmetadata = () => {
+          videoDurationSeconds = Math.round(videoEl.duration) || 60;
+          updateDurationBadges(videoDurationSeconds);
+          try {
+            videoEl.currentTime = 0.05; // Render first frame on mobile
+          } catch(err) {}
+        };
+      }
+
+      // Fallback timer if metadata takes longer
+      setTimeout(() => {
         if (!videoDurationSeconds) {
-          // Estimate default 60s
           videoDurationSeconds = 60;
           updateDurationBadges(videoDurationSeconds);
         }
-      };
+      }, 1500);
 
       showToast(`ဖိုင်တင်ခြင်း အောင်မြင်ပါသည် (${sizeMB} MB)`, "success");
-
-      // Reset input value so re-selecting same file triggers correctly
-      e.target.value = "";
-    }
+    });
 
     function updateDurationBadges(durSecs) {
       const mins = Math.floor(durSecs / 60);
