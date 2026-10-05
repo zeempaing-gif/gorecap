@@ -71,15 +71,6 @@ HTML_CONTENT = """<!DOCTYPE html>
     </div>
   </header>
 
-  <!-- Hidden Native File Input (Directly invoked via JS to avoid mobile click blocks) -->
-  <input
-    type="file"
-    id="videoFileInput"
-    accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv"
-    class="fixed -top-[9999px] -left-[9999px] opacity-0 pointer-events-none"
-    onchange="handleVideoSelected(event)"
-  />
-
   <!-- Main Body Content -->
   <main class="max-w-5xl w-full p-4 sm:p-6 space-y-6 flex-1">
 
@@ -103,25 +94,33 @@ HTML_CONTENT = """<!DOCTYPE html>
               <span id="fileBadgeStatus" class="hidden text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">✓ တင်ထားပြီး</span>
             </div>
 
-            <!-- Upload Dropzone Area (Clickable Anywhere) -->
+            <!-- 100% Foolproof Native Upload Area -->
+            <!-- The native <input type="file"> covers 100% of this box via absolute inset-0 z-30 -->
             <div
               id="uploadDropzone"
-              onclick="triggerFileInput(event)"
-              class="border border-dashed border-slate-700/80 hover:border-blue-500/80 rounded-2xl p-7 text-center cursor-pointer transition-all bg-[#070b14]/70 hover:bg-[#0c1322]/80 block group active:scale-[0.99]"
+              class="relative border-2 border-dashed border-slate-700/80 hover:border-blue-500 rounded-2xl p-7 text-center transition-all bg-[#070b14]/70 hover:bg-[#0c1322]/80 group cursor-pointer overflow-hidden"
             >
-              <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                🎧
-              </div>
-              <p class="text-xs font-bold text-slate-200 mt-3.5" id="uploadPromptText">Drag & drop a video or audio file</p>
-              <p class="text-[11px] text-slate-500 mt-1 font-mono">mp4, mov, mp3, wav, m4a · max 200MB</p>
-              <div class="mt-4">
-                <button
-                  type="button"
-                  onclick="triggerFileInput(event)"
-                  class="px-4 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold shadow-sm transition-colors pointer-events-auto"
-                >
-                  Browse
-                </button>
+              <!-- Invisible File Input spanning the entire container -->
+              <input
+                type="file"
+                id="videoFileInput"
+                accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                onchange="handleVideoSelected(event)"
+              />
+
+              <!-- Visual Content (Pointer events none so clicking always hits the file input) -->
+              <div class="pointer-events-none relative z-10 space-y-2">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  🎧
+                </div>
+                <p class="text-xs font-bold text-slate-200 mt-3" id="uploadPromptText">Drag & drop a video or audio file</p>
+                <p class="text-[11px] text-slate-500 font-mono">mp4, mov, mp3, wav, m4a · max 200MB</p>
+                <div class="mt-4">
+                  <span class="inline-block px-4 py-2 rounded-xl bg-blue-600 group-hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all">
+                    📁 Browse (ဖိုင်ရွေးမည်)
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -132,13 +131,19 @@ HTML_CONTENT = """<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-blue-300">ရွေးချယ်ထားသော မီဒီယာ (Preview)</span>
                 </div>
-                <button
-                  type="button"
-                  onclick="triggerFileInput(event)"
-                  class="text-[11px] text-blue-400 hover:underline cursor-pointer font-bold bg-transparent border-none p-0"
-                >
-                  🔄 အသစ်လဲမည်
-                </button>
+
+                <!-- Re-select Button with native input overlay -->
+                <div class="relative inline-block cursor-pointer">
+                  <span class="text-[11px] text-blue-400 hover:underline font-bold">
+                    🔄 အသစ်လဲမည်
+                  </span>
+                  <input
+                    type="file"
+                    accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                    onchange="handleVideoSelected(event)"
+                  />
+                </div>
               </div>
 
               <!-- Video Player -->
@@ -409,18 +414,6 @@ HTML_CONTENT = """<!DOCTYPE html>
         ttsSec.classList.remove("hidden");
         ttsBtn.className = "px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all flex items-center gap-1.5";
         transBtn.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
-      }
-    }
-
-    // Direct File Trigger (Guaranteed to work on all Mobile Browsers)
-    function triggerFileInput(e) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      const input = document.getElementById("videoFileInput");
-      if (input) {
-        input.click();
       }
     }
 
