@@ -70,7 +70,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </header>
 
-  <!-- Real Native File Input (Attached via Label) -->
   <input
     type="file"
     id="videoFileInput"
@@ -134,7 +133,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 </label>
               </div>
 
-              <!-- Native Video Player -->
               <video
                 id="previewVideoEl"
                 controls
@@ -145,7 +143,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 class="w-full rounded-xl max-h-52 bg-black border border-slate-800 shadow-inner"
               ></video>
 
-              <!-- Audio Player -->
               <div id="audioPreviewContainer" class="hidden space-y-2 p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div class="flex items-center gap-2 text-xs text-amber-300 font-bold">
                   <span>🎵</span>
@@ -154,7 +151,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 <audio id="previewAudioEl" controls class="w-full"></audio>
               </div>
 
-              <!-- Video Metadata Grid -->
               <div class="grid grid-cols-2 gap-2 text-xs">
                 <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
                   <span class="text-[10px] text-slate-400 block">ဖိုင်အမည်:</span>
@@ -166,7 +162,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 </div>
               </div>
 
-              <!-- Duration Calculation Banner -->
               <div class="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60 text-xs text-blue-300 flex items-center justify-between">
                 <div>
                   <span class="text-[10px] text-slate-400 block">မူရင်းအလျား ➔ Recap စာညွှန်း</span>
@@ -180,7 +175,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- AI Engine Selector (Groq vs Gemini 3.8 Flash) -->
+            <!-- AI Engine Selector -->
             <div class="space-y-1.5 pt-1">
               <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
                 <span class="flex items-center gap-1.5">
@@ -224,7 +219,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 placeholder="AIzaSy... (Gemini Key ထည့်ပါ)"
                 class="w-full bg-[#070b14] border border-amber-500/70 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
               />
-              <p class="text-[10px] text-slate-500">Google AI Studio (aistudio.google.com) မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
+              <p class="text-[10px] text-slate-500">Google AI Studio မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
             </div>
 
             <!-- Groq API Key Input Field -->
@@ -240,7 +235,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 type="password"
                 id="groqApiKeyInput"
                 placeholder="gsk_... (Groq Key ထည့်ပါ)"
-                class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
+                class="w-full bg-[#070b14] border border-blue-500/40 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
               />
               <p class="text-[10px] text-slate-500">Groq Console မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
             </div>
@@ -638,7 +633,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       setUint32(36 + length);
       setUint32(0x45564157);
       setUint32(0x20746d66);
-      setUint16(16);
       setUint16(1);
       setUint16(numOfChan);
       setUint32(buffer.sampleRate);
@@ -658,7 +652,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // Clean post-processing filter for Burmese characters
+    // ==========================================
+    // RIGOROUS SCRIPT SANITIZER (NO ENGLISH, NO HEADERS, NO CHECKLISTS)
+    // ==========================================
     function sanitizeMovieRecapScript(raw) {
       if (!raw) return "";
 
@@ -778,14 +774,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
     }
 
-    // Gemini 3.8 Flash Direct Pipeline (Ultra Fast & Accurate)
+    // Gemini 3.8 Flash Direct Pipeline (Fixed CamelCase Schema, Zero Deprecated Models)
     async function callGemini38Flash(apiKey, systemPrompt, userContent) {
-      // Prioritize gemini-3.8-flash, with instant fallbacks to 3.5 and 2.5
       const candidateModels = [
         "gemini-3.8-flash",
         "gemini-3.5-flash",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
+        "gemini-3-flash",
         "gemini-1.5-flash"
       ];
       let lastErr = null;
@@ -797,10 +791,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              system_instruction: { parts: [{ text: systemPrompt }] },
+              systemInstruction: { parts: [{ text: systemPrompt }] },
               contents: [{ parts: [{ text: userContent }] }],
-              generationConfig: { 
-                temperature: 0.25,
+              generationConfig: {
                 maxOutputTokens: 2500
               }
             })
@@ -866,100 +859,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           });
         }
 
-        let understoodText = "";
-
-        if (currentEngine === "gemini") {
-          outputText.value = "Gemini 3.8 Flash AI ဖြင့် စကားပြောသံနှင့် ဇာတ်လမ်းကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
-          btnText.innerText = "Gemini 3.8 Flash ဖြင့် ဖတ်နေပါသည်...";
-
-          const reader = new FileReader();
-          const base64Audio = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-            reader.readAsDataURL(audioToSend);
-          });
-
-          const geminiModels = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash"];
-          let lastErr = null;
-
-          for (const m of geminiModels) {
-            try {
-              const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{
-                    parts: [
-                      { text: "Accurately transcribe all speech, dialog, character actions, and story events from this audio track in full detail from beginning to end." },
-                      { inline_data: { mime_type: "audio/wav", data: base64Audio } }
-                    ]
-                  }]
-                })
-              });
-
-              if (gemRes.ok) {
-                const gemData = await gemRes.json();
-                understoodText = gemData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                if (understoodText) break;
-              } else {
-                const errJson = await gemRes.json().catch(() => ({}));
-                lastErr = errJson.error?.message || `Status ${gemRes.status}`;
-              }
-            } catch (e) {
-              lastErr = e.message;
-            }
-          }
-
-          if (!understoodText) {
-            throw new Error(lastErr || "Gemini 3.8 Flash Audio ဖတ်ရှုမှု မအောင်မြင်ပါ");
-          }
-
-        } else {
-          // Groq Whisper Engine
-          outputText.value = "အဆင့် ၁/၂: Whisper AI ဖြင့် မည်သည့်ဘာသာစကားဖြင့် ပြောထားသည်ကို စိစစ်ပြီး အဓိပ္ပာယ် ဖတ်ယူနေပါသည်...";
-          btnText.innerText = "Whisper ဖြင့် စကားလုံးများ ဖတ်နေပါသည်...";
-
-          const formData = new FormData();
-          formData.append("file", audioToSend);
-          formData.append("model", "whisper-large-v3");
-          formData.append("response_format", "verbose_json");
-
-          let whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${groqKey}` },
-            body: formData
-          });
-
-          if (!whisperRes.ok) {
-            whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-              method: "POST",
-              headers: { "Authorization": `Bearer ${groqKey}` },
-              body: formData
-            });
-          }
-
-          if (!whisperRes.ok) {
-            const errData = await whisperRes.json().catch(() => ({}));
-            throw new Error(errData.error?.message || "Whisper ချိတ်ဆက်မှု မအောင်မြင်ပါ");
-          }
-
-          const whisperData = await whisperRes.json();
-          understoodText = whisperData.text || "";
-
-          if (includeTimestamps && whisperData.segments) {
-            understoodText = whisperData.segments.map(s => {
-              const startM = Math.floor(s.start / 60).toString().padStart(2, '0');
-              const startS = Math.floor(s.start % 60).toString().padStart(2, '0');
-              return `[${startM}:${startS}] ${s.text}`;
-            }).join("\n");
-          }
-        }
-
-        // ==========================================
-        // STEP 2: PROFESSIONAL BURMESE RECAP SCRIPT (ZERO META-TEXT)
-        // ==========================================
-        btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
-        outputText.value = "အဆင့် ၂/၂: အပိုစာသား လုံးဝမပါသော သန့်ရှင်းသည့် Movie Recap အသံထွက် ဇာတ်ညွှန်းအဖြစ် အချောသပ် ရေးသားနေပါသည်...";
-
         const baseSecs = videoDurationSeconds || 60;
         const targetSecs = baseSecs + 30;
 
@@ -1000,8 +899,101 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
         let finalScript = "";
 
         if (currentEngine === "gemini") {
-          finalScript = await callGemini38Flash(geminiKey, systemPrompt, `Video Plot Story Information:\n${understoodText}`);
+          outputText.value = "Gemini 3.8 Flash AI ဖြင့် စကားပြောသံနှင့် ဇာတ်လမ်းကို အလွန်လျင်မြန်စွာ ဖတ်ရှုပြီး မြန်မာဇာတ်ညွှန်း ရေးသားနေပါသည်...";
+          btnText.innerText = "Gemini 3.8 Flash ဖြင့် ရေးနေပါသည်...";
+
+          const reader = new FileReader();
+          const base64Audio = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(audioToSend);
+          });
+
+          const geminiModels = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3-flash", "gemini-1.5-flash"];
+          let lastErr = null;
+
+          for (const m of geminiModels) {
+            try {
+              const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  systemInstruction: { parts: [{ text: systemPrompt }] },
+                  contents: [{
+                    parts: [
+                      { text: "Listen carefully to this entire audio track and write the pure Burmese Movie Recap voiceover script following all instructions." },
+                      { inlineData: { mimeType: "audio/wav", data: base64Audio } }
+                    ]
+                  }],
+                  generationConfig: {
+                    maxOutputTokens: 2500
+                  }
+                })
+              });
+
+              if (gemRes.ok) {
+                const gemData = await gemRes.json();
+                const rawContent = gemData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                if (rawContent) {
+                  finalScript = sanitizeMovieRecapScript(rawContent);
+                  break;
+                }
+              } else {
+                const errJson = await gemRes.json().catch(() => ({}));
+                lastErr = errJson.error?.message || `Status ${gemRes.status}`;
+                console.warn(`Direct perception with ${m} failed:`, lastErr);
+              }
+            } catch (e) {
+              lastErr = e.message;
+            }
+          }
+
+          if (!finalScript) {
+            throw new Error(lastErr || "Gemini 3.8 Flash ဖြင့် ဇာတ်ညွှန်းထုတ်ယူ၍ မရပါ");
+          }
+
         } else {
+          // Groq Whisper + LLM Engine
+          outputText.value = "အဆင့် ၁/၂: Whisper AI ဖြင့် မည်သည့်ဘာသာစကားဖြင့် ပြောထားသည်ကို စိစစ်ပြီး အဓိပ္ပာယ် ဖတ်ယူနေပါသည်...";
+          btnText.innerText = "Whisper ဖြင့် စကားလုံးများ ဖတ်နေပါသည်...";
+
+          const formData = new FormData();
+          formData.append("file", audioToSend);
+          formData.append("model", "whisper-large-v3");
+          formData.append("response_format", "verbose_json");
+
+          let whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${groqKey}` },
+            body: formData
+          });
+
+          if (!whisperRes.ok) {
+            whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${groqKey}` },
+              body: formData
+            });
+          }
+
+          if (!whisperRes.ok) {
+            const errData = await whisperRes.json().catch(() => ({}));
+            throw new Error(errData.error?.message || "Whisper ချိတ်ဆက်မှု မအောင်မြင်ပါ");
+          }
+
+          const whisperData = await whisperRes.json();
+          let understoodText = whisperData.text || "";
+
+          if (includeTimestamps && whisperData.segments) {
+            understoodText = whisperData.segments.map(s => {
+              const startM = Math.floor(s.start / 60).toString().padStart(2, '0');
+              const startS = Math.floor(s.start % 60).toString().padStart(2, '0');
+              return `[${startM}:${startS}] ${s.text}`;
+            }).join("\n");
+          }
+
+          btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
+          outputText.value = "အဆင့် ၂/၂: အပိုစာသား လုံးဝမပါသော သန့်ရှင်းသည့် Movie Recap အသံထွက် ဇာတ်ညွှန်းအဖြစ် အချောသပ် ရေးသားနေပါသည်...";
+
           finalScript = await callGroqTranslation(groqKey, systemPrompt, `Video Plot Story Information:\n${understoodText}`);
         }
 
@@ -1069,7 +1061,7 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
         id: "thiha",
         name: "Thiha",
         gender: "men",
-        icon: "🎙️",
+        icon: "🎙️️",
         badge: "အမျိုးသား",
         role: "တည်ကြည်လေးနက်သော အမျိုးသားအသံ (မူရင်းမြန်မာ)",
         sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"
