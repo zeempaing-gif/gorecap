@@ -222,7 +222,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <input
                 type="password"
                 id="groqApiKeyInput"
-                placeholder="gsk_... (Groq Key ထည့်ပါ)"
+                placeholder="Groq Key ထည့်ပါ (gsk_...)"
                 class="w-full bg-[#070b14] border border-blue-500/40 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
               />
               <p class="text-[10px] text-slate-500">Groq Console (console.groq.com/keys) မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
@@ -240,8 +240,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <input
                 type="password"
                 id="geminiApiKeyInput"
-                placeholder="AIzaSy... (Gemini Key ထည့်ပါ)"
-                class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
+                placeholder="Gemini Key ထည့်ပါ (AIza...)"
+                class="w-full bg-[#070b14] border border-amber-500/40 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
               />
               <p class="text-[10px] text-slate-500">Google AI Studio (aistudio.google.com) မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
             </div>
@@ -485,23 +485,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const groqBtn = document.getElementById("engineGroqBtn");
       const geminiBtn = document.getElementById("engineGeminiBtn");
       const text = document.getElementById("activeEngineText");
-      const groqInput = document.getElementById("groqApiKeyInput");
-      const geminiInput = document.getElementById("geminiApiKeyInput");
 
       if (engine === "groq") {
         groqBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white flex items-center justify-center gap-1.5 shadow-md";
         geminiBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
         text.innerText = "Active: ⚡ Groq Engine";
         text.className = "text-[10px] text-blue-400 font-semibold";
-        groqInput.classList.add("border-blue-500/70", "ring-1", "ring-blue-500/40");
-        geminiInput.classList.remove("border-amber-500/70", "ring-1", "ring-amber-500/40");
       } else {
         geminiBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950 flex items-center justify-center gap-1.5 shadow-md";
         groqBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
         text.innerText = "Active: ✨ Gemini Engine";
         text.className = "text-[10px] text-amber-400 font-semibold";
-        geminiInput.classList.add("border-amber-500/70", "ring-1", "ring-amber-500/40");
-        groqInput.classList.remove("border-blue-500/70", "ring-1", "ring-blue-500/40");
       }
     }
 
@@ -530,7 +524,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let currentUploadedFile = null;
     let videoDurationSeconds = 0;
 
-    // Native file change listener
     const fileInputEl = document.getElementById("videoFileInput");
     fileInputEl.addEventListener("change", function(e) {
       const file = this.files && this.files[0];
@@ -676,7 +669,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return txt.trim();
     }
 
-    // Dynamic Groq Translation
+    // Dynamic Groq Translation (Strict zero-penalty to keep clean Burmese)
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
       let liveModels = [];
       try {
@@ -757,27 +750,38 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
     }
 
-    // Google Gemini Direct Call
+    // Google Gemini Direct Call (Supports gemini-2.0-flash / gemini-1.5-flash)
     async function callGeminiDirect(apiKey, systemPrompt, userContent) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ parts: [{ text: userContent }] }],
-          generationConfig: { temperature: 0.3 }
-        })
-      });
+      const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"];
+      let lastErr = null;
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error?.message || "Gemini ချိတ်ဆက်မှု မအောင်မြင်ပါ");
+      for (const m of candidateModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: systemPrompt }] },
+              contents: [{ parts: [{ text: userContent }] }],
+              generationConfig: { temperature: 0.3 }
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if (content) return cleanBurmeseOutput(content);
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            lastErr = errJson.error?.message || `Model ${m} status ${res.status}`;
+          }
+        } catch (e) {
+          lastErr = e.message;
+        }
       }
 
-      const data = await res.json();
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      return cleanBurmeseOutput(content);
+      throw new Error(lastErr || "Gemini ချိတ်ဆက်မှု မအောင်မြင်ပါ");
     }
 
     async function handleTranscribeProcess() {
@@ -786,19 +790,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         return;
       }
 
-      const groqKey = document.getElementById("groqApiKeyInput").value.trim();
-      const geminiKey = document.getElementById("geminiApiKeyInput").value.trim();
+      // Read and sanitize keys (strip any accidental whitespaces)
+      const groqKey = document.getElementById("groqApiKeyInput").value.trim().replace(/[\s\r\n\t]/g, '');
+      const geminiKey = document.getElementById("geminiApiKeyInput").value.trim().replace(/[\s\r\n\t]/g, '');
 
-      if (currentEngine === "groq" && (!groqKey || !groqKey.startsWith("gsk_"))) {
-        showToast("Groq API Key (gsk_...) ကို ထည့်သွင်းပေးပါ", "error");
-        document.getElementById("groqApiKeyInput").focus();
-        return;
-      }
-
-      if (currentEngine === "gemini" && (!geminiKey || !geminiKey.startsWith("AIza"))) {
-        showToast("Gemini API Key (AIza...) ကို ထည့်သွင်းပေးပါ", "error");
-        document.getElementById("geminiApiKeyInput").focus();
-        return;
+      if (currentEngine === "groq") {
+        if (!groqKey) {
+          showToast("Groq API Key ကို ထည့်သွင်းပေးပါ", "error");
+          document.getElementById("groqApiKeyInput").focus();
+          return;
+        }
+      } else {
+        if (!geminiKey) {
+          showToast("Gemini API Key ကို ထည့်သွင်းပေးပါ", "error");
+          document.getElementById("geminiApiKeyInput").focus();
+          return;
+        }
       }
 
       const btn = document.getElementById("startTranscriptBtn");
@@ -833,26 +840,41 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             reader.readAsDataURL(audioToSend);
           });
 
-          const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: "Listen carefully to this audio track. Transcribe and describe all speech, dialogue, plot actions, and what is happening from beginning to end in detail." },
-                  { inline_data: { mime_type: "audio/wav", data: base64Audio } }
-                ]
-              }]
-            })
-          });
+          // Try Gemini audio perception across available flash models
+          const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"];
+          let lastErr = null;
 
-          if (!gemRes.ok) {
-            const errJson = await gemRes.json().catch(() => ({}));
-            throw new Error(errJson.error?.message || "Gemini Audio ဖတ်ရှုမှု မအောင်မြင်ပါ");
+          for (const m of candidateModels) {
+            try {
+              const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{
+                    parts: [
+                      { text: "Listen carefully to this audio track. Transcribe all speech, dialogue, events, and plot actions happening in this clip in detail from start to end." },
+                      { inline_data: { mime_type: "audio/wav", data: base64Audio } }
+                    ]
+                  }]
+                })
+              });
+
+              if (gemRes.ok) {
+                const gemData = await gemRes.json();
+                understoodText = gemData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                if (understoodText) break;
+              } else {
+                const errJson = await gemRes.json().catch(() => ({}));
+                lastErr = errJson.error?.message || `Status ${gemRes.status}`;
+              }
+            } catch (e) {
+              lastErr = e.message;
+            }
           }
 
-          const gemData = await gemRes.json();
-          understoodText = gemData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          if (!understoodText) {
+            throw new Error(lastErr || "Gemini Audio ဖတ်ရှုမှု မအောင်မြင်ပါ");
+          }
 
         } else {
           // Groq Whisper Engine
