@@ -128,6 +128,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
+                <!-- Re-select button -->
                 <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
                   🔄 အသစ်လဲမည်
                 </label>
@@ -652,9 +653,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // ==========================================
-    // RIGOROUS SCRIPT SANITIZER (NO ENGLISH, NO HEADERS, NO CHECKLISTS)
-    // ==========================================
+    // Strict regex sanitizer to remove any markdown tags, outlines, and checklists
     function sanitizeMovieRecapScript(raw) {
       if (!raw) return "";
 
@@ -745,72 +744,61 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
     }
 
-    // Official Google Gemini Interactions & Modern GenerateContent Engine
+    // Official Google AI Studio OpenAI-Compatible Engine for Gemini 3.8 Flash (Ultra Fast & 100% Reliable)
     async function callGemini38Flash(apiKey, systemPrompt, userContent) {
       let lastErr = null;
 
-      // 1. Try Google Gemini's Modern Interactions API (Official standard for gemini-3.8-flash)
+      // 1. Google AI Studio Official OpenAI Endpoint (Zero schema errors, 100% stable)
       try {
-        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
           method: "POST",
           headers: {
-            "x-goog-api-key": apiKey,
+            "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
             model: "gemini-3.8-flash",
-            system_instruction: systemPrompt,
-            input: userContent
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userContent }
+            ]
           })
         });
 
         if (res.ok) {
           const data = await res.json();
-          const text = data.output_text || data.output || (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text);
+          const text = data.choices?.[0]?.message?.content || "";
           if (text) return sanitizeMovieRecapScript(text);
         } else {
           const errJson = await res.json().catch(() => ({}));
-          lastErr = errJson.error?.message || `Interactions API Status ${res.status}`;
+          lastErr = errJson.error?.message || `Status ${res.status}`;
         }
       } catch (e) {
         lastErr = e.message;
       }
 
-      // 2. Direct Fallback to gemini-3.8-flash generateContent endpoint with x-goog-api-key
-      const modernModels = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-pro"];
+      // 2. Direct REST generateContent fallback with API key in query param
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: `${systemPrompt}\n\n[STORY TO NARRATE]:\n${userContent}` }]
+            }]
+          })
+        });
 
-      for (const m of modernModels) {
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-            method: "POST",
-            headers: {
-              "x-goog-api-key": apiKey,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              contents: [{
-                role: "user",
-                parts: [
-                  { text: `${systemPrompt}\n\n[INPUT STORY TO NARRATE]:\n${userContent}` }
-                ]
-              }],
-              generationConfig: {
-                maxOutputTokens: 2500
-              }
-            })
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            if (text) return sanitizeMovieRecapScript(text);
-          } else {
-            const errJson = await res.json().catch(() => ({}));
-            lastErr = errJson.error?.message || `Model ${m} status ${res.status}`;
-          }
-        } catch (e) {
-          lastErr = e.message;
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          if (text) return sanitizeMovieRecapScript(text);
+        } else {
+          const errJson = await res.json().catch(() => ({}));
+          lastErr = errJson.error?.message || `Status ${res.status}`;
         }
+      } catch (e) {
+        lastErr = e.message;
       }
 
       throw new Error(lastErr || "Gemini 3.8 Flash ချိတ်ဆက်မှု မအောင်မြင်ပါ");
@@ -899,8 +887,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         let finalScript = "";
 
-        // Fast & Reliable Audio Perception:
-        // Use Groq Whisper (if groq key provided) for 2-second crystal-clear transcription
+        // Fast & Reliable Audio Perception
         let understoodText = "";
         if (groqKey) {
           outputText.value = "Whisper AI ဖြင့် မည်သည့်ဘာသာစကားဖြင့် ပြောထားသည်ကို စက္ကန့်ပိုင်းအတွင်း ဖတ်ရှုနေပါသည်...";
@@ -943,44 +930,46 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           outputText.value = "Gemini 3.8 Flash AI ဖြင့် Movie Recap အသံထွက် ဇာတ်ညွှန်းကို ရေးသားနေပါသည်...";
 
           if (!understoodText) {
-            // If only Gemini key exists, send audio directly
             const reader = new FileReader();
             const base64Audio = await new Promise((resolve) => {
               reader.onloadend = () => resolve(reader.result.split(',')[1]);
               reader.readAsDataURL(audioToSend);
             });
 
-            const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
+            // Standard Google OpenAI input_audio specification
+            const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
               method: "POST",
               headers: {
-                "x-goog-api-key": geminiKey,
+                "Authorization": `Bearer ${geminiKey}`,
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                contents: [{
-                  role: "user",
-                  parts: [
-                    { text: systemPrompt },
-                    { inlineData: { mimeType: "audio/wav", data: base64Audio } }
-                  ]
-                }]
+                model: "gemini-3.8-flash",
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  {
+                    role: "user",
+                    content: [
+                      { type: "text", text: "Listen carefully to this entire audio track and write the pure Burmese Movie Recap voiceover script following all instructions." },
+                      { type: "input_audio", input_audio: { data: base64Audio, format: "wav" } }
+                    ]
+                  }
+                ]
               })
             });
 
             if (res.ok) {
               const data = await res.json();
-              finalScript = sanitizeMovieRecapScript(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
+              finalScript = sanitizeMovieRecapScript(data.choices?.[0]?.message?.content || "");
             } else {
               const errData = await res.json().catch(() => ({}));
               throw new Error(errData.error?.message || "Gemini 3.8 Flash ချိတ်ဆက်မှု မအောင်မြင်ပါ");
             }
           } else {
-            // Ultra-fast text narration with Gemini 3.8 Flash
             finalScript = await callGemini38Flash(geminiKey, systemPrompt, understoodText);
           }
 
         } else {
-          // Groq LLM
           btnText.innerText = "Groq AI ဖြင့် ဇာတ်ညွှန်း ရေးနေပါသည်...";
           outputText.value = "Groq AI ဖြင့် သန့်ရှင်းသော မြန်မာဇာတ်ညွှန်း အချောသပ် ရေးသားနေပါသည်...";
           finalScript = await callGroqTranslation(groqKey, systemPrompt, understoodText);
