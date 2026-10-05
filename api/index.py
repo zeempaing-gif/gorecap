@@ -129,7 +129,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
-                <!-- Re-select button -->
                 <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
                   🔄 အသစ်လဲမည်
                 </label>
@@ -450,7 +449,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       localStorage.setItem("groq_api_key", e.target.value.trim());
     });
 
-    // Native file change listener (Direct Event Binding)
+    // Native file change listener
     const fileInputEl = document.getElementById("videoFileInput");
     fileInputEl.addEventListener("change", function(e) {
       const file = this.files && this.files[0];
@@ -458,7 +457,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       
-      // Support up to 200MB
       if (file.size > 200 * 1024 * 1024) {
         showToast(`ဖိုင်အရွယ်အစား ${sizeMB}MB ဖြစ်နေပါသည်။ အများဆုံး 200MB အထိသာ ခွင့်ပြုထားပါသည်`, "error");
         this.value = "";
@@ -467,15 +465,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       currentUploadedFile = file;
 
-      // 1. Update Dropzone UI Text
       document.getElementById("uploadPromptText").innerText = `✓ ${file.name}`;
       document.getElementById("fileBadgeStatus").classList.remove("hidden");
-
-      // 2. Update Details Grid
       document.getElementById("videoFileNameLabel").innerText = file.name;
       document.getElementById("videoFileSizeLabel").innerText = `${sizeMB} MB`;
 
-      // 3. Show Preview Box & Hide Upload Prompt
       const previewCard = document.getElementById("videoPreviewBox");
       const dropzoneLabel = document.getElementById("uploadDropzoneLabel");
       const videoEl = document.getElementById("previewVideoEl");
@@ -506,7 +500,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           videoDurationSeconds = Math.round(videoEl.duration) || 60;
           updateDurationBadges(videoDurationSeconds);
           try {
-            videoEl.currentTime = 0.05; // Render first frame on mobile
+            videoEl.currentTime = 0.05;
           } catch(err) {}
         };
       }
@@ -569,22 +563,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
       function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
 
-      // RIFF identifier
       setUint32(0x46464952); // "RIFF"
       setUint32(36 + length);
       setUint32(0x45564157); // "WAVE"
-
-      // format chunk
       setUint32(0x20746d66); // "fmt "
-      setUint32(16); // 16 for PCM
-      setUint16(1); // PCM
+      setUint32(16);
+      setUint16(1);
       setUint16(numOfChan);
       setUint32(buffer.sampleRate);
       setUint32(buffer.sampleRate * 2);
-      setUint16(2); // block align
-      setUint16(16); // bits per sample
-
-      // data chunk
+      setUint16(2);
+      setUint16(16);
       setUint32(0x61746164); // "data"
       setUint32(length);
 
@@ -598,16 +587,57 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // Call Groq Chat Completions with automatic model fallbacks for Free Tier accounts
+    // Dynamic Groq Translation with Live Active Model Discovery
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
-      // Primary model: llama-3.1-8b-instant (Fastest & 100% Free for all Groq keys)
-      // Fallback models: llama-3.3-70b-versatile, llama3-70b-8192, llama3-8b-8192
-      const candidateModels = [
+      // 1. Fetch live active models for this specific Groq key
+      let liveModels = [];
+      try {
+        const mRes = await fetch("https://api.groq.com/openai/v1/models", {
+          headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+        if (mRes.ok) {
+          const mData = await mRes.json();
+          liveModels = (mData.data || [])
+            .map(m => m.id)
+            .filter(id => {
+              const l = id.toLowerCase();
+              return !l.includes("whisper") && !l.includes("guard") && !l.includes("vision") &&
+                     !l.includes("tts") && !l.includes("orpheus") && !l.includes("embed") &&
+                     !l.includes("safeguard") && !l.includes("compound");
+            });
+        }
+      } catch (err) {
+        console.warn("Could not fetch live models from Groq:", err);
+      }
+
+      // Prioritized order of active Groq text models
+      const priority = [
         "llama-3.1-8b-instant",
         "llama-3.3-70b-versatile",
-        "llama3-70b-8192",
-        "llama3-8b-8192"
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+        "qwen/qwen3.8-27b"
       ];
+
+      const candidateModels = [];
+
+      // Add prioritized models that actually exist on user's key
+      for (const p of priority) {
+        if (liveModels.length === 0 || liveModels.includes(p)) {
+          candidateModels.push(p);
+        }
+      }
+
+      // Add any remaining live text models returned by Groq
+      for (const m of liveModels) {
+        if (!candidateModels.includes(m)) {
+          candidateModels.push(m);
+        }
+      }
+
+      if (candidateModels.length === 0) {
+        candidateModels.push("llama-3.1-8b-instant");
+      }
 
       let lastError = null;
 
@@ -625,7 +655,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userContent }
               ],
-              temperature: 0.5
+              temperature: 0.6
             })
           });
 
@@ -636,7 +666,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastError = errJson.error?.message || `Model ${modelName} returned status ${res.status}`;
-            console.warn(`Groq model ${modelName} failed, trying fallback:`, lastError);
+            console.warn(`Model ${modelName} error:`, lastError);
           }
         } catch (e) {
           lastError = e.message;
@@ -678,7 +708,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           });
         }
 
-        outputText.value = "Groq Whisper စနစ်ဖြင့် Video ထဲမှ စကားပြောသံများကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
+        outputText.value = "Groq Whisper Large-V3 စနစ်ဖြင့် Video ထဲမှ စကားပြောသံများကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
         btnText.innerText = "Groq Whisper ဖြင့် ဖတ်နေပါသည်...";
 
         const formData = new FormData();
