@@ -129,6 +129,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
+                <!-- Re-select button -->
                 <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
                   🔄 အသစ်လဲမည်
                 </label>
@@ -188,7 +189,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </label>
               <div class="p-2.5 rounded-xl bg-[#070b14] border border-slate-800 text-xs text-slate-200 flex items-center justify-between">
                 <span class="font-bold text-blue-400">သဘာဝကျ Movie Recap စကားပြောဟန်</span>
-                <span class="text-[10px] bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded-md border border-blue-500/20">လူငယ်ဆန်ဆန်</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">စကားထပ်ခြင်း ကာကွယ်ထားပြီး</span>
               </div>
             </div>
 
@@ -588,7 +589,29 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // Dynamic Groq Translation with Live Active Model Discovery
+    // Client-side text cleanup to completely eradicate duplicate repeated phrases
+    function removeRepetitiveLoops(rawText) {
+      if (!rawText) return "";
+      let cleaned = rawText.trim();
+      
+      // Remove repeating consecutive chunks of 8 to 80 characters
+      cleaned = cleaned.replace(/(.{8,80}?)\1{2,}/gu, '$1');
+      
+      // Remove identical repeating sentences
+      const sentences = cleaned.split(/(?<=[။!?\n])/);
+      const filtered = [];
+      for (let i = 0; i < sentences.length; i++) {
+        const current = sentences[i].trim();
+        const prev = filtered.length > 0 ? filtered[filtered.length - 1].trim() : "";
+        if (current.length > 5 && current === prev) {
+          continue; // skip duplicate sentence
+        }
+        filtered.push(sentences[i]);
+      }
+      return filtered.join("").trim();
+    }
+
+    // Dynamic Groq Translation with Live Active Model Discovery & Anti-Repetition Penalties
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
       let liveModels = [];
       try {
@@ -610,12 +633,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         console.warn("Could not fetch live models from Groq:", err);
       }
 
+      // Priority list of models with high-grade reasoning
       const priority = [
-        "llama-3.1-8b-instant",
         "llama-3.3-70b-versatile",
-        "openai/gpt-oss-20b",
+        "llama-3.1-8b-instant",
         "openai/gpt-oss-120b",
-        "qwen/qwen3.8-27b"
+        "openai/gpt-oss-20b"
       ];
 
       const candidateModels = [];
@@ -649,14 +672,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userContent }
               ],
-              temperature: 0.7
+              temperature: 0.5,
+              presence_penalty: 0.65, // Stops phrase repetitions completely
+              frequency_penalty: 0.65, // Discourages repeated vocabulary loops
+              top_p: 0.9
             })
           });
 
           if (res.ok) {
             const data = await res.json();
             const content = data.choices?.[0]?.message?.content || "";
-            if (content) return content;
+            if (content) return removeRepetitiveLoops(content);
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastError = errJson.error?.message || `Model ${modelName} returned status ${res.status}`;
@@ -732,42 +758,44 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           }).join("\n");
         }
 
-        btnText.innerText = "Recap ဇာတ်ကြောင်းပြောဟန်ဖြင့် ရေးသားနေပါသည် (+30s)...";
-        outputText.value = "လူငယ်ဆန်ဆန် သဘာဝကျသော Movie Recap ဇာတ်ကြောင်းပြန် စာသားအဖြစ် ဖန်တီးရေးသားနေပါသည်...";
+        btnText.innerText = "Movie Recap စကားပြောဟန်ဖြင့် ရေးသားနေပါသည် (+30s)...";
+        outputText.value = "သဘာဝကျကျ လူငယ်ဆန်ဆန် စကားပြောဟန်ဖြင့် Movie Recap ဇာတ်ညွှန်းကို ဖန်တီးနေပါသည်...";
 
         const baseSecs = videoDurationSeconds || 60;
         const targetSecs = baseSecs + 30;
         const targetWords = Math.max(120, Math.round(targetSecs * 2.8));
 
-        // Advanced Human-Like Movie Recap Voiceover Prompt
+        // High-precision prompt engineered in English to enforce zero loop, natural conversational Burmese
         const systemPrompt = `
-သင်သည် YouTube နှင့် TikTok တွင် နာမည်ကြီးသော ထိပ်တန်း Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
-ပေးထားသော ဗီဒီယိုပါ စကားများနှင့် ဇာတ်လမ်းအကြောင်းအရာကို အခြေခံပြီး "ဗီဒီယိုကို ကိုယ်တိုင် အစအဆုံး ကြည့်ပြီးသားလူတစ်ယောက်က ဘေးနားက သူငယ်ချင်းကို စိတ်ဝင်စားဖွယ် အရသာရှိရှိ ပြန်ပြောပြနေသည့် လေသံမျိုး" ဖြင့် မြန်မာဘာသာပြန် ဇာတ်ညွှန်း ရေးသားပေးရမည်။
+You are a master Burmese Movie Recap content creator (like top YouTube / Facebook Movie Recap narrators).
+Your task is to take the transcribed video content and rewrite it into an engaging, natural, lively Burmese Movie Recap voiceover script.
 
-အောက်ပါ တိကျသော စည်းမျဉ်းများကို ၁၀၀% မပျက်မကွက် လိုက်နာပါ:
+CRITICAL STORYTELLING RULES:
+1. DO NOT READ LIKE A BOOK (သဘာဝစကားပြောဟန် စစ်စစ်ဖြစ်ရမည်):
+   - Never use rigid formal written Burmese like "ထိုသူသည် သွားလေ၏", "ဖြစ်ပျက်ခဲ့ပါသည်", "ပြုလုပ်ခဲ့သည်", "ဟု ဆိုပါသည်".
+   - Use lively natural spoken recap connectors like: "ဒီလိုနဲ့ သူတို့တွေ...", "အဲဒီအချိန်မှာပဲ...", "တကယ်တော့ သူက...", "မထင်မှတ်ဘဲနဲ့...", "ဒါပေမဲ့ အခြေအနေတွေက...", "ဘာတွေဆက်ဖြစ်မလဲဆိုရင်...".
+   - Make it sound like an excited friend recounting a gripping movie scene to another friend.
 
-၁။ 【စာအုပ်ဖတ်ဟန် လုံးဝမဖြစ်စေရ - သဘာဝကျသော စကားပြောဟန် ဖြစ်ရမည်】
-- "ထိုသူသည် သွားလေ၏"၊ "ဖြစ်ပျက်ခဲ့ပါသည်"၊ "ပြုလုပ်ခဲ့သည်"၊ "ဟု ဆိုပါသည်" စသည့် တောင့်တင်းသော စာဆန်သည့် ဝါကျများ လုံးဝမသုံးရ။
-- ၎င်းအစား Movie Recap များတွင် သုံးလေ့ရှိသော သဘာဝစကားပြော စကားဆက်များဖြစ်သည့် "ဒီလိုနဲ့ သူတို့တွေ..."၊ "အဲဒီအချိန်မှာပဲ..."၊ "တကယ်တော့ သူက..."၊ "မထင်မှတ်ဘဲနဲ့..."၊ "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့..."၊ "ဘာတွေဆက်ဖြစ်မလဲဆိုရင်..." စသည့် နားထောင်ကောင်းပြီး ဆွဲဆောင်မှုရှိသော စကားပြောဟန်ဖြင့်သာ အစအဆုံး ရေးသားပါ။
+2. GENDER-NEUTRAL NARRATOR VOICE (ကျား/မ မရွေး ဖတ်နိုင်ရမည်):
+   - Never use "ကျွန်တော်", "ကျွန်မ", "ခင်ဗျာ", "ရှင်".
+   - Both male and female voiceover artists must be able to read this script naturally. Refer to characters by their names or "သူ", "သူတို့", "ဒီလူက".
 
-၂။ 【ကျား/မ မရွေး အသံထွက်ဖတ်နိုင်သော Neutral Tone ဖြစ်ရမည်】
-- "ကျွန်တော်"၊ "ကျွန်မ"၊ "ခင်ဗျာ"၊ "ရှင်" စသည့် ကျား/မ သတ်မှတ်သော စကားလုံးများ လုံးဝမသုံးရ။
-- မိန်းကလေး Voiceover က ဖတ်ဖတ်၊ ယောက်ျားလေး Voiceover က ဖတ်ဖတ် အားလုံးနှင့် အံဝင်ခွင်ကျဖြစ်နေရမည်။ ဇာတ်ကောင်နာမည်များနှင့် "သူ"၊ "သူတို့"၊ "ဒီလူက" စသည့် စကားလုံးများကိုသာ သုံးပါ။
+3. ABSOLUTE BAN ON REPETITION AND LOOPS (စာလုံးထပ်ခြင်း လုံးဝမဖြစ်စေရ):
+   - Never repeat the same phrase, sentence, or fragment over and over.
+   - The narrative must progress smoothly and linearly from beginning to middle to climax without looping back.
 
-၃။ 【အပိုစာသားနှင့် English လုံးဝ မပါရ (Zero English / Zero Meta-text)】
-- "Here is the recap:", "Title:", "Summary:", "ဇာတ်လမ်းအကျဉ်း -" စသည့် နိဒါန်း၊ ခေါင်းစဉ်နှင့် English စာလုံး လုံးဝမပါရ။
-- TTS စက်ထဲ တိုက်ရိုက်ထည့်ပြီး အသံထွက်ဖတ်မည့် ဇာတ်ကြောင်းပြော မြန်မာစကားပြေ စာသားသက်သက်ကိုသာ ပထမဆုံးစာလုံးမှစ၍ တိုက်ရိုက် ထုတ်ပေးပါ။
+4. EXTEND DURATION BY ~30 SECONDS (အသေးစိတ် ချဲ့ထွင်ရေးသားရန်):
+   - Expand on the characters' emotions, the tension in the scene, and cinematic atmosphere to make the script approximately ${targetWords} Burmese words long (lasting ~30 seconds longer than the original clip).
 
-၄။ 【မူရင်းဗီဒီယို ကြာချိန်ထက် စက္ကန့် ၃၀ ခန့် ပိုရှည်အောင် ချဲ့ထွင်ရေးသားရမည်】
-- ဇာတ်ကောင်တွေရဲ့ လုပ်ရပ်၊ ခံစားချက်၊ ဇာတ်ကွက်အလှည့်အပြောင်းတွေကို ကွက်ကွက်ကွင်းကွင်း မြင်သာအောင် အသေးစိတ် ရှင်းပြချက်များ ဖြည့်စွက်၍ စုစုပေါင်း ခန့်မှန်းခြေ ${targetWords} စကားလုံး ဝန်းကျင်အထိ ပါဝင်အောင် ရေးပေးပါ။
+5. ZERO ENGLISH & ZERO META TEXT (မြန်မာဇာတ်ညွှန်း သီးသန့်):
+   - No English words, no intros ("Here is...", "Recap:"), no titles. Output ONLY the pure Burmese spoken voiceover script.
+6. TIMESTAMPS:
+   - ${includeTimestamps ? "Include timestamps like [00:00], [00:30] at natural narrative segment beginnings." : "Do NOT include any timestamps. Format in clean, readable conversational paragraphs."}
 
-၅။ 【အချိန်မှတ် (Timestamp) စည်းမျဉ်း】
-- ${includeTimestamps ? "အချိန်မှတ် များကို [00:00], [00:30] ပုံစံဖြင့် ဝါကျအလိုက် ဆက်လက် ထည့်သွင်းပေးပါ။" : "အချိန်မှတ် (Timestamp) များကို လုံးဝ မထည့်ပါနှင့်။ ချောမွေ့သော စကားပြော စာပိုဒ်များဖြင့်သာ ရေးပေးပါ။"}
-
-အထက်ပါ စည်းမျဉ်းများအတိုင်း လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာ Movie Recap Script စစ်စစ်ကိုသာ ထုတ်ပေးပါ:
+Write the full, non-repeating natural Burmese Movie Recap script now:
         `.trim();
 
-        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `မူရင်း ဗီဒီယို စာသားများ:\n${originalText}`);
+        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `Original Video Transcript Content:\n${originalText}`);
 
         if (finalScript) {
           outputText.value = finalScript.trim();
