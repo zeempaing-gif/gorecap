@@ -52,7 +52,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               Max 200MB
             </span>
           </div>
-          <p class="text-[11px] text-slate-400 hidden sm:block">Burmese Video Script & Speech Studio</p>
+          <p class="text-[11px] text-slate-400 hidden sm:block">Burmese Movie Recap Script & Speech Studio</p>
         </div>
       </div>
 
@@ -175,20 +175,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span id="targetDurationLabel" class="font-bold font-mono text-emerald-400">00:30 (+30s)</span>
                 </div>
                 <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-1 rounded-lg font-bold">
-                  +30s စာညွှန်း
+                  Recap Style (+30s)
                 </span>
               </div>
             </div>
 
-            <!-- Language Selector -->
+            <!-- Language & Tone Indicator -->
             <div class="space-y-1.5 pt-1">
               <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <span>🌐</span>
-                <span>Language ထွက်မည့် ဘာသာစကား</span>
+                <span>🎬</span>
+                <span>ဇာတ်ကြောင်းပြန် စတိုင်လ် (Style)</span>
               </label>
-              <select id="languageSelect" class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 font-bold focus:outline-none focus:border-blue-500">
-                <option value="burmese">Burmese မြန်မာ (သဘာဝစကားပြော & +30s Extended)</option>
-              </select>
+              <div class="p-2.5 rounded-xl bg-[#070b14] border border-slate-800 text-xs text-slate-200 flex items-center justify-between">
+                <span class="font-bold text-blue-400">သဘာဝကျ Movie Recap စကားပြောဟန်</span>
+                <span class="text-[10px] bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded-md border border-blue-500/20">လူငယ်ဆန်ဆန်</span>
+              </div>
             </div>
 
             <!-- Add Timestamp Toggle Switch -->
@@ -227,8 +228,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-bold text-sm shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2.5 transition-all disabled:opacity-50"
             >
               <span id="transSpinner" class="hidden animate-spin">🌀</span>
-              <span id="transIcon" class="text-base">🎙️</span>
-              <span id="transBtnText">Transcribe (စာညွှန်းထုတ်ယူမည်)</span>
+              <span id="transIcon" class="text-base">🎬</span>
+              <span id="transBtnText">Movie Recap Script ထုတ်ယူမည် (+30s)</span>
             </button>
           </div>
 
@@ -239,8 +240,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <div class="bg-gradient-to-b from-slate-900/90 to-[#0d1527]/90 border border-slate-800/90 rounded-2xl p-5 space-y-3 shadow-2xl backdrop-blur-sm flex flex-col h-full min-h-[490px]">
             <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
               <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-slate-200">Transcript</span>
-                <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">Pure Burmese</span>
+                <span class="text-sm font-bold text-slate-200">Movie Recap Script</span>
+                <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">သဘာဝဇာတ်ကြောင်းပြောဟန်</span>
               </div>
               <div class="flex items-center gap-2">
                 <span id="scriptWordCount" class="text-[11px] text-slate-400 font-mono">၀ စကားလုံး</span>
@@ -251,7 +252,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="relative flex-1">
               <textarea
                 id="transcriptOutputText"
-                placeholder="Transcribed text will appear here. (ဗီဒီယို တင်ပြီး Transcribe နှိပ်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် English လုံးဝမပါသော မြန်မာဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်)..."
+                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် စာအုပ်ဖတ်သလို မဟုတ်ဘဲ ဗီဒီယိုကို ကိုယ်တိုင်ကြည့်ပြီး ပြန်ပြောပြနေသလို သဘာဝကျကျ အပိုစာသားနှင့် English လုံးဝမပါသော Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
                 class="w-full h-full min-h-[360px] bg-[#070b14] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll font-sans"
               ></textarea>
             </div>
@@ -589,7 +590,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     // Dynamic Groq Translation with Live Active Model Discovery
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
-      // 1. Fetch live active models for this specific Groq key
       let liveModels = [];
       try {
         const mRes = await fetch("https://api.groq.com/openai/v1/models", {
@@ -610,7 +610,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         console.warn("Could not fetch live models from Groq:", err);
       }
 
-      // Prioritized order of active Groq text models
       const priority = [
         "llama-3.1-8b-instant",
         "llama-3.3-70b-versatile",
@@ -620,21 +619,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       ];
 
       const candidateModels = [];
-
-      // Add prioritized models that actually exist on user's key
       for (const p of priority) {
         if (liveModels.length === 0 || liveModels.includes(p)) {
           candidateModels.push(p);
         }
       }
-
-      // Add any remaining live text models returned by Groq
       for (const m of liveModels) {
         if (!candidateModels.includes(m)) {
           candidateModels.push(m);
         }
       }
-
       if (candidateModels.length === 0) {
         candidateModels.push("llama-3.1-8b-instant");
       }
@@ -655,7 +649,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userContent }
               ],
-              temperature: 0.6
+              temperature: 0.7
             })
           });
 
@@ -738,23 +732,39 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           }).join("\n");
         }
 
-        btnText.innerText = "Groq AI ဖြင့် မြန်မာပြန်နေပါသည် (+30s)...";
-        outputText.value = "Groq AI ဖြင့် မူရင်းဗီဒီယိုထက် စက္ကန့် ၃၀ ပိုရှည်အောင် မြန်မာဘာသာပြန် ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
+        btnText.innerText = "Recap ဇာတ်ကြောင်းပြောဟန်ဖြင့် ရေးသားနေပါသည် (+30s)...";
+        outputText.value = "လူငယ်ဆန်ဆန် သဘာဝကျသော Movie Recap ဇာတ်ကြောင်းပြန် စာသားအဖြစ် ဖန်တီးရေးသားနေပါသည်...";
 
         const baseSecs = videoDurationSeconds || 60;
         const targetSecs = baseSecs + 30;
         const targetWords = Math.max(120, Math.round(targetSecs * 2.8));
 
+        // Advanced Human-Like Movie Recap Voiceover Prompt
         const systemPrompt = `
-သင်သည် အဆင့်မြင့် ရုပ်ရှင်ဇာတ်ညွှန်းနှင့် ဗီဒီယို ဘာသာပြန် ကျွမ်းကျင်သူ ဖြစ်သည်။
-ပေးထားသော Video ဇာတ်ကြောင်း စကားများကို အောက်ပါ တိကျသော စည်းမျဉ်း (၄) ချက်အတိုင်း မြန်မာလို ပြန်ဆိုပေးပါ:
+သင်သည် YouTube နှင့် TikTok တွင် နာမည်ကြီးသော ထိပ်တန်း Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
+ပေးထားသော ဗီဒီယိုပါ စကားများနှင့် ဇာတ်လမ်းအကြောင်းအရာကို အခြေခံပြီး "ဗီဒီယိုကို ကိုယ်တိုင် အစအဆုံး ကြည့်ပြီးသားလူတစ်ယောက်က ဘေးနားက သူငယ်ချင်းကို စိတ်ဝင်စားဖွယ် အရသာရှိရှိ ပြန်ပြောပြနေသည့် လေသံမျိုး" ဖြင့် မြန်မာဘာသာပြန် ဇာတ်ညွှန်း ရေးသားပေးရမည်။
 
-၁။ အပိုစာသားနှင့် English စာသား လုံးဝ (လုံးဝ) မထည့်ပါနှင့်။ (ဥပမာ "Here is the Burmese translation:", "Title:", "Summary:" စသည့် စကားလုံးများ၊ နိဒါန်းစာများနှင့် အင်္ဂလိပ်စာလုံးများ လုံးဝမပါရ)။
-၂။ မူရင်းဗီဒီယို ကြာချိန်ထက် စက္ကန့် ၃၀ စာခန့် ပိုရှည်စေရန်အတွက် အကြောင်းအရာကို ပြည့်စုံသန့်ရှင်းစွာ အသေးစိတ် ချဲ့ထွင်၍ မြန်မာစကားလုံး ခန့်မှန်းခြေ ${targetWords} စကားလုံး ဝန်းကျင်အထိ ပါဝင်အောင် ဇာတ်ကြောင်းပြန် စာသားအဖြစ် ရေးပေးရမည်။
-၃။ လူတိုင်း နားလည်လွယ်သော သဘာဝကျသည့် မြန်မာစကားပြော ပြေပြေပြစ်ပြစ် ဖြစ်ရမည်။
-၄။ ${includeTimestamps ? "အချိန်မှတ် (Time Stamp) များကို ဥပမာ [00:00], [00:30] ပုံစံဖြင့် ဝါကျများရှေ့တွင် ဆက်လက် ထည့်သွင်းပေးပါ။" : "အချိန်မှတ် (Time Stamp) များကို လုံးဝ မထည့်ပါနှင့်၊ သဘာဝကျသော စာပိုဒ်များဖြင့်သာ ရေးပေးပါ။"}
+အောက်ပါ တိကျသော စည်းမျဉ်းများကို ၁၀၀% မပျက်မကွက် လိုက်နာပါ:
 
-အထက်ပါ စည်းမျဉ်းအတိုင်း မြန်မာစာသား စစ်စစ်ကိုသာ တိုက်ရိုက် ထုတ်ပေးပါ:
+၁။ 【စာအုပ်ဖတ်ဟန် လုံးဝမဖြစ်စေရ - သဘာဝကျသော စကားပြောဟန် ဖြစ်ရမည်】
+- "ထိုသူသည် သွားလေ၏"၊ "ဖြစ်ပျက်ခဲ့ပါသည်"၊ "ပြုလုပ်ခဲ့သည်"၊ "ဟု ဆိုပါသည်" စသည့် တောင့်တင်းသော စာဆန်သည့် ဝါကျများ လုံးဝမသုံးရ။
+- ၎င်းအစား Movie Recap များတွင် သုံးလေ့ရှိသော သဘာဝစကားပြော စကားဆက်များဖြစ်သည့် "ဒီလိုနဲ့ သူတို့တွေ..."၊ "အဲဒီအချိန်မှာပဲ..."၊ "တကယ်တော့ သူက..."၊ "မထင်မှတ်ဘဲနဲ့..."၊ "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့..."၊ "ဘာတွေဆက်ဖြစ်မလဲဆိုရင်..." စသည့် နားထောင်ကောင်းပြီး ဆွဲဆောင်မှုရှိသော စကားပြောဟန်ဖြင့်သာ အစအဆုံး ရေးသားပါ။
+
+၂။ 【ကျား/မ မရွေး အသံထွက်ဖတ်နိုင်သော Neutral Tone ဖြစ်ရမည်】
+- "ကျွန်တော်"၊ "ကျွန်မ"၊ "ခင်ဗျာ"၊ "ရှင်" စသည့် ကျား/မ သတ်မှတ်သော စကားလုံးများ လုံးဝမသုံးရ။
+- မိန်းကလေး Voiceover က ဖတ်ဖတ်၊ ယောက်ျားလေး Voiceover က ဖတ်ဖတ် အားလုံးနှင့် အံဝင်ခွင်ကျဖြစ်နေရမည်။ ဇာတ်ကောင်နာမည်များနှင့် "သူ"၊ "သူတို့"၊ "ဒီလူက" စသည့် စကားလုံးများကိုသာ သုံးပါ။
+
+၃။ 【အပိုစာသားနှင့် English လုံးဝ မပါရ (Zero English / Zero Meta-text)】
+- "Here is the recap:", "Title:", "Summary:", "ဇာတ်လမ်းအကျဉ်း -" စသည့် နိဒါန်း၊ ခေါင်းစဉ်နှင့် English စာလုံး လုံးဝမပါရ။
+- TTS စက်ထဲ တိုက်ရိုက်ထည့်ပြီး အသံထွက်ဖတ်မည့် ဇာတ်ကြောင်းပြော မြန်မာစကားပြေ စာသားသက်သက်ကိုသာ ပထမဆုံးစာလုံးမှစ၍ တိုက်ရိုက် ထုတ်ပေးပါ။
+
+၄။ 【မူရင်းဗီဒီယို ကြာချိန်ထက် စက္ကန့် ၃၀ ခန့် ပိုရှည်အောင် ချဲ့ထွင်ရေးသားရမည်】
+- ဇာတ်ကောင်တွေရဲ့ လုပ်ရပ်၊ ခံစားချက်၊ ဇာတ်ကွက်အလှည့်အပြောင်းတွေကို ကွက်ကွက်ကွင်းကွင်း မြင်သာအောင် အသေးစိတ် ရှင်းပြချက်များ ဖြည့်စွက်၍ စုစုပေါင်း ခန့်မှန်းခြေ ${targetWords} စကားလုံး ဝန်းကျင်အထိ ပါဝင်အောင် ရေးပေးပါ။
+
+၅။ 【အချိန်မှတ် (Timestamp) စည်းမျဉ်း】
+- ${includeTimestamps ? "အချိန်မှတ် များကို [00:00], [00:30] ပုံစံဖြင့် ဝါကျအလိုက် ဆက်လက် ထည့်သွင်းပေးပါ။" : "အချိန်မှတ် (Timestamp) များကို လုံးဝ မထည့်ပါနှင့်။ ချောမွေ့သော စကားပြော စာပိုဒ်များဖြင့်သာ ရေးပေးပါ။"}
+
+အထက်ပါ စည်းမျဉ်းများအတိုင်း လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာ Movie Recap Script စစ်စစ်ကိုသာ ထုတ်ပေးပါ:
         `.trim();
 
         const finalScript = await callGroqTranslation(apiKey, systemPrompt, `မူရင်း ဗီဒီယို စာသားများ:\n${originalText}`);
@@ -763,7 +773,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           outputText.value = finalScript.trim();
           const words = finalScript.trim().split(/\s+/).length;
           document.getElementById("scriptWordCount").innerText = `${words} စကားလုံး`;
-          showToast("မြန်မာဇာတ်ညွှန်း အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ (200MB Ready)", "success");
+          showToast("Movie Recap စတိုင်လ် မြန်မာဇာတ်ညွှန်း ထွက်ရှိပါပြီ", "success");
         } else {
           throw new Error("စာသား ရယူ၍ မရပါ");
         }
@@ -775,7 +785,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         btn.disabled = false;
         spinner.classList.add("hidden");
         transIcon.classList.remove("hidden");
-        btnText.innerText = "Transcribe (စာညွှန်းထုတ်ယူမည်)";
+        btnText.innerText = "Movie Recap Script ထုတ်ယူမည် (+30s)";
       }
     }
 
