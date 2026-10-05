@@ -74,7 +74,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
           <button id="generateBtn" type="button" onclick="handleGenerate()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all">
             <span id="generateSpinner" class="hidden animate-spin">🌀</span>
-            <span id="generateText">🎙️️ အသံဖန်တီးမည် (Generate Voice)</span>
+            <span id="generateText">🎙 အသံဖန်တီးမည် (Generate Voice)</span>
           </button>
         </div>
 
@@ -163,8 +163,10 @@ HTML_CONTENT = """<!DOCTYPE html>
       }
       playingPreviewId = id;
       renderVoices();
+
       try {
-        const res = await fetch(`/api/preview/${id}`);
+        let res = await fetch(`/api/preview/${id}`);
+        if (!res.ok) res = await fetch(`/preview/${id}`);
         if (res.ok) {
           const blob = await res.blob();
           previewAudioEl.src = URL.createObjectURL(blob);
@@ -172,8 +174,10 @@ HTML_CONTENT = """<!DOCTYPE html>
           return;
         }
       } catch (e) {}
+
       playingPreviewId = null;
       renderVoices();
+      alert("အသံစမ်းဖွင့်၍ မရသေးပါ။ စက္ကန့် ၃၀ ခန့်စောင့်ပြီး ပြန်လည်စမ်းသပ်ပေးပါ။");
     }
 
     previewAudioEl.onended = () => {
@@ -199,7 +203,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       btnText.innerText = "အသံဖန်တီးနေပါသည်...";
 
       try {
-        const res = await fetch("/api/tts", {
+        let res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -209,13 +213,28 @@ HTML_CONTENT = """<!DOCTYPE html>
             user_pitch_offset: parseInt(document.getElementById("pitchRange").value)
           })
         });
+
+        if (!res.ok) {
+          res = await fetch("/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: text,
+              persona_id: selectedId,
+              user_rate_offset: parseInt(document.getElementById("speedRange").value),
+              user_pitch_offset: parseInt(document.getElementById("pitchRange").value)
+            })
+          });
+        }
+
         if (res.ok) {
           currentBlob = await res.blob();
           mainAudioEl.src = URL.createObjectURL(currentBlob);
           document.getElementById("playerSection").classList.remove("hidden");
           await mainAudioEl.play();
         } else {
-          alert("အသံဖန်တီးရာတွင် အဆင်မပြေဖြစ်သွားပါသည်။");
+          const errData = await res.json().catch(() => ({}));
+          alert("အသံဖန်တီးရာတွင် အဆင်မပြေဖြစ်သွားပါသည်: " + (errData.detail || "Server Busy"));
         }
       } catch (e) {
         alert("ချိတ်ဆက်မှု မအောင်မြင်ပါ။ ခဏစောင့်ပြီး ပြန်လည်စမ်းသပ်ပေးပါ။");
@@ -271,10 +290,12 @@ def read_api_root():
     return HTMLResponse(content=HTML_CONTENT)
 
 @app.get("/api/health")
+@app.get("/health")
 def health():
     return {"status": "ok"}
 
 @app.get("/api/preview/{persona_id}")
+@app.get("/preview/{persona_id}")
 async def get_persona_preview(persona_id: str):
     persona = PERSONA_DICT.get(persona_id, PERSONA_VOICES[2])
     try:
@@ -293,6 +314,7 @@ async def get_persona_preview(persona_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/tts")
+@app.post("/tts")
 async def generate_speech(req: GenerateTTSRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="စာသား ထည့်သွင်းပေးရန် လိုအပ်ပါသည်။")
