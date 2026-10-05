@@ -849,5 +849,3 @@ async def generate_speech(req: GenerateTTSRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 ```eof
-
-### ပြင်ဆင်ထည့်သွင်းနည်း (၁ မိနစ်):
