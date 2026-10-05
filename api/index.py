@@ -129,6 +129,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
+                <!-- Re-select button -->
                 <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
                   🔄 အသစ်လဲမည်
                 </label>
@@ -188,7 +189,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </label>
               <div class="p-2.5 rounded-xl bg-[#070b14] border border-slate-800 text-xs text-slate-200 flex items-center justify-between">
                 <span class="font-bold text-blue-400">သဘာဝကျ Movie Recap စကားပြောဟန်</span>
-                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">စကားထပ်ခြင်း ကင်းစင်</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">နာမ်စားမှန်ကန်ရေး စနစ်ထည့်သွင်းပြီး</span>
               </div>
             </div>
 
@@ -206,19 +207,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- Groq API Key -->
+            <!-- AI API Key (Supports Groq Key or Gemini Key) -->
             <div class="pt-3 border-t border-slate-800/80 space-y-1.5">
               <div class="flex items-center justify-between">
-                <label class="text-[11px] font-bold text-slate-300">Groq API Key (console.groq.com)</label>
-                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-blue-400 hover:underline">Key ရယူရန် (Free) ↗</a>
+                <label class="text-[11px] font-bold text-slate-300">AI API Key (Groq သို့မဟုတ် Gemini)</label>
+                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-blue-400 hover:underline">Groq Key ရယူရန် ↗</a>
               </div>
               <input
                 type="password"
                 id="groqApiKeyInput"
-                placeholder="gsk_... (Groq API Key ထည့်ပါ)"
+                placeholder="gsk_... (Groq Key) သို့မဟုတ် AIza... (Gemini Key)"
                 class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
               />
-              <p class="text-[10px] text-slate-500">Free Groq Key ထည့်ပေးပါ (Browser တွင် အလိုအလျောက် သိမ်းထားပေးပါမည်)။</p>
+              <p class="text-[10px] text-slate-500">Groq Key (gsk_...) သို့မဟုတ် Gemini Key (AIza...) နှစ်သက်ရာ ထည့်နိုင်ပါသည် (Browser တွင် အလိုအလျောက် မှတ်ထားပေးပါမည်)။</p>
             </div>
 
             <!-- Transcribe Button -->
@@ -252,7 +253,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="relative flex-1">
               <textarea
                 id="transcriptOutputText"
-                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် စာအုပ်ဖတ်သလို မဟုတ်ဘဲ ဗီဒီယိုကို ကိုယ်တိုင်ကြည့်ပြီး ပြန်ပြောပြနေသလို သဘာဝကျကျ လူတိုင်းနားလည်လွယ်သော Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
+                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် စာအုပ်ဖတ်သလို မဟုတ်ဘဲ နာမ်စားအသုံးအနှုန်း မှန်ကန်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
                 class="w-full h-full min-h-[360px] bg-[#070b14] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll font-sans"
               ></textarea>
             </div>
@@ -538,7 +539,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       
-      statusCallback("အဆင့် ၂/၃: Groq Whisper စနစ်အတွက် အသံအရွယ်အစားကို ချုံ့ပေးနေပါသည်...");
+      statusCallback("အဆင့် ၂/၃: Whisper စနစ်အတွက် အသံအရွယ်အစားကို ချုံ့ပေးနေပါသည်...");
       
       const targetRate = 16000;
       const offlineCtx = new OfflineAudioContext(1, Math.ceil(audioBuffer.duration * targetRate), targetRate);
@@ -587,54 +588,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // Absolute Anti-Loop & Repetition Truncation Engine
-    function cleanBurmeseRepeats(text) {
-      if (!text) return "";
-      let cleaned = text.trim();
+    // Clean post-processing filter for Burmese characters
+    function cleanBurmeseOutput(raw) {
+      if (!raw) return "";
+      let txt = raw.trim();
+      
+      // Clean up common glitch notes emitted by AI
+      txt = txt.replace(/\(Note:.*?\)/gi, '');
+      txt = txt.replace(/\[Note:.*?\]/gi, '');
 
-      // 1. Regex cleanup of any phrase (3 to 60 chars) repeating 2 or more times
-      cleaned = cleaned.replace(/(.{3,60}?)\s*(?:\1\s*){2,}/gu, '$1');
+      // Remove repetitive phrases at the end
+      txt = txt.replace(/(.{4,80}?)\s*(?:\1\s*){2,}/gu, '$1');
 
-      // 2. Token-level loop detector: if the exact same phrase repeats at the end, truncate it
-      const words = cleaned.split(/\s+/);
-      const resultWords = [];
-      let lastWord = "";
-      let duplicateStreak = 0;
-
-      for (let i = 0; i < words.length; i++) {
-        const w = words[i].trim();
-        if (w === lastWord && w.length > 2) {
-          duplicateStreak++;
-          if (duplicateStreak >= 2) {
-            // Stop appending once infinite loop is encountered!
-            continue;
-          }
-        } else {
-          duplicateStreak = 0;
-          lastWord = w;
-        }
-        resultWords.push(words[i]);
-      }
-
-      cleaned = resultWords.join(" ");
-
-      // 3. Sentence-level deduplication
-      const sentences = cleaned.split(/(?<=[။!?\n])/);
-      const finalSentences = [];
-      const seen = new Set();
-      for (const s of sentences) {
-        const trimmed = s.trim();
-        if (trimmed.length > 5) {
-          if (seen.has(trimmed)) continue;
-          seen.add(trimmed);
-        }
-        finalSentences.push(s);
-      }
-
-      return finalSentences.join("").trim();
+      return txt.trim();
     }
 
-    // Dynamic Groq Translation with Live Active Model Discovery & Controlled Anti-Loop Settings
+    // Dynamic Groq Translation (Strict Zero-Penalty to prevent corrupted Burmese Unicode)
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
       let liveModels = [];
       try {
@@ -654,13 +623,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         }
       } catch (err) {}
 
-      // Prioritized order: Highest capability multilingual models on Groq
       const priority = [
         "llama-3.3-70b-versatile",
-        "qwen/qwen3.8-27b",
+        "llama-3.1-8b-instant",
         "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
-        "llama-3.1-8b-instant"
+        "openai/gpt-oss-20b"
       ];
 
       const candidateModels = [];
@@ -694,17 +661,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userContent }
               ],
-              temperature: 0.35,
-              presence_penalty: 0.6,
-              frequency_penalty: 0.6,
-              max_tokens: 1600
+              temperature: 0.3,
+              presence_penalty: 0.0,   // CRITICAL: MUST BE 0 to avoid breaking Burmese UTF-8 bytes
+              frequency_penalty: 0.0,  // CRITICAL: MUST BE 0 to avoid breaking Burmese UTF-8 bytes
+              max_tokens: 2048
             })
           });
 
           if (res.ok) {
             const data = await res.json();
             const content = data.choices?.[0]?.message?.content || "";
-            if (content) return cleanBurmeseRepeats(content);
+            if (content) return cleanBurmeseOutput(content);
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastError = errJson.error?.message || `Model ${modelName} returned status ${res.status}`;
@@ -717,6 +684,29 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
     }
 
+    // Google Gemini Direct Call (if user provides Gemini API Key AIza...)
+    async function callGeminiDirect(apiKey, systemPrompt, userContent) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ parts: [{ text: userContent }] }],
+          generationConfig: { temperature: 0.3 }
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || "Gemini ချိတ်ဆက်မှု မအောင်မြင်ပါ");
+      }
+
+      const data = await res.json();
+      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      return cleanBurmeseOutput(content);
+    }
+
     async function handleTranscribeProcess() {
       if (!currentUploadedFile) {
         showToast("ကျေးဇူးပြု၍ Video / Audio ဖိုင် အရင်ရွေးချယ်ပေးပါ", "error");
@@ -724,10 +714,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
 
       const apiKey = document.getElementById("groqApiKeyInput").value.trim();
-      if (!apiKey || !apiKey.startsWith("gsk_")) {
-        showToast("Groq API Key (gsk_...) ကို မှန်ကန်စွာ ထည့်ပေးပါ (console.groq.com/keys)", "error");
+      if (!apiKey) {
+        showToast("Groq Key (gsk_...) သို့မဟုတ် Gemini Key ထည့်ပေးပါ", "error");
         return;
       }
+
+      const isGeminiKey = apiKey.startsWith("AIza");
 
       const btn = document.getElementById("startTranscriptBtn");
       const spinner = document.getElementById("transSpinner");
@@ -749,88 +741,134 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           });
         }
 
-        // ==========================================
-        // STEP 1: VOICE TO TEXT (ACCURATE TRANSCRIPTION)
-        // ==========================================
-        outputText.value = "အဆင့် ၁/၂: Whisper AI ဖြင့် ဗီဒီယိုပါ စကားပြောသံအားလုံးကို တိကျစွာ စာသားပြောင်းနေပါသည်...";
-        btnText.innerText = "Whisper ဖြင့် စကားလုံးများ ဖတ်နေပါသည်...";
+        let understoodText = "";
 
-        const formData = new FormData();
-        formData.append("file", audioToSend);
-        formData.append("model", "whisper-large-v3");
-        formData.append("response_format", "verbose_json");
+        if (isGeminiKey) {
+          outputText.value = "Gemini Flash AI ဖြင့် စကားပြောသံနှင့် ဇာတ်လမ်းအဓိပ္ပာယ်ကို တိုက်ရိုက် ဖတ်ရှုနေပါသည်...";
+          btnText.innerText = "Gemini ဖြင့် ဖတ်နေပါသည်...";
 
-        // Use translation endpoint first to understand non-English/non-Burmese speech directly
-        let whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${apiKey}` },
-          body: formData
-        });
+          // Convert audio blob to base64 for Gemini
+          const reader = new FileReader();
+          const base64Audio = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(audioToSend);
+          });
 
-        if (!whisperRes.ok) {
-          whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+          const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: "Listen carefully to this audio track. Transcribe and describe all speech, dialogue, plot actions, and what is happening from beginning to end in detail." },
+                  { inline_data: { mime_type: "audio/wav", data: base64Audio } }
+                ]
+              }]
+            })
+          });
+
+          if (!gemRes.ok) {
+            const errJson = await gemRes.json().catch(() => ({}));
+            throw new Error(errJson.error?.message || "Gemini Audio ဖတ်ရှုမှု မအောင်မြင်ပါ");
+          }
+
+          const gemData = await gemRes.json();
+          understoodText = gemData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+        } else {
+          // Groq Whisper Engine
+          outputText.value = "အဆင့် ၁/၂: Whisper AI ဖြင့် မည်သည့်ဘာသာစကားဖြင့် ပြောထားသည်ကို စိစစ်ပြီး အဓိပ္ပာယ် ဖတ်ယူနေပါသည်...";
+          btnText.innerText = "Whisper ဖြင့် စကားလုံးများ ဖတ်နေပါသည်...";
+
+          const formData = new FormData();
+          formData.append("file", audioToSend);
+          formData.append("model", "whisper-large-v3");
+          formData.append("response_format", "verbose_json");
+
+          let whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
             method: "POST",
             headers: { "Authorization": `Bearer ${apiKey}` },
             body: formData
           });
-        }
 
-        if (!whisperRes.ok) {
-          const errData = await whisperRes.json().catch(() => ({}));
-          throw new Error(errData.error?.message || "Groq Whisper ချိတ်ဆက်မှု မအောင်မြင်ပါ");
-        }
+          if (!whisperRes.ok) {
+            whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${apiKey}` },
+              body: formData
+            });
+          }
 
-        const whisperData = await whisperRes.json();
-        let understoodText = whisperData.text || "";
+          if (!whisperRes.ok) {
+            const errData = await whisperRes.json().catch(() => ({}));
+            throw new Error(errData.error?.message || "Whisper ချိတ်ဆက်မှု မအောင်မြင်ပါ");
+          }
 
-        if (includeTimestamps && whisperData.segments) {
-          understoodText = whisperData.segments.map(s => {
-            const startM = Math.floor(s.start / 60).toString().padStart(2, '0');
-            const startS = Math.floor(s.start % 60).toString().padStart(2, '0');
-            return `[${startM}:${startS}] ${s.text}`;
-          }).join("\n");
+          const whisperData = await whisperRes.json();
+          understoodText = whisperData.text || "";
+
+          if (includeTimestamps && whisperData.segments) {
+            understoodText = whisperData.segments.map(s => {
+              const startM = Math.floor(s.start / 60).toString().padStart(2, '0');
+              const startS = Math.floor(s.start % 60).toString().padStart(2, '0');
+              return `[${startM}:${startS}] ${s.text}`;
+            }).join("\n");
+          }
         }
 
         // ==========================================
-        // STEP 2: NATURAL BURMESE MOVIE RECAP SCRIPT
+        // STEP 2: PROFESSIONAL BURMESE RECAP SCRIPT
         // ==========================================
-        btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း အချောသပ်နေပါသည်...";
-        outputText.value = "အဆင့် ၂/၂: ဇာတ်လမ်းကို နားလည်ပြီး လူတိုင်းနားလည်လွယ်သည့် သဘာဝကျသော Movie Recap အသံထွက် ဇာတ်ညွှန်းအဖြစ် အချောသပ် ပြန်လည်ရေးသားနေပါသည်...";
+        btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
+        outputText.value = "အဆင့် ၂/၂: ဇာတ်လမ်းကို နားလည်ပြီး နာမ်စားအသုံးအနှုန်း မှန်ကန်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်းအဖြစ် အချောသပ် ရေးသားနေပါသည်...";
 
+        const baseSecs = videoDurationSeconds || 60;
+        const targetSecs = baseSecs + 30;
+
+        // Master Burmese Movie Recap Storyteller Prompt with strict Vocabulary Standards
         const systemPrompt = `
-You are an expert Burmese Movie Recap Narrator and Storyteller.
-You have the complete transcribed voice-to-text content of a video.
-Your task is to retell this video plot into an authentic, natural, and captivating Burmese Movie Recap narration script for voiceover.
+သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
+ပေးထားသော ဗီဒီယိုပါ ဇာတ်လမ်းအကြောင်းအရာနှင့် စကားပြောများကို အခြေခံ၍ လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။
 
-CRITICAL INSTRUCTIONS:
-1. NATURAL SPOKEN BURMESE (လူတိုင်းနားလည်လွယ်သော သဘာဝစကားပြောဟန်):
-   - Explain what actually happened in the video like a great YouTube movie recap creator telling the story to an audience.
-   - Use natural storytelling connectors: "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "တကယ်တော့ ဖြစ်ပျက်သွားတာက...", "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...", "နောက်ဆုံးမှာတော့...".
-   - DO NOT translate word-by-word into awkward phrases (NO "တစ်ကောင်ကောင်မလေး", NO "အလွတ်တစ်ကောင်", NO "အိမ်ထောင်စု အုပ်ထိန်းသူ"). Use clear, everyday Burmese that real people speak.
+အောက်ပါ စည်းမျဉ်းများကို မပျက်မကွက် တိကျစွာ လိုက်နာပါ:
 
-2. GENDER-NEUTRAL NARRATION:
-   - DO NOT use "ကျွန်တော်" (male) or "ကျွန်မ" (female).
-   - DO NOT use "ခင်ဗျာ" or "ရှင်".
-   - The script must flow naturally so that BOTH male and female voice actors can read it aloud smoothly.
+၁။ 【နာမ်စားနှင့် လူပုဂ္ဂိုလ် အသုံးအနှုန်းများ တိကျမှန်ကန်ရမည်】
+- နိုင်ငံခြားစကားလုံးများကို အဓိပ္ပာယ်မဲ့ တိုက်ရိုက်ပြန်ဆိုခြင်း (Literal Translation) လုံးဝမပြုလုပ်ရ။
+- ဇာတ်လမ်းထဲတွင် တွေ့ရသည့်အတိုင်း သဘာဝကျသော မြန်မာနာမ်စားများကိုသာ သုံးပါ:
+  * Maid / Servant / အိမ်အကူဝတ်စုံဝတ်ထားသူ -> "အိမ်အကူကောင်မလေး" သို့မဟုတ် "အိမ်ဖော်မလေး" (★ "နို့တိုက်မ" ဟု လုံးဝမသုံးရ)
+  * Dog / Pet -> "ခွေးလေး"
+  * Father / Old man -> "အဖေကြီး" / "အဘိုးကြီး" / "လူကြီး"
+  * Son / Boy -> "သားဖြစ်သူ" / "ကောင်လေး"
+  * Daughter / Girl -> "သမီးဖြစ်သူ" / "ကောင်မလေး"
+  * Boss / Landlord / Rich person -> "အိမ်ရှင်" / "သူဌေး"
+- "တစ်ကောင်ကောင်မလေး"၊ "အလွတ်တစ်ကောင်"၊ "အိမ်ထောင်စု အုပ်ထိန်းသူ" စသည့် အဓိပ္ပာယ်မဲ့ စာလုံးအဆန်းများ လုံးဝမပါရ။
 
-3. ABSOLUTE BAN ON LOOPS & REPETITION:
-   - Progress the story naturally through its beginning, middle, and climax.
-   - When the story in the video is finished, conclude the narration cleanly.
-   - NEVER repeat words, phrases, or clauses endlessly. Stop writing as soon as the story ends.
+၂။ 【ကျား/မ မရွေး ဖတ်နိုင်သော Voiceover လေသံ】
+- "ကျွန်တော်" (ကျား) သို့မဟုတ် "ကျွန်မ" (မ) ဟူသော စကားလုံးများ မသုံးရ။ "ခင်ဗျာ"၊ "ရှင်" မသုံးရ။
+- မည်သည့် Voiceover အနုပညာရှင်မဆို သဘာဝကျကျ အသံထွက်ဖတ်နိုင်သော ဇာတ်ကြောင်းပြောဟန် ဖြစ်ရမည်။
 
-4. EXTENDED PACING:
-   - Add vivid descriptions of the scene's tension, characters' decisions, and emotions so the narration naturally plays ~30 seconds longer than the original clip without artificially repeating words.
+၃။ 【သဘာဝကျသော Movie Recap စကားပြောဟန်】
+- စာအုပ်ဖတ်သလို မဟုတ်ဘဲ ဗီဒီယိုကို ကိုယ်တိုင် အစအဆုံး ကြည့်ပြီး မိတ်ဆွေတစ်ယောက်ကို ပြန်ပြောပြနေသလို ဇာတ်လမ်းကို စီးမျောစွာ ရေးသားပါ။
+- သဘာဝစကားဆက်များ သုံးပါ: "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "တကယ်တော့ ဖြစ်ပျက်သွားတာက...", "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...", "နောက်ဆုံးမှာတော့...".
 
-5. SCRIPT ONLY:
-   - Zero English words.
-   - Zero intros ("Here is...", "Recap:"), Zero titles. Output ONLY the pure spoken Burmese voiceover paragraphs.
-6. TIMESTAMPS:
-   - ${includeTimestamps ? "Keep timestamps like [00:00], [00:30] at the start of scenes." : "Do NOT include any timestamps. Format into clean, readable storytelling paragraphs."}
+၄။ 【ကြာချိန်နှင့် အဆုံးသတ် စည်းမျဉ်း】
+- ဇာတ်လမ်းအစ၊ အလယ်၊ အဆုံးကို ပြည့်စုံစွာ ဖော်ပြပြီး မူရင်းဗီဒီယိုထက် စက္ကန့် ၃၀ ခန့် ပိုရှည်အောင် အသေးစိတ် ရှင်းပြချက်များဖြင့် ဖွဲ့စည်းပါ။
+- ဇာတ်လမ်းပြီးဆုံးပါက စကားလုံးများ ထပ်ခါတလဲလဲ မဖြစ်စေဘဲ သပ်ရပ်စွာ အဆုံးသတ်ပါ။
 
-Write the natural, thrilling Burmese Movie Recap script now:
+၅။ 【သန့်ရှင်းသော ဇာတ်ညွှန်းသက်သက်သာ ထုတ်ပေးရန်】
+- English စာလုံး လုံးဝမပါရ။ နိဒါန်း၊ မှတ်ချက် ("Note:") လုံးဝမပါရ။
+- ${includeTimestamps ? "အချိန်မှတ် များကို [00:00], [00:30] ပုံစံဖြင့် ဝါကျအလိုက် ဆက်လက် ထည့်သွင်းပေးပါ။" : "အချိန်မှတ် များကို လုံးဝ မထည့်ပါနှင့်။ သဘာဝကျသော စာပိုဒ်များဖြင့်သာ ရေးပေးပါ။"}
+
+အထက်ပါ စည်းမျဉ်းအတိုင်း နာမ်စားမှန်ကန်သော မြန်မာ Movie Recap Script စစ်စစ်ကိုသာ ထုတ်ပေးပါ:
         `.trim();
 
-        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `Voice-to-Text Content from Video:\n${understoodText}`);
+        let finalScript = "";
+
+        if (isGeminiKey) {
+          finalScript = await callGeminiDirect(apiKey, systemPrompt, `Video Plot Story:\n${understoodText}`);
+        } else {
+          finalScript = await callGroqTranslation(apiKey, systemPrompt, `Video Plot Story:\n${understoodText}`);
+        }
 
         if (finalScript) {
           outputText.value = finalScript;
