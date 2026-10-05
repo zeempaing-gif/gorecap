@@ -63,14 +63,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <span>Transcript (200MB)</span>
         </button>
         <button id="tabTtsBtn" onclick="switchMainTab('tts')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
-          <span>🎙️️</span>
+          <span>🎙️</span>
           <span>TTS Studio</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Real Native File Input (Attached via Label) -->
   <input
     type="file"
     id="videoFileInput"
@@ -134,7 +133,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 </label>
               </div>
 
-              <!-- Native Video Player -->
               <video
                 id="previewVideoEl"
                 controls
@@ -145,7 +143,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 class="w-full rounded-xl max-h-52 bg-black border border-slate-800 shadow-inner"
               ></video>
 
-              <!-- Audio Player -->
               <div id="audioPreviewContainer" class="hidden space-y-2 p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div class="flex items-center gap-2 text-xs text-amber-300 font-bold">
                   <span>🎵</span>
@@ -154,7 +151,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 <audio id="previewAudioEl" controls class="w-full"></audio>
               </div>
 
-              <!-- Video Metadata Grid -->
               <div class="grid grid-cols-2 gap-2 text-xs">
                 <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
                   <span class="text-[10px] text-slate-400 block">ဖိုင်အမည်:</span>
@@ -166,7 +162,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 </div>
               </div>
 
-              <!-- Duration Calculation Banner -->
               <div class="p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60 text-xs text-blue-300 flex items-center justify-between">
                 <div>
                   <span class="text-[10px] text-slate-400 block">မူရင်းအလျား ➔ Recap စာညွှန်း</span>
@@ -180,7 +175,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- AI Engine Selector (Groq vs Gemini) -->
+            <!-- AI Engine Selector -->
             <div class="space-y-1.5 pt-1">
               <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
                 <span class="flex items-center gap-1.5">
@@ -286,16 +281,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- Text Area -->
             <div class="relative flex-1">
               <textarea
                 id="transcriptOutputText"
-                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် English လုံးဝမပါဘဲ Narrator တိုက်ရိုက်ဖတ်နိုင်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
+                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် English လုံးဝမပါဘဲ Brian, Andrew, နီလာ တို့ဖြင့် အဆင်သင့်ဖတ်နိုင်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
                 class="w-full h-full min-h-[360px] bg-[#070b14] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll font-sans"
               ></textarea>
             </div>
 
-            <!-- Bottom Action Buttons -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
               <button
                 type="button"
@@ -311,7 +304,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 onclick="sendScriptToTts()"
                 class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
               >
-                <span>🎙️</span>
+                <span>🎙️️</span>
                 <span>TTS အသံထုတ်ခန်းသို့ ပို့မည်</span>
               </button>
             </div>
@@ -322,7 +315,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
 
     <!-- ========================================== -->
-    <!-- SECTION 2: TTS STUDIO                      -->
+    <!-- SECTION 2: TTS STUDIO (BRIAN & ANDREW ADDED) -->
     <!-- ========================================== -->
     <div id="sectionTts" class="hidden space-y-6">
 
@@ -330,14 +323,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <div>
           <h2 class="text-sm font-bold text-amber-300 flex items-center gap-1.5">
             <span>✨</span>
-            <span>မြန်မာအသံ ကာရိုက်တာ (၁၀) မျိုးဖြင့် အသံဖန်တီးခန်း</span>
+            <span>Brian, Andrew အပါအဝင် အဆင့်မြင့် မြန်မာအသံဖန်တီးခန်း</span>
           </h2>
           <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">
-            စာသားများကို ရိုက်ထည့်၍ဖြစ်စေ၊ Transcript မှ ရရှိလာသော ဇာတ်ညွှန်းကိုဖြစ်စေ MP3 အသံဖိုင် တိုက်ရိုက် ထုတ်ယူပါ
+            Crikk ကဲ့သို့ Brian Multilingual, Andrew, Florian, Nilar, Thiha အသံများဖြင့် မြန်မာစာသားများကို တိုက်ရိုက် MP3 ထုတ်ယူပါ
           </p>
         </div>
         <div id="activeVoicePill" class="text-xs font-bold text-amber-300 bg-amber-950/80 border border-amber-800/80 px-3 py-1.5 rounded-xl shrink-0">
-          ရွေးထားသည်: နေတိုး
+          ရွေးထားသည်: Brian Multilingual
         </div>
       </div>
 
@@ -348,11 +341,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
             <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">အသံကဏ္ဍခွဲများ</span>
             <div class="flex gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-[11px]">
-              <button onclick="filterVoices('all')" class="cat-pill px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all" data-cat="all">အားလုံး</button>
-              <button onclick="filterVoices('men')" class="cat-pill px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="men">လူကြီး</button>
-              <button onclick="filterVoices('boy')" class="cat-pill px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="boy">လူငယ်</button>
-              <button onclick="filterVoices('women')" class="cat-pill px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="women">အမျိုးသမီး</button>
-              <button onclick="filterVoices('girl')" class="cat-pill px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="girl">မိန်းကလေး</button>
+              <button onclick="filterVoices('all')" class="cat-pill px-2 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all" data-cat="all">အားလုံး</button>
+              <button onclick="filterVoices('multilingual')" class="cat-pill px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="multilingual">🌟 Crikk အသံများ</button>
+              <button onclick="filterVoices('men')" class="cat-pill px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="men">အမျိုးသား</button>
+              <button onclick="filterVoices('women')" class="cat-pill px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all" data-cat="women">အမျိုးသမီး</button>
             </div>
           </div>
           <div id="voiceCardsList" class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1.5 custom-scroll"></div>
@@ -375,7 +367,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               rows="6"
               placeholder="အသံဖန်တီးလိုသော မြန်မာစာသားများကို ရိုက်ထည့်ပါ..."
               class="w-full bg-[#030712] border border-slate-800 rounded-xl p-3.5 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500/80 transition-all resize-y"
-            >သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။</textarea>
+            >အချစ်လေးရေ ဘာလုပ်နေလဲ</textarea>
 
             <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
               <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
@@ -632,10 +624,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
       function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
 
-      setUint32(0x46464952); // "RIFF"
+      setUint32(0x46464952);
       setUint32(36 + length);
-      setUint32(0x45564157); // "WAVE"
-      setUint32(0x20746d66); // "fmt "
+      setUint32(0x45564157);
+      setUint32(0x20746d66);
       setUint32(16);
       setUint16(1);
       setUint16(numOfChan);
@@ -643,7 +635,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       setUint32(buffer.sampleRate * 2);
       setUint16(2);
       setUint16(16);
-      setUint32(0x61746164); // "data"
+      setUint32(0x61746164);
       setUint32(length);
 
       const channelData = buffer.getChannelData(0);
@@ -656,26 +648,20 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // ==========================================
-    // RIGOROUS SCRIPT SANITIZER (NO ENGLISH, NO HEADERS, NO CHECKLISTS)
-    // ==========================================
     function sanitizeMovieRecapScript(raw) {
       if (!raw) return "";
 
-      // 1. Remove labels like *Intro:*, *Middle:*, *Conflict:*, *Climax/End:*, etc.
       let cleaned = raw
         .replace(/\*\s*\*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)(?:\/[A-Za-z]+)?\s*:\s*\*/gi, '')
         .replace(/\*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)(?:\/[A-Za-z]+)?\s*:\*/gi, '')
         .replace(/(?:^|\n)\s*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)\s*:\s*/gi, '\n');
 
-      // 2. Remove checklist lines, analysis questions, or metadata notes
       const lines = cleaned.split('\n');
       const filteredLines = [];
 
       for (let line of lines) {
         const trimmed = line.trim();
 
-        // Skip English analysis headers or bullet checklists
         if (/^\*\s*(?:No English|No "Note|No timestamps|Accurate pronouns|Natural flow|Gender neutral|Longer than)/i.test(trimmed)) continue;
         if (/^(?:No English|No "Note|No timestamps|Accurate pronouns|Natural flow|Gender neutral|Longer than)/i.test(trimmed)) continue;
         if (/^Famous Myanmar Movie Recap Creator/i.test(trimmed)) continue;
@@ -688,7 +674,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         if (/^\(Note:.*?\)$/i.test(trimmed)) continue;
         if (/^\[Note:.*?\]$/i.test(trimmed)) continue;
 
-        // Skip lines that have no Burmese characters and are mostly English words
         const burmeseChars = trimmed.match(/[\u1000-\u109F]/g);
         const englishChars = trimmed.match(/[a-zA-Z]/g);
 
@@ -696,18 +681,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           continue;
         }
 
-        // Clean out leading bullet markdown (* or -) if present before Burmese text
         line = line.replace(/^\s*[\*\-]\s+/, '');
-
         filteredLines.push(line);
       }
 
       cleaned = filteredLines.join('\n').trim();
-
-      // 3. Remove repetitive looped phrases if any
       cleaned = cleaned.replace(/(.{4,80}?)\s*(?:\1\s*){2,}/gu, '$1');
-
-      // 4. Clean consecutive extra line breaks
       cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
 
       return cleaned;
@@ -838,7 +817,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastErr = errJson.error?.message || `Model ${m} status ${res.status}`;
-            console.warn(`Gemini model ${m} failed:`, lastErr);
           }
         } catch (e) {
           lastErr = e.message;
@@ -928,7 +906,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               } else {
                 const errJson = await gemRes.json().catch(() => ({}));
                 lastErr = errJson.error?.message || `Status ${gemRes.status}`;
-                console.warn(`Audio perception with ${m} failed:`, lastErr);
               }
             } catch (e) {
               lastErr = e.message;
@@ -980,16 +957,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           }
         }
 
-        // ==========================================
-        // STEP 2: PROFESSIONAL BURMESE RECAP SCRIPT (ZERO META-TEXT)
-        // ==========================================
         btnText.innerText = "အဆင့် ၂/၂: Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
         outputText.value = "အဆင့် ၂/၂: အပိုစာသား လုံးဝမပါသော သန့်ရှင်းသည့် Movie Recap အသံထွက် ဇာတ်ညွှန်းအဖြစ် အချောသပ် ရေးသားနေပါသည်...";
 
         const baseSecs = videoDurationSeconds || 60;
         const targetSecs = baseSecs + 30;
 
-        // Crystal Clear Master Burmese Prompt with Absolute Ban on Meta Headings & Checklists
         const systemPrompt = `
 You are an expert Burmese Movie Recap Narrator.
 Write an authentic, compelling Burmese Movie Recap voiceover script based on the video plot.
@@ -1080,22 +1053,102 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
     }
 
     // ==========================================
-    // TTS STUDIO LOGIC
+    // TTS STUDIO LOGIC (CRIKK VOICES INCLUDED)
     // ==========================================
     const PERSONAS = [
-      { id: "nay-toe", name: "နေတိုး", category: "boy", icon: "👦", badge: "လူငယ်အမျိုးသား", role: "တက်ကြွ လန်းဆန်းသော လူငယ်သံ (Movie Recap အကောင်းဆုံး)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
-      { id: "tha-zin", name: "သဇင်", category: "girl", icon: "👧", badge: "မိန်းကလေးငယ်", role: "သွက်လက် ချိုသာသော အပျိုမလေးသံ (TikTok / Shorts အထူးကောင်း)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။" },
-      { id: "tay-za", name: "တေဇ", category: "boy", icon: "🧑", badge: "လူငယ်အမျိုးသား", role: "သဘာဝကျပြီး ရှင်းလင်းပြတ်သားသော ဇာတ်ကြောင်းပြောဟန်", sample: "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
-      { id: "may-hnin", name: "မေနှင်း", category: "girl", icon: "🌸", badge: "မိန်းကလေးငယ်", role: "ကြည်လင် အေးချမ်းသော ကောင်မလေးသံ (ဝတ္ထုဖတ်/စာအုပ်)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။" },
-      { id: "u-han", name: "ဦးဟန်", category: "men", icon: "👨", badge: "လူကြီးအမျိုးသား", role: "တည်ကြည် ခန့်ညားသော လူကြီးသံ (သတင်း/အသိပညာပေး)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
-      { id: "u-kyi", name: "ဦးကြည်", category: "men", icon: "👴", badge: "အဖိုး/လူကြီးသံ", role: "အသံဩဇာပြည့်ဝပြီး လေးနက်သော အဖိုးကြီးသံ (သမိုင်း/ဒဏ္ဍာရီ)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးကြည် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
-      { id: "daw-yin", name: "ဒေါ်ရင်", category: "women", icon: "👩", badge: "အမျိုးသမီးကြီး", role: "နွေးထွေး ကြင်နာတတ်သော မိခင်သံ (တရားတော်/ဘဝအတွေ့အကြုံ)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်ရင် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
-      { id: "daw-soe", name: "ဒေါ်စိုး", category: "women", icon: "🧕", badge: "အမျိုးသမီးကြီး", role: "တည်ငြိမ် ရင့်ကျက်သော အိမ်ထောင်ရှင်အမျိုးသမီးသံ", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်စိုး ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
-      { id: "zaw-zaw", name: "ဇော်ဇော်", category: "boy", icon: "🧒", badge: "ဆယ်ကျော်သက်", role: "သွက်လက် ပေါ့ပါးသော လူငယ်စကားပြောဟန် (Vlog/ဟာသ)", sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဇော်ဇော် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။" },
-      { id: "nu-nu", name: "နုနု", category: "girl", icon: "🎀", badge: "ကလေးမလေးသံ", role: "နူးညံ့ ချစ်စဖွယ် ကလေးမလေးသံ (ညအိပ်ရာဝင် ပုံပြင်)", sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ နုနု ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်ရှင်။" }
+      {
+        id: "brian-multi",
+        name: "Brian Multilingual",
+        category: "multilingual",
+        icon: "🎙️",
+        badge: "Crikk အထူးသံ",
+        role: "ရင့်ကျက်ပြတ်သားသော နာမည်ကြီး Movie Recap အသံ (Brian)",
+        sample: "မင်္ဂလာပါ၊ ကျွန်တော် Brian ဖြစ်ပါတယ်။ Recap Go မှာ မြန်မာစကားပြော ပြန်လည်တင်ဆက်ပေးပါ့မယ်။"
+      },
+      {
+        id: "andrew-multi",
+        name: "Andrew Multilingual",
+        category: "multilingual",
+        icon: "🧑",
+        badge: "Crikk အထူးသံ",
+        role: "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန် (Andrew)",
+        sample: "မင်္ဂလာပါ၊ ကျွန်တော် Andrew ဖြစ်ပါတယ်။ ရုပ်ရှင်ဇာတ်လမ်းတွဲများကို နွေးထွေးစွာ ပြောပြပေးပါ့မယ်။"
+      },
+      {
+        id: "ava-multi",
+        name: "Ava Multilingual",
+        category: "multilingual",
+        icon: "👧",
+        badge: "Crikk အထူးသံ",
+        role: "ချိုသာကြည်လင် ခေတ်မီဆန်းသစ်သော အမျိုးသမီးသံ (Ava)",
+        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မက Ava ဖြစ်ပါတယ်။ သဘာဝကျပြီး နားထောင်လို့ကောင်းတဲ့ အသံနဲ့ ပြောပြပေးသွားမှာပါ။"
+      },
+      {
+        id: "florian-multi",
+        name: "Florian Multilingual",
+        category: "multilingual",
+        icon: "⚡",
+        badge: "Crikk အထူးသံ",
+        role: "စိတ်လှုပ်ရှားဖွယ် Action ဇာတ်လမ်းပြောဟန် (Florian)",
+        sample: "မင်္ဂလာပါ၊ ကျွန်တော် Florian ဖြစ်ပါတယ်။ အက်ရှင်ဇာတ်လမ်းများကို အားမာန်အပြည့်နဲ့ တင်ဆက်ပေးပါ့မယ်။"
+      },
+      {
+        id: "seraphina-multi",
+        name: "Seraphina Multilingual",
+        category: "multilingual",
+        icon: "🌸",
+        badge: "Crikk အထူးသံ",
+        role: "ညင်သာအေးချမ်းသော စာပေ/ပုံပြင်ဖတ်ကြားသံ (Seraphina)",
+        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မက Seraphina ပါ။ ညင်သာအေးချမ်းတဲ့ အသံလေးနဲ့ ပြောပြပေးသွားပါ့မယ်ရှင်။"
+      },
+      {
+        id: "nay-toe",
+        name: "နေတိုး",
+        category: "men",
+        icon: "👦",
+        badge: "လူငယ်အမျိုးသား",
+        role: "တက်ကြွ လန်းဆန်းသော လူငယ်သံ (Movie Recap အကောင်းဆုံး)",
+        sample: "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "tha-zin",
+        name: "သဇင် (Nilar Base)",
+        category: "women",
+        icon: "👧",
+        badge: "မိန်းကလေးငယ်",
+        role: "သွက်လက် ချိုသာသော အပျိုမလေးသံ (TikTok / Shorts)",
+        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"
+      },
+      {
+        id: "tay-za",
+        name: "တေဇ (Thiha Base)",
+        category: "men",
+        icon: "🧑",
+        badge: "လူငယ်အမျိုးသား",
+        role: "သဘာဝကျပြီး ရှင်းလင်းပြတ်သားသော ဇာတ်ကြောင်းပြောဟန်",
+        sample: "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"
+      },
+      {
+        id: "may-hnin",
+        name: "မေနှင်း (Nilar)",
+        category: "women",
+        icon: "🌸",
+        badge: "မိန်းကလေးငယ်",
+        role: "ကြည်လင် အေးချမ်းသော ကောင်မလေးသံ (ဝတ္ထုဖတ်/စာအုပ်)",
+        sample: "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"
+      },
+      {
+        id: "u-han",
+        name: "ဦးဟန် (Thiha)",
+        category: "men",
+        icon: "👨",
+        badge: "လူကြီးအမျိုးသား",
+        role: "တည်ကြည် ခန့်ညားသော လူကြီးသံ (သတင်း/အသိပညာပေး)",
+        sample: "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"
+      }
     ];
 
-    let selectedId = "nay-toe";
+    let selectedId = "brian-multi";
     let playingPreviewId = null;
     let generatedBlob = null;
 
@@ -1129,9 +1182,8 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
               <div class="flex items-center gap-1.5">
                 <span class="font-bold text-xs sm:text-sm text-slate-100">${p.name}</span>
                 <span class="text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                  p.category === 'multilingual' ? 'bg-amber-950 text-amber-300 border border-amber-800/80' :
                   p.category === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800/80' :
-                  p.category === 'boy' ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/80' :
-                  p.category === 'women' ? 'bg-purple-950 text-purple-300 border border-purple-800/80' :
                   'bg-pink-950 text-pink-300 border border-pink-800/80'
                 }">
                   ${p.badge}
@@ -1308,23 +1360,24 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
 </html>
 """
 
+# Microsoft Official Neural Voices (Including Crikk's Multilingual Voices for Burmese Cross-Lingual Speech)
 PERSONA_VOICES = [
+    {"id": "brian-multi", "base_voice": "en-US-BrianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် Brian ဖြစ်ပါတယ်။ Recap Go မှာ မြန်မာစကားပြော ပြန်လည်တင်ဆက်ပေးပါ့မယ်။"},
+    {"id": "andrew-multi", "base_voice": "en-US-AndrewMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် Andrew ဖြစ်ပါတယ်။ ရုပ်ရှင်ဇာတ်လမ်းတွဲများကို နွေးထွေးစွာ ပြောပြပေးပါ့မယ်။"},
+    {"id": "ava-multi", "base_voice": "en-US-AvaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မက Ava ဖြစ်ပါတယ်။ သဘာဝကျပြီး နားထောင်လို့ကောင်းတဲ့ အသံနဲ့ ပြောပြပေးသွားမှာပါ။"},
+    {"id": "florian-multi", "base_voice": "de-DE-FlorianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် Florian ဖြစ်ပါတယ်။ အက်ရှင်ဇာတ်လမ်းများကို အားမာန်အပြည့်နဲ့ တင်ဆက်ပေးပါ့မယ်။"},
+    {"id": "seraphina-multi", "base_voice": "de-DE-SeraphinaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မက Seraphina ပါ။ ညင်သာအေးချမ်းတဲ့ အသံလေးနဲ့ ပြောပြပေးသွားပါ့မယ်ရှင်။"},
     {"id": "nay-toe", "base_voice": "my-MM-ThihaNeural", "base_rate": "+4%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် နေတိုး ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
     {"id": "tha-zin", "base_voice": "my-MM-NilarNeural", "base_rate": "+3%", "base_pitch": "+6Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ သဇင် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"},
     {"id": "tay-za", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် တေဇ ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
     {"id": "may-hnin", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ မေနှင်း ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်နော်။"},
-    {"id": "u-han", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "u-kyi", "base_voice": "my-MM-ThihaNeural", "base_rate": "-6%", "base_pitch": "-18Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးကြည် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "daw-yin", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-8Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်ရင် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "daw-soe", "base_voice": "my-MM-NilarNeural", "base_rate": "-6%", "base_pitch": "-14Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ ဒေါ်စိုး ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "zaw-zaw", "base_voice": "my-MM-ThihaNeural", "base_rate": "+7%", "base_pitch": "+12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဇော်ဇော် ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်။"},
-    {"id": "nu-nu", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+12Hz", "sample_text": "မင်္ဂလာပါရှင်၊ ကျွန်မ နုနု ပါ။ Recap Go မှာ ကြိုဆိုပါတယ်ရှင်။"}
+    {"id": "u-han", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-12Hz", "sample_text": "မင်္ဂလာပါ၊ ကျွန်တော် ဦးဟန် ဖြစ်ပါတယ်။ Recap Go မှာ ကြိုဆိုပါတယ်။"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
 class GenerateTTSRequest(BaseModel):
     text: str
-    persona_id: str = "nay-toe"
+    persona_id: str = "brian-multi"
     user_rate_offset: int = 0
     user_pitch_offset: int = 0
 
