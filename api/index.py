@@ -102,7 +102,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </span>
             </div>
 
-            <!-- Upload Dropzone Label Container (Native Label click triggers file picker on ALL mobile devices) -->
+            <!-- Upload Dropzone Label Container -->
             <label
               id="uploadDropzoneLabel"
               for="videoFileInput"
@@ -122,7 +122,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </label>
 
-            <!-- Video Preview Card (Renders IMMEDIATELY on file selection) -->
+            <!-- Video Preview Card -->
             <div id="videoPreviewBox" class="hidden space-y-3 bg-[#050914] border-2 border-blue-500 rounded-2xl p-3.5 shadow-2xl transition-all">
               <div class="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div class="flex items-center gap-2">
@@ -135,7 +135,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 </label>
               </div>
 
-              <!-- Native Video Player (Playsinline + muted for mobile rendering) -->
+              <!-- Native Video Player -->
               <video
                 id="previewVideoEl"
                 controls
@@ -146,7 +146,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 class="w-full rounded-xl max-h-52 bg-black border border-slate-800 shadow-inner"
               ></video>
 
-              <!-- Audio Player (In case audio format like mp3/m4a was chosen) -->
+              <!-- Audio Player -->
               <div id="audioPreviewContainer" class="hidden space-y-2 p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div class="flex items-center gap-2 text-xs text-amber-300 font-bold">
                   <span>🎵</span>
@@ -425,7 +425,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         type === 'success' ? 'bg-emerald-950 border-emerald-800 text-emerald-200' :
         'bg-slate-900 border-slate-700 text-slate-200'
       }`;
-      toast.innerHTML = `<span>${type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ️️'}</span><span>${msg}</span>`;
+      toast.innerHTML = `<span>${type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ'}</span><span>${msg}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 20);
       setTimeout(() => {
@@ -511,7 +511,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         };
       }
 
-      // Fallback timer if metadata takes longer
       setTimeout(() => {
         if (!videoDurationSeconds) {
           videoDurationSeconds = 60;
@@ -599,6 +598,54 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
+    // Call Groq Chat Completions with automatic model fallbacks for Free Tier accounts
+    async function callGroqTranslation(apiKey, systemPrompt, userContent) {
+      // Primary model: llama-3.1-8b-instant (Fastest & 100% Free for all Groq keys)
+      // Fallback models: llama-3.3-70b-versatile, llama3-70b-8192, llama3-8b-8192
+      const candidateModels = [
+        "llama-3.1-8b-instant",
+        "llama-3.3-70b-versatile",
+        "llama3-70b-8192",
+        "llama3-8b-8192"
+      ];
+
+      let lastError = null;
+
+      for (const modelName of candidateModels) {
+        try {
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userContent }
+              ],
+              temperature: 0.5
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const content = data.choices?.[0]?.message?.content || "";
+            if (content) return content;
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            lastError = errJson.error?.message || `Model ${modelName} returned status ${res.status}`;
+            console.warn(`Groq model ${modelName} failed, trying fallback:`, lastError);
+          }
+        } catch (e) {
+          lastError = e.message;
+        }
+      }
+
+      throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
+    }
+
     async function handleTranscribeProcess() {
       if (!currentUploadedFile) {
         showToast("ကျေးဇူးပြု၍ Video / Audio ဖိုင် အရင်ရွေးချယ်ပေးပါ", "error");
@@ -631,7 +678,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           });
         }
 
-        outputText.value = "Groq Whisper Large-V3 စနစ်ဖြင့် Video ထဲမှ စကားပြောသံများကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
+        outputText.value = "Groq Whisper စနစ်ဖြင့် Video ထဲမှ စကားပြောသံများကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
         btnText.innerText = "Groq Whisper ဖြင့် ဖတ်နေပါသည်...";
 
         const formData = new FormData();
@@ -661,8 +708,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           }).join("\n");
         }
 
-        btnText.innerText = "Groq LLaMA ဖြင့် မြန်မာပြန်နေပါသည် (+30s)...";
-        outputText.value = "Groq LLaMA 3.3 70B AI ဖြင့် မူရင်းဗီဒီယိုထက် စက္ကန့် ၃၀ ပိုရှည်အောင် မြန်မာဘာသာပြန် ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
+        btnText.innerText = "Groq AI ဖြင့် မြန်မာပြန်နေပါသည် (+30s)...";
+        outputText.value = "Groq AI ဖြင့် မူရင်းဗီဒီယိုထက် စက္ကန့် ၃၀ ပိုရှည်အောင် မြန်မာဘာသာပြန် ဇာတ်ညွှန်း ရေးသားနေပါသည်...";
 
         const baseSecs = videoDurationSeconds || 60;
         const targetSecs = baseSecs + 30;
@@ -680,29 +727,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 အထက်ပါ စည်းမျဉ်းအတိုင်း မြန်မာစာသား စစ်စစ်ကိုသာ တိုက်ရိုက် ထုတ်ပေးပါ:
         `.trim();
 
-        const llmRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: `မူရင်း ဗီဒီယို စာသားများ:\n${originalText}` }
-            ],
-            temperature: 0.6
-          })
-        });
-
-        if (!llmRes.ok) {
-          const errData = await llmRes.json().catch(() => ({}));
-          throw new Error(errData.error?.message || "Groq Translation မအောင်မြင်ပါ");
-        }
-
-        const llmData = await llmRes.json();
-        const finalScript = llmData.choices?.[0]?.message?.content || "";
+        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `မူရင်း ဗီဒီယို စာသားများ:\n${originalText}`);
 
         if (finalScript) {
           outputText.value = finalScript.trim();
