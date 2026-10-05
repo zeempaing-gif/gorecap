@@ -848,4 +848,3 @@ async def generate_speech(req: GenerateTTSRequest):
         return Response(content=audio_data, media_type="audio/mpeg")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-```eof
