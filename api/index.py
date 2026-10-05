@@ -189,7 +189,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </label>
               <div class="p-2.5 rounded-xl bg-[#070b14] border border-slate-800 text-xs text-slate-200 flex items-center justify-between">
                 <span class="font-bold text-blue-400">သဘာဝကျ Movie Recap စကားပြောဟန်</span>
-                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">စကားထပ်ခြင်း ကာကွယ်ထားပြီး</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">လူတိုင်းနားလည်လွယ်သော မြန်မာစကား</span>
               </div>
             </div>
 
@@ -242,7 +242,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-slate-200">Movie Recap Script</span>
-                <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">သဘာဝဇာတ်ကြောင်းပြောဟန်</span>
+                <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">သဘာဝစကားပြောအစစ်</span>
               </div>
               <div class="flex items-center gap-2">
                 <span id="scriptWordCount" class="text-[11px] text-slate-400 font-mono">၀ စကားလုံး</span>
@@ -253,7 +253,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="relative flex-1">
               <textarea
                 id="transcriptOutputText"
-                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် စာအုပ်ဖတ်သလို မဟုတ်ဘဲ ဗီဒီယိုကို ကိုယ်တိုင်ကြည့်ပြီး ပြန်ပြောပြနေသလို သဘာဝကျကျ အပိုစာသားနှင့် English လုံးဝမပါသော Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
+                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် စာအုပ်ဖတ်သလို မဟုတ်ဘဲ ဗီဒီယိုကို ကိုယ်တိုင်ကြည့်ပြီး ပြန်ပြောပြနေသလို သဘာဝကျကျ လူတိုင်းနားလည်လွယ်သော Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
                 class="w-full h-full min-h-[360px] bg-[#070b14] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll font-sans"
               ></textarea>
             </div>
@@ -441,7 +441,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let currentUploadedFile = null;
     let videoDurationSeconds = 0;
 
-    // Load saved Groq Key from local storage
     const savedGroqKey = localStorage.getItem("groq_api_key") || "";
     if (savedGroqKey) {
       document.getElementById("groqApiKeyInput").value = savedGroqKey;
@@ -589,29 +588,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // Client-side text cleanup to completely eradicate duplicate repeated phrases
-    function removeRepetitiveLoops(rawText) {
-      if (!rawText) return "";
-      let cleaned = rawText.trim();
-      
-      // Remove repeating consecutive chunks of 8 to 80 characters
-      cleaned = cleaned.replace(/(.{8,80}?)\1{2,}/gu, '$1');
-      
-      // Remove identical repeating sentences
-      const sentences = cleaned.split(/(?<=[။!?\n])/);
-      const filtered = [];
-      for (let i = 0; i < sentences.length; i++) {
-        const current = sentences[i].trim();
-        const prev = filtered.length > 0 ? filtered[filtered.length - 1].trim() : "";
-        if (current.length > 5 && current === prev) {
-          continue; // skip duplicate sentence
-        }
-        filtered.push(sentences[i]);
-      }
-      return filtered.join("").trim();
-    }
-
-    // Dynamic Groq Translation with Live Active Model Discovery & Anti-Repetition Penalties
+    // Dynamic Groq Translation with Live Active Model Discovery & Anti-Repetition
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
       let liveModels = [];
       try {
@@ -629,11 +606,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                      !l.includes("safeguard") && !l.includes("compound");
             });
         }
-      } catch (err) {
-        console.warn("Could not fetch live models from Groq:", err);
-      }
+      } catch (err) {}
 
-      // Priority list of models with high-grade reasoning
       const priority = [
         "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
@@ -672,21 +646,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userContent }
               ],
-              temperature: 0.5,
-              presence_penalty: 0.65, // Stops phrase repetitions completely
-              frequency_penalty: 0.65, // Discourages repeated vocabulary loops
-              top_p: 0.9
+              temperature: 0.3,
+              presence_penalty: 0.5,
+              frequency_penalty: 0.5
             })
           });
 
           if (res.ok) {
             const data = await res.json();
             const content = data.choices?.[0]?.message?.content || "";
-            if (content) return removeRepetitiveLoops(content);
+            if (content) return content.trim();
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastError = errJson.error?.message || `Model ${modelName} returned status ${res.status}`;
-            console.warn(`Model ${modelName} error:`, lastError);
           }
         } catch (e) {
           lastError = e.message;
@@ -728,19 +700,29 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           });
         }
 
-        outputText.value = "Groq Whisper Large-V3 စနစ်ဖြင့် Video ထဲမှ စကားပြောသံများကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
-        btnText.innerText = "Groq Whisper ဖြင့် ဖတ်နေပါသည်...";
+        outputText.value = "Whisper AI ဖြင့် မည်သည့်ဘာသာစကားဖြင့် ပြောထားသည်ကို စိစစ်ပြီး အဓိပ္ပာယ်အပြည့်အစုံကို ဖတ်ယူနေပါသည်...";
+        btnText.innerText = "Whisper AI ဖြင့် အဓိပ္ပာယ်ဖတ်နေပါသည်...";
 
         const formData = new FormData();
         formData.append("file", audioToSend);
         formData.append("model", "whisper-large-v3");
-        formData.append("response_format", includeTimestamps ? "verbose_json" : "json");
+        formData.append("response_format", "verbose_json");
 
-        const whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        // Try Whisper Translation endpoint first (translates ANY language like Chinese, Spanish, etc. into crystal-clear English)
+        let whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
           method: "POST",
           headers: { "Authorization": `Bearer ${apiKey}` },
           body: formData
         });
+
+        // Fallback to transcriptions if translations not supported or fails
+        if (!whisperRes.ok) {
+          whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${apiKey}` },
+            body: formData
+          });
+        }
 
         if (!whisperRes.ok) {
           const errData = await whisperRes.json().catch(() => ({}));
@@ -748,60 +730,63 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         }
 
         const whisperData = await whisperRes.json();
-        let originalText = whisperData.text || "";
+        let understoodText = whisperData.text || "";
 
         if (includeTimestamps && whisperData.segments) {
-          originalText = whisperData.segments.map(s => {
+          understoodText = whisperData.segments.map(s => {
             const startM = Math.floor(s.start / 60).toString().padStart(2, '0');
             const startS = Math.floor(s.start % 60).toString().padStart(2, '0');
             return `[${startM}:${startS}] ${s.text}`;
           }).join("\n");
         }
 
-        btnText.innerText = "Movie Recap စကားပြောဟန်ဖြင့် ရေးသားနေပါသည် (+30s)...";
-        outputText.value = "သဘာဝကျကျ လူငယ်ဆန်ဆန် စကားပြောဟန်ဖြင့် Movie Recap ဇာတ်ညွှန်းကို ဖန်တီးနေပါသည်...";
+        btnText.innerText = "မြန်မာ Movie Recap ဇာတ်ညွှန်း ရေးသားနေပါသည် (+30s)...";
+        outputText.value = "ဗီဒီယိုပါ ဇာတ်လမ်းကို နားလည်ပြီး လူတိုင်းနားလည်လွယ်သည့် သဘာဝကျသော မြန်မာ Movie Recap ဇာတ်ကြောင်းပြန်အဖြစ် ရေးဖွဲ့နေပါသည်...";
 
         const baseSecs = videoDurationSeconds || 60;
         const targetSecs = baseSecs + 30;
-        const targetWords = Math.max(120, Math.round(targetSecs * 2.8));
 
-        // High-precision prompt engineered in English to enforce zero loop, natural conversational Burmese
+        // Natural, Fluent Spoken Burmese Storytelling Prompt
         const systemPrompt = `
-You are a master Burmese Movie Recap content creator (like top YouTube / Facebook Movie Recap narrators).
-Your task is to take the transcribed video content and rewrite it into an engaging, natural, lively Burmese Movie Recap voiceover script.
+You are a professional Burmese Movie Recap Storyteller (ရုပ်ရှင်ဇာတ်ကြောင်းပြန် ကျွမ်းကျင်သူ).
+Your job is to read the story from the video and rewrite it into an engaging, thrilling, natural Burmese Movie Recap voiceover script.
 
-CRITICAL STORYTELLING RULES:
-1. DO NOT READ LIKE A BOOK (သဘာဝစကားပြောဟန် စစ်စစ်ဖြစ်ရမည်):
-   - Never use rigid formal written Burmese like "ထိုသူသည် သွားလေ၏", "ဖြစ်ပျက်ခဲ့ပါသည်", "ပြုလုပ်ခဲ့သည်", "ဟု ဆိုပါသည်".
-   - Use lively natural spoken recap connectors like: "ဒီလိုနဲ့ သူတို့တွေ...", "အဲဒီအချိန်မှာပဲ...", "တကယ်တော့ သူက...", "မထင်မှတ်ဘဲနဲ့...", "ဒါပေမဲ့ အခြေအနေတွေက...", "ဘာတွေဆက်ဖြစ်မလဲဆိုရင်...".
-   - Make it sound like an excited friend recounting a gripping movie scene to another friend.
+CRITICAL VOICE & LANGUAGE RULES:
+1. PURE NATURAL BURMESE STORYTELLING (လူတိုင်းနားလည်လွယ်သော သဘာဝစကားပြောဟန်):
+   - DO NOT translate word-by-word literally. DO NOT output awkward translation gibberish like "တစ်ကောင်ကောင်မလေး", "တက်သွားတယ်", "အလွတ်တစ်ကောင်", "အိမ်ထောင်စု အုပ်ထိန်းသူ".
+   - Instead, use real, everyday Burmese conversational storytelling words that real people use:
+     * ဇာတ်လမ်းစစချင်းမှာတော့... / ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...
+     * ကောင်မလေးက... / ကောင်လေးက... / ဒီလူက...
+     * အိမ်ထဲကို ရောက်လာတဲ့အချိန်မှာပဲ...
+     * မထင်မှတ်ဘဲနဲ့ ဘာဖြစ်သွားလဲဆိုရင်...
+     * တကယ်တော့ သူတို့တွေက...
+     * အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...
+     * နောက်ဆုံးမှာတော့...
 
-2. GENDER-NEUTRAL NARRATOR VOICE (ကျား/မ မရွေး ဖတ်နိုင်ရမည်):
-   - Never use "ကျွန်တော်", "ကျွန်မ", "ခင်ဗျာ", "ရှင်".
-   - Both male and female voiceover artists must be able to read this script naturally. Refer to characters by their names or "သူ", "သူတို့", "ဒီလူက".
+2. GENDER-NEUTRAL NARRATOR VOICE:
+   - Do NOT use "ကျွန်တော်" (male) or "ကျွန်မ" (female). Do NOT use "ခင်ဗျာ" or "ရှင်".
+   - The script must be completely neutral so ANY narrator (male or female) can read it aloud smoothly.
 
-3. ABSOLUTE BAN ON REPETITION AND LOOPS (စာလုံးထပ်ခြင်း လုံးဝမဖြစ်စေရ):
-   - Never repeat the same phrase, sentence, or fragment over and over.
-   - The narrative must progress smoothly and linearly from beginning to middle to climax without looping back.
+3. +30 SECONDS EXTENDED DURATION:
+   - Make the storytelling vivid and engaging, describing the scene's tension, atmosphere, and characters' actions so the narration comfortably plays about 30 seconds longer than the original clip (${targetSecs} seconds total pace).
 
-4. EXTEND DURATION BY ~30 SECONDS (အသေးစိတ် ချဲ့ထွင်ရေးသားရန်):
-   - Expand on the characters' emotions, the tension in the scene, and cinematic atmosphere to make the script approximately ${targetWords} Burmese words long (lasting ~30 seconds longer than the original clip).
+4. CLEAN SCRIPT ONLY (ZERO ENGLISH & ZERO INTRO):
+   - No English words.
+   - No intro or titles like "Here is the recap" or "Title:".
+   - Start immediately with the first Burmese spoken storytelling sentence.
+5. TIMESTAMPS:
+   - ${includeTimestamps ? "Keep timestamps like [00:00], [00:30] at the start of scenes." : "Do NOT include any timestamps. Write in clean, coherent paragraphs."}
 
-5. ZERO ENGLISH & ZERO META TEXT (မြန်မာဇာတ်ညွှန်း သီးသန့်):
-   - No English words, no intros ("Here is...", "Recap:"), no titles. Output ONLY the pure Burmese spoken voiceover script.
-6. TIMESTAMPS:
-   - ${includeTimestamps ? "Include timestamps like [00:00], [00:30] at natural narrative segment beginnings." : "Do NOT include any timestamps. Format in clean, readable conversational paragraphs."}
-
-Write the full, non-repeating natural Burmese Movie Recap script now:
+Write the natural, thrilling Burmese Movie Recap script now:
         `.trim();
 
-        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `Original Video Transcript Content:\n${originalText}`);
+        const finalScript = await callGroqTranslation(apiKey, systemPrompt, `Video Plot & Story Information:\n${understoodText}`);
 
         if (finalScript) {
           outputText.value = finalScript.trim();
           const words = finalScript.trim().split(/\s+/).length;
           document.getElementById("scriptWordCount").innerText = `${words} စကားလုံး`;
-          showToast("Movie Recap စတိုင်လ် မြန်မာဇာတ်ညွှန်း ထွက်ရှိပါပြီ", "success");
+          showToast("Movie Recap စတိုင်လ် မြန်မာဇာတ်ညွှန်း အောင်မြင်စွာ ထွက်ရှိပါပြီ", "success");
         } else {
           throw new Error("စာသား ရယူ၍ မရပါ");
         }
