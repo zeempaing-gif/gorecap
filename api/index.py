@@ -129,7 +129,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span class="text-xs font-bold text-emerald-300">တင်ထားသော ဗီဒီယို (Preview)</span>
                 </div>
-                <!-- Re-select button -->
                 <label for="videoFileInput" class="text-[11px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer">
                   🔄 အသစ်လဲမည်
                 </label>
@@ -181,51 +180,33 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- AI Engine Selector (Groq vs Gemini) -->
+            <!-- AI Engine Selector (Groq vs Gemini 3.8 Flash) -->
             <div class="space-y-1.5 pt-1">
               <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
                 <span class="flex items-center gap-1.5">
                   <span>🤖</span>
                   <span>အသုံးပြုမည့် AI စနစ် ရွေးချယ်ပါ</span>
                 </span>
-                <span class="text-[10px] text-blue-400 font-semibold" id="activeEngineText">Active: Groq Engine</span>
+                <span class="text-[10px] text-amber-400 font-semibold" id="activeEngineText">Active: ✨ Gemini 3.8 Flash</span>
               </label>
               <div class="grid grid-cols-2 gap-2 bg-[#070b14] p-1 rounded-xl border border-slate-800">
                 <button
                   type="button"
-                  id="engineGroqBtn"
-                  onclick="selectAiEngine('groq')"
-                  class="py-2 px-3 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white flex items-center justify-center gap-1.5 shadow-md"
+                  id="engineGeminiBtn"
+                  onclick="selectAiEngine('gemini')"
+                  class="py-2 px-3 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950 flex items-center justify-center gap-1.5 shadow-md"
                 >
-                  <span>⚡ Groq Engine</span>
+                  <span>✨ Gemini 3.8 Flash</span>
                 </button>
                 <button
                   type="button"
-                  id="engineGeminiBtn"
-                  onclick="selectAiEngine('gemini')"
+                  id="engineGroqBtn"
+                  onclick="selectAiEngine('groq')"
                   class="py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5"
                 >
-                  <span>✨ Gemini Engine</span>
+                  <span>⚡ Groq Engine</span>
                 </button>
               </div>
-            </div>
-
-            <!-- Groq API Key Input Field -->
-            <div id="groqKeyBox" class="pt-2 border-t border-slate-800/80 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="text-[11px] font-bold text-blue-400 flex items-center gap-1">
-                  <span>⚡</span>
-                  <span>Groq API Key</span>
-                </label>
-                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-blue-400 hover:underline">Key ရယူရန် (Free) ↗</a>
-              </div>
-              <input
-                type="password"
-                id="groqApiKeyInput"
-                placeholder="Groq Key ထည့်ပါ (gsk_...)"
-                class="w-full bg-[#070b14] border border-blue-500/40 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
-              />
-              <p class="text-[10px] text-slate-500">Groq Console (console.groq.com/keys) မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
             </div>
 
             <!-- Gemini API Key Input Field -->
@@ -233,17 +214,35 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <div class="flex items-center justify-between">
                 <label class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
                   <span>✨</span>
-                  <span>Gemini API Key</span>
+                  <span>Gemini API Key (Google AI Studio)</span>
                 </label>
                 <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-amber-400 hover:underline">Key ရယူရန် (Free) ↗</a>
               </div>
               <input
                 type="password"
                 id="geminiApiKeyInput"
-                placeholder="Gemini Key ထည့်ပါ (AIza...)"
-                class="w-full bg-[#070b14] border border-amber-500/40 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
+                placeholder="AIzaSy... (Gemini Key ထည့်ပါ)"
+                class="w-full bg-[#070b14] border border-amber-500/70 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
               />
               <p class="text-[10px] text-slate-500">Google AI Studio (aistudio.google.com) မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
+            </div>
+
+            <!-- Groq API Key Input Field -->
+            <div id="groqKeyBox" class="pt-2 border-t border-slate-800/80 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-bold text-blue-400 flex items-center gap-1">
+                  <span>⚡</span>
+                  <span>Groq API Key (console.groq.com)</span>
+                </label>
+                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-blue-400 hover:underline">Key ရယူရန် (Free) ↗</a>
+              </div>
+              <input
+                type="password"
+                id="groqApiKeyInput"
+                placeholder="gsk_... (Groq Key ထည့်ပါ)"
+                class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
+              />
+              <p class="text-[10px] text-slate-500">Groq Console မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
             </div>
 
             <!-- Add Timestamp Toggle Switch -->
@@ -290,7 +289,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="relative flex-1">
               <textarea
                 id="transcriptOutputText"
-                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် English လုံးဝမပါဘဲ Narrator တိုက်ရိုက်ဖတ်နိုင်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်း ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
+                placeholder="ဗီဒီယို တင်ပြီးခလုတ်နှိပ်လိုက်ပါက ဤနေရာတွင် အပိုစာသားနှင့် English လုံးဝမပါဘဲ Narrator တိုက်ရိုက်ဖတ်နိုင်သော သဘာဝကျသည့် Movie Recap ဇာတ်ညွှန်း အလွန်လျင်မြန်စွာ ထွက်ပေါ်လာမည် ဖြစ်ပါသည်..."
                 class="w-full h-full min-h-[360px] bg-[#070b14] border border-slate-800/80 rounded-xl p-4 text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll font-sans"
               ></textarea>
             </div>
@@ -470,7 +469,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     // ==========================================
     // AI ENGINE SELECTION & DUAL API KEYS
     // ==========================================
-    let currentEngine = localStorage.getItem("active_ai_engine") || "groq";
+    let currentEngine = localStorage.getItem("active_ai_engine") || "gemini";
 
     function selectAiEngine(engine) {
       currentEngine = engine;
@@ -479,17 +478,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const groqBtn = document.getElementById("engineGroqBtn");
       const geminiBtn = document.getElementById("engineGeminiBtn");
       const text = document.getElementById("activeEngineText");
+      const groqInput = document.getElementById("groqApiKeyInput");
+      const geminiInput = document.getElementById("geminiApiKeyInput");
 
       if (engine === "groq") {
         groqBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white flex items-center justify-center gap-1.5 shadow-md";
         geminiBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
         text.innerText = "Active: ⚡ Groq Engine";
         text.className = "text-[10px] text-blue-400 font-semibold";
+        groqInput.classList.add("border-blue-500/70", "ring-1", "ring-blue-500/40");
+        geminiInput.classList.remove("border-amber-500/70", "ring-1", "ring-amber-500/40");
       } else {
         geminiBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950 flex items-center justify-center gap-1.5 shadow-md";
         groqBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
-        text.innerText = "Active: ✨ Gemini Engine";
+        text.innerText = "Active: ✨ Gemini 3.8 Flash";
         text.className = "text-[10px] text-amber-400 font-semibold";
+        geminiInput.classList.add("border-amber-500/70", "ring-1", "ring-amber-500/40");
+        groqInput.classList.remove("border-blue-500/70", "ring-1", "ring-blue-500/40");
       }
     }
 
@@ -604,7 +609,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       
-      statusCallback("အဆင့် ၂/၃: Whisper စနစ်အတွက် အသံအရွယ်အစားကို ချုံ့ပေးနေပါသည်...");
+      statusCallback("အဆင့် ၂/၃: Speech AI အတွက် အသံအရွယ်အစားကို ချုံ့ပေးနေပါသည်...");
       
       const targetRate = 16000;
       const offlineCtx = new OfflineAudioContext(1, Math.ceil(audioBuffer.duration * targetRate), targetRate);
@@ -633,7 +638,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       setUint32(36 + length);
       setUint32(0x45564157);
       setUint32(0x20746d66);
-      setUint32(16);
+      setUint16(16);
       setUint16(1);
       setUint16(numOfChan);
       setUint32(buffer.sampleRate);
@@ -653,9 +658,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // ==========================================
-    // RIGOROUS SCRIPT SANITIZER (NO ENGLISH, NO HEADERS, NO CHECKLISTS)
-    // ==========================================
+    // Clean post-processing filter for Burmese characters
     function sanitizeMovieRecapScript(raw) {
       if (!raw) return "";
 
@@ -775,37 +778,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
     }
 
-    // Dynamic Google Gemini Caller
-    async function getAvailableGeminiModels(apiKey) {
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        if (res.ok) {
-          const data = await res.json();
-          const list = (data.models || [])
-            .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
-            .map(m => m.name.replace("models/", ""))
-            .filter(name => !name.includes("2.5") && !name.includes("embedding") && !name.includes("imagen") && !name.includes("veo"));
-          
-          if (list.length > 0) return list;
-        }
-      } catch (e) {}
-
-      return [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-2.0-flash-lite",
+    // Gemini 3.8 Flash Direct Pipeline (Ultra Fast & Accurate)
+    async function callGemini38Flash(apiKey, systemPrompt, userContent) {
+      // Prioritize gemini-3.8-flash, with instant fallbacks to 3.5 and 2.5
+      const candidateModels = [
         "gemini-3.8-flash",
         "gemini-3.5-flash",
-        "gemini-3.1-flash-lite",
-        "gemini-1.5-pro"
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash"
       ];
-    }
-
-    async function callGeminiDirect(apiKey, systemPrompt, userContent) {
-      const activeModels = await getAvailableGeminiModels(apiKey);
       let lastErr = null;
 
-      for (const m of activeModels) {
+      for (const m of candidateModels) {
         try {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
           const res = await fetch(url, {
@@ -814,7 +799,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             body: JSON.stringify({
               system_instruction: { parts: [{ text: systemPrompt }] },
               contents: [{ parts: [{ text: userContent }] }],
-              generationConfig: { temperature: 0.25 }
+              generationConfig: { 
+                temperature: 0.25,
+                maxOutputTokens: 2500
+              }
             })
           });
 
@@ -825,13 +813,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           } else {
             const errJson = await res.json().catch(() => ({}));
             lastErr = errJson.error?.message || `Model ${m} status ${res.status}`;
+            console.warn(`Gemini model ${m} failed:`, lastErr);
           }
         } catch (e) {
           lastErr = e.message;
         }
       }
 
-      throw new Error(lastErr || "Gemini ချိတ်ဆက်မှု မအောင်မြင်ပါ");
+      throw new Error(lastErr || "Gemini 3.8 Flash ချိတ်ဆက်မှု မအောင်မြင်ပါ");
     }
 
     async function handleTranscribeProcess() {
@@ -880,8 +869,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         let understoodText = "";
 
         if (currentEngine === "gemini") {
-          outputText.value = "Gemini Flash AI ဖြင့် စကားပြောသံနှင့် ဇာတ်လမ်းအဓိပ္ပာယ်ကို တိုက်ရိုက် ဖတ်ရှုနေပါသည်...";
-          btnText.innerText = "Gemini ဖြင့် ဖတ်နေပါသည်...";
+          outputText.value = "Gemini 3.8 Flash AI ဖြင့် စကားပြောသံနှင့် ဇာတ်လမ်းကို အလွန်လျင်မြန်စွာ ဖတ်ရှုနေပါသည်...";
+          btnText.innerText = "Gemini 3.8 Flash ဖြင့် ဖတ်နေပါသည်...";
 
           const reader = new FileReader();
           const base64Audio = await new Promise((resolve) => {
@@ -889,10 +878,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             reader.readAsDataURL(audioToSend);
           });
 
-          const activeModels = await getAvailableGeminiModels(geminiKey);
+          const geminiModels = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash"];
           let lastErr = null;
 
-          for (const m of activeModels) {
+          for (const m of geminiModels) {
             try {
               const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {
                 method: "POST",
@@ -900,7 +889,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 body: JSON.stringify({
                   contents: [{
                     parts: [
-                      { text: "Listen carefully to this audio track. Transcribe all speech, dialogue, events, and plot actions happening in this clip in detail from start to end." },
+                      { text: "Accurately transcribe all speech, dialog, character actions, and story events from this audio track in full detail from beginning to end." },
                       { inline_data: { mime_type: "audio/wav", data: base64Audio } }
                     ]
                   }]
@@ -921,7 +910,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           }
 
           if (!understoodText) {
-            throw new Error(lastErr || "Gemini Audio ဖတ်ရှုမှု မအောင်မြင်ပါ");
+            throw new Error(lastErr || "Gemini 3.8 Flash Audio ဖတ်ရှုမှု မအောင်မြင်ပါ");
           }
 
         } else {
@@ -1011,7 +1000,7 @@ OUTPUT ONLY THE CLEAN BURMESE NARRATION SCRIPT NOW:
         let finalScript = "";
 
         if (currentEngine === "gemini") {
-          finalScript = await callGeminiDirect(geminiKey, systemPrompt, `Video Plot Story Information:\n${understoodText}`);
+          finalScript = await callGemini38Flash(geminiKey, systemPrompt, `Video Plot Story Information:\n${understoodText}`);
         } else {
           finalScript = await callGroqTranslation(groqKey, systemPrompt, `Video Plot Story Information:\n${understoodText}`);
         }
