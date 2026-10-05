@@ -181,16 +181,69 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- Language & Tone Indicator -->
+            <!-- AI Engine Selector (Groq vs Gemini) -->
             <div class="space-y-1.5 pt-1">
-              <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <span>🎬</span>
-                <span>ဇာတ်ကြောင်းပြန် စတိုင်လ် (Style)</span>
+              <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <span>🤖</span>
+                  <span>အသုံးပြုမည့် AI စနစ် ရွေးချယ်ပါ</span>
+                </span>
+                <span class="text-[10px] text-blue-400 font-semibold" id="activeEngineText">Active: Groq Engine</span>
               </label>
-              <div class="p-2.5 rounded-xl bg-[#070b14] border border-slate-800 text-xs text-slate-200 flex items-center justify-between">
-                <span class="font-bold text-blue-400">သဘာဝကျ Movie Recap စကားပြောဟန်</span>
-                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">နာမ်စားမှန်ကန်ရေး စနစ်ထည့်သွင်းပြီး</span>
+              <div class="grid grid-cols-2 gap-2 bg-[#070b14] p-1 rounded-xl border border-slate-800">
+                <button
+                  type="button"
+                  id="engineGroqBtn"
+                  onclick="selectAiEngine('groq')"
+                  class="py-2 px-3 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white flex items-center justify-center gap-1.5 shadow-md"
+                >
+                  <span>⚡ Groq Engine</span>
+                </button>
+                <button
+                  type="button"
+                  id="engineGeminiBtn"
+                  onclick="selectAiEngine('gemini')"
+                  class="py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5"
+                >
+                  <span>✨ Gemini Engine</span>
+                </button>
               </div>
+            </div>
+
+            <!-- Groq API Key Input Field -->
+            <div id="groqKeyBox" class="pt-2 border-t border-slate-800/80 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-bold text-blue-400 flex items-center gap-1">
+                  <span>⚡</span>
+                  <span>Groq API Key</span>
+                </label>
+                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-blue-400 hover:underline">Key ရယူရန် (Free) ↗</a>
+              </div>
+              <input
+                type="password"
+                id="groqApiKeyInput"
+                placeholder="gsk_... (Groq Key ထည့်ပါ)"
+                class="w-full bg-[#070b14] border border-blue-500/40 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
+              />
+              <p class="text-[10px] text-slate-500">Groq Console (console.groq.com/keys) မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
+            </div>
+
+            <!-- Gemini API Key Input Field -->
+            <div id="geminiKeyBox" class="pt-2 border-t border-slate-800/80 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                  <span>✨</span>
+                  <span>Gemini API Key</span>
+                </label>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-amber-400 hover:underline">Key ရယူရန် (Free) ↗</a>
+              </div>
+              <input
+                type="password"
+                id="geminiApiKeyInput"
+                placeholder="AIzaSy... (Gemini Key ထည့်ပါ)"
+                class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
+              />
+              <p class="text-[10px] text-slate-500">Google AI Studio (aistudio.google.com) မှ အခမဲ့ ရယူနိုင်ပါသည်။</p>
             </div>
 
             <!-- Add Timestamp Toggle Switch -->
@@ -205,21 +258,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
                 </label>
               </div>
-            </div>
-
-            <!-- AI API Key (Supports Groq Key or Gemini Key) -->
-            <div class="pt-3 border-t border-slate-800/80 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="text-[11px] font-bold text-slate-300">AI API Key (Groq သို့မဟုတ် Gemini)</label>
-                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-blue-400 hover:underline">Groq Key ရယူရန် ↗</a>
-              </div>
-              <input
-                type="password"
-                id="groqApiKeyInput"
-                placeholder="gsk_... (Groq Key) သို့မဟုတ် AIza... (Gemini Key)"
-                class="w-full bg-[#070b14] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
-              />
-              <p class="text-[10px] text-slate-500">Groq Key (gsk_...) သို့မဟုတ် Gemini Key (AIza...) နှစ်သက်ရာ ထည့်နိုင်ပါသည် (Browser တွင် အလိုအလျောက် မှတ်ထားပေးပါမည်)။</p>
             </div>
 
             <!-- Transcribe Button -->
@@ -436,19 +474,61 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     // ==========================================
-    // 200MB AUDIO EXTRACTOR & GROQ TRANSCRIPT
+    // AI ENGINE SELECTION & DUAL API KEYS
     // ==========================================
-    let currentUploadedFile = null;
-    let videoDurationSeconds = 0;
+    let currentEngine = localStorage.getItem("active_ai_engine") || "groq";
 
+    function selectAiEngine(engine) {
+      currentEngine = engine;
+      localStorage.setItem("active_ai_engine", engine);
+
+      const groqBtn = document.getElementById("engineGroqBtn");
+      const geminiBtn = document.getElementById("engineGeminiBtn");
+      const text = document.getElementById("activeEngineText");
+      const groqInput = document.getElementById("groqApiKeyInput");
+      const geminiInput = document.getElementById("geminiApiKeyInput");
+
+      if (engine === "groq") {
+        groqBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white flex items-center justify-center gap-1.5 shadow-md";
+        geminiBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
+        text.innerText = "Active: ⚡ Groq Engine";
+        text.className = "text-[10px] text-blue-400 font-semibold";
+        groqInput.classList.add("border-blue-500/70", "ring-1", "ring-blue-500/40");
+        geminiInput.classList.remove("border-amber-500/70", "ring-1", "ring-amber-500/40");
+      } else {
+        geminiBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950 flex items-center justify-center gap-1.5 shadow-md";
+        groqBtn.className = "py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
+        text.innerText = "Active: ✨ Gemini Engine";
+        text.className = "text-[10px] text-amber-400 font-semibold";
+        geminiInput.classList.add("border-amber-500/70", "ring-1", "ring-amber-500/40");
+        groqInput.classList.remove("border-blue-500/70", "ring-1", "ring-blue-500/40");
+      }
+    }
+
+    // Load saved API keys from local storage
     const savedGroqKey = localStorage.getItem("groq_api_key") || "";
     if (savedGroqKey) {
       document.getElementById("groqApiKeyInput").value = savedGroqKey;
     }
 
+    const savedGeminiKey = localStorage.getItem("gemini_api_key") || "";
+    if (savedGeminiKey) {
+      document.getElementById("geminiApiKeyInput").value = savedGeminiKey;
+    }
+
     document.getElementById("groqApiKeyInput").addEventListener("input", (e) => {
       localStorage.setItem("groq_api_key", e.target.value.trim());
     });
+
+    document.getElementById("geminiApiKeyInput").addEventListener("input", (e) => {
+      localStorage.setItem("gemini_api_key", e.target.value.trim());
+    });
+
+    // ==========================================
+    // 200MB AUDIO EXTRACTOR & MEDIA HANDLER
+    // ==========================================
+    let currentUploadedFile = null;
+    let videoDurationSeconds = 0;
 
     // Native file change listener
     const fileInputEl = document.getElementById("videoFileInput");
@@ -527,7 +607,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById("targetDurationLabel").innerText = `${tMins.toString().padStart(2, '0')}:${tSecs.toString().padStart(2, '0')} (+30s)`;
     }
 
-    // Client-side Audio Extraction Engine for 200MB Videos
     async function prepareAudioForGroq(file, statusCallback) {
       if (file.type.startsWith("audio/") && file.size <= 24 * 1024 * 1024) {
         return file;
@@ -588,22 +667,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return new Blob([view], { type: "audio/wav" });
     }
 
-    // Clean post-processing filter for Burmese characters
     function cleanBurmeseOutput(raw) {
       if (!raw) return "";
       let txt = raw.trim();
-      
-      // Clean up common glitch notes emitted by AI
       txt = txt.replace(/\(Note:.*?\)/gi, '');
       txt = txt.replace(/\[Note:.*?\]/gi, '');
-
-      // Remove repetitive phrases at the end
       txt = txt.replace(/(.{4,80}?)\s*(?:\1\s*){2,}/gu, '$1');
-
       return txt.trim();
     }
 
-    // Dynamic Groq Translation (Strict Zero-Penalty to prevent corrupted Burmese Unicode)
+    // Dynamic Groq Translation
     async function callGroqTranslation(apiKey, systemPrompt, userContent) {
       let liveModels = [];
       try {
@@ -662,8 +735,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 { role: "user", content: userContent }
               ],
               temperature: 0.3,
-              presence_penalty: 0.0,   // CRITICAL: MUST BE 0 to avoid breaking Burmese UTF-8 bytes
-              frequency_penalty: 0.0,  // CRITICAL: MUST BE 0 to avoid breaking Burmese UTF-8 bytes
+              presence_penalty: 0.0,
+              frequency_penalty: 0.0,
               max_tokens: 2048
             })
           });
@@ -674,7 +747,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             if (content) return cleanBurmeseOutput(content);
           } else {
             const errJson = await res.json().catch(() => ({}));
-            lastError = errJson.error?.message || `Model ${modelName} returned status ${res.status}`;
+            lastError = errJson.error?.message || `Model ${modelName} status ${res.status}`;
           }
         } catch (e) {
           lastError = e.message;
@@ -684,7 +757,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       throw new Error(lastError || "Groq Translation မအောင်မြင်ပါ");
     }
 
-    // Google Gemini Direct Call (if user provides Gemini API Key AIza...)
+    // Google Gemini Direct Call
     async function callGeminiDirect(apiKey, systemPrompt, userContent) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       const res = await fetch(url, {
@@ -713,13 +786,20 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         return;
       }
 
-      const apiKey = document.getElementById("groqApiKeyInput").value.trim();
-      if (!apiKey) {
-        showToast("Groq Key (gsk_...) သို့မဟုတ် Gemini Key ထည့်ပေးပါ", "error");
+      const groqKey = document.getElementById("groqApiKeyInput").value.trim();
+      const geminiKey = document.getElementById("geminiApiKeyInput").value.trim();
+
+      if (currentEngine === "groq" && (!groqKey || !groqKey.startsWith("gsk_"))) {
+        showToast("Groq API Key (gsk_...) ကို ထည့်သွင်းပေးပါ", "error");
+        document.getElementById("groqApiKeyInput").focus();
         return;
       }
 
-      const isGeminiKey = apiKey.startsWith("AIza");
+      if (currentEngine === "gemini" && (!geminiKey || !geminiKey.startsWith("AIza"))) {
+        showToast("Gemini API Key (AIza...) ကို ထည့်သွင်းပေးပါ", "error");
+        document.getElementById("geminiApiKeyInput").focus();
+        return;
+      }
 
       const btn = document.getElementById("startTranscriptBtn");
       const spinner = document.getElementById("transSpinner");
@@ -743,18 +823,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         let understoodText = "";
 
-        if (isGeminiKey) {
+        if (currentEngine === "gemini") {
           outputText.value = "Gemini Flash AI ဖြင့် စကားပြောသံနှင့် ဇာတ်လမ်းအဓိပ္ပာယ်ကို တိုက်ရိုက် ဖတ်ရှုနေပါသည်...";
           btnText.innerText = "Gemini ဖြင့် ဖတ်နေပါသည်...";
 
-          // Convert audio blob to base64 for Gemini
           const reader = new FileReader();
           const base64Audio = await new Promise((resolve) => {
             reader.onloadend = () => resolve(reader.result.split(',')[1]);
             reader.readAsDataURL(audioToSend);
           });
 
-          const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -787,14 +866,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
           let whisperRes = await fetch("https://api.groq.com/openai/v1/audio/translations", {
             method: "POST",
-            headers: { "Authorization": `Bearer ${apiKey}` },
+            headers: { "Authorization": `Bearer ${groqKey}` },
             body: formData
           });
 
           if (!whisperRes.ok) {
             whisperRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
               method: "POST",
-              headers: { "Authorization": `Bearer ${apiKey}` },
+              headers: { "Authorization": `Bearer ${groqKey}` },
               body: formData
             });
           }
@@ -825,7 +904,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         const baseSecs = videoDurationSeconds || 60;
         const targetSecs = baseSecs + 30;
 
-        // Master Burmese Movie Recap Storyteller Prompt with strict Vocabulary Standards
         const systemPrompt = `
 သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
 ပေးထားသော ဗီဒီယိုပါ ဇာတ်လမ်းအကြောင်းအရာနှင့် စကားပြောများကို အခြေခံ၍ လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။
@@ -864,10 +942,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         let finalScript = "";
 
-        if (isGeminiKey) {
-          finalScript = await callGeminiDirect(apiKey, systemPrompt, `Video Plot Story:\n${understoodText}`);
+        if (currentEngine === "gemini") {
+          finalScript = await callGeminiDirect(geminiKey, systemPrompt, `Video Plot Story:\n${understoodText}`);
         } else {
-          finalScript = await callGroqTranslation(apiKey, systemPrompt, `Video Plot Story:\n${understoodText}`);
+          finalScript = await callGroqTranslation(groqKey, systemPrompt, `Video Plot Story:\n${understoodText}`);
         }
 
         if (finalScript) {
@@ -1137,9 +1215,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       showToast("MP3 ဒေါင်းလုဒ် ဆွဲပြီးပါပြီ", "success");
     }
 
-    // Initialize View
+    // Initialize View & Active Engine
     renderVoiceCards("all");
     updateTuningLabels();
+    selectAiEngine(currentEngine);
     document.getElementById("charCount").innerText = `${textInputEl.value.length} အက္ခရာ`;
   </script>
 </body>
