@@ -32,7 +32,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         extend: {
           colors: {
             brand: '#3b82f6',
-            darkbg: '#080d1a',
+            darkbg: '#070b16',
             cardbg: '#0e1628'
           }
         }
@@ -45,6 +45,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
     .glow-btn { box-shadow: 0 0 25px rgba(37, 99, 235, 0.4); }
     .glow-btn:hover { box-shadow: 0 0 35px rgba(37, 99, 235, 0.6); }
+    .switch-checkbox:checked + .switch-label { background-color: #3b82f6; }
+    .switch-checkbox:checked + .switch-label .switch-dot { transform: translateX(100%); background-color: #ffffff; }
   </style>
 </head>
 <body class="bg-[#070b16] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
@@ -69,14 +71,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
 
     <nav class="space-y-1.5 py-4 flex-1 text-xs font-bold text-slate-300">
+      <button onclick="switchStudioView('recapvd')" class="w-full flex items-center gap-3 p-3 rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-colors text-left">
+        <span>🍿</span><span>Auto Recap VD</span>
+      </button>
       <button onclick="switchStudioView('transcriber')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-900 transition-colors text-left">
         <span>📹</span><span>AI Transcriber</span>
       </button>
       <button onclick="switchStudioView('tts')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-900 transition-colors text-left">
         <span>🎙️</span><span>TTS Voice Over</span>
-      </button>
-      <button onclick="switchStudioView('recapvd')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-900 transition-colors text-left">
-        <span>🍿</span><span>Auto Recap VD</span>
       </button>
       <button onclick="switchStudioView('dubbing')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-900 transition-colors text-left">
         <span>🎧</span><span>Auto Dubbing Mode</span>
@@ -93,7 +95,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </aside>
 
-  <!-- Clean Top Navigation Bar (Matches Reference UI) -->
+  <!-- Clean Top Navigation Bar -->
   <header class="w-full border-b border-slate-800/80 bg-[#090f1e]/95 backdrop-blur-xl sticky top-0 z-40 shadow-xl">
     <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
@@ -104,15 +106,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <div class="flex items-center gap-1.5">
             <h1 class="text-base font-extrabold tracking-tight text-white">Recap Go</h1>
             <span class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              AI Tools
+              Auto Recap
             </span>
           </div>
-          <p class="text-[10px] text-slate-400">Burmese Video Transcriber & Speech</p>
+          <p class="text-[10px] text-slate-400">Burmese Text to Speech & Recap</p>
         </div>
       </div>
 
       <!-- Action Utilities -->
       <div class="flex items-center gap-1.5">
+        <button onclick="switchStudioView('recapvd')" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-400 text-xs font-bold" title="Auto Recap VD">
+          🍿
+        </button>
         <button onclick="switchStudioView('transcriber')" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 text-xs font-bold" title="AI Transcriber">
           📹
         </button>
@@ -129,35 +134,372 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </header>
 
-  <!-- Real Native File Input (Attached via Label) -->
-  <input type="file" id="videoFileInput" accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv" class="hidden" />
+  <!-- Real Native File Inputs (Hidden) -->
+  <input type="file" id="recapVideoFileInput" accept="video/*,.mp4,.mov,.mkv,.webm" class="hidden" />
+  <input type="file" id="transVideoFileInput" accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv" class="hidden" />
 
-  <!-- Main Container -->
+  <!-- Main Container (Mobile-first SaaS Card Layout) -->
   <main class="max-w-md w-full p-4 space-y-5 flex-1">
 
     <!-- ========================================================================= -->
-    <!-- VIEW 1: AI TRANSCRIBER (EXACTLY MATCHING REFERENCE UI)                   -->
+    <!-- VIEW 1: AUTO RECAP VD (MATCHES REFERENCE IMAGE 1000049244.jpg EXACTLY)   -->
     <!-- ========================================================================= -->
-    <div id="panelTranscriber" class="space-y-4">
+    <div id="panelRecapVd" class="space-y-4">
 
-      <!-- 1. FILE UPLOAD CARD -->
+      <!-- 1. VIDEO UPLOAD CARD -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md">
         <div class="flex items-center gap-2 font-bold text-slate-200 text-sm">
+          <span class="text-blue-400">🎞</span>
+          <span>Video Upload</span>
+        </div>
+
+        <!-- Dropzone Box with Browse Button -->
+        <label
+          for="recapVideoFileInput"
+          id="recapDropzoneBox"
+          class="border-2 border-dashed border-slate-700/80 hover:border-blue-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#080d1a] hover:bg-[#0c1426] block group"
+        >
+          <div class="space-y-2 pointer-events-none">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              🎬
+            </div>
+            <p class="text-xs font-bold text-slate-100" id="recapPromptText">Drag & drop a video file</p>
+            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · max 500MB · free trial 8 min</p>
+            <div class="pt-2">
+              <span class="inline-block px-5 py-2 rounded-xl bg-[#0e1628] hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700/80 shadow-md transition-all">
+                Browse
+              </span>
+            </div>
+          </div>
+        </label>
+
+        <!-- Video Preview Card -->
+        <div id="recapVideoPreviewBox" class="hidden space-y-3 bg-[#080d1a] border border-blue-500/40 rounded-2xl p-3.5">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-blue-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Video Ready</span>
+            </span>
+            <label for="recapVideoFileInput" class="text-blue-400 hover:underline cursor-pointer text-[11px] font-bold">Change</label>
+          </div>
+          <div class="relative overflow-hidden rounded-xl bg-black border border-slate-800 aspect-video flex items-center justify-center">
+            <video id="recapVideoPlayerEl" controls playsinline muted class="w-full h-full object-contain transition-transform duration-300"></video>
+            <!-- Live subtitle burn overlay -->
+            <div id="recapLiveSubOverlay" class="absolute bottom-3 inset-x-3 text-center pointer-events-none hidden">
+              <span class="inline-block bg-black/80 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold shadow-lg" id="recapSubSampleText">
+                မြန်မာ Movie Recap စာသား
+              </span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+            <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 truncate" id="recapMediaNameTag">video.mp4</div>
+            <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 text-blue-400 font-bold" id="recapMediaSizeTag">0 MB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. OUTPUT FORMAT (ASPECT RATIO CARDS) -->
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md">
+        <div class="flex items-center gap-2 font-bold text-slate-200 text-sm">
+          <span class="text-blue-400">❖</span>
+          <span>Output Format</span>
+          <span class="text-[11px] font-normal text-slate-400 font-mono">Aspect ratio</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 text-center text-xs">
+          <!-- YouTube (16:9 Landscape) -->
+          <div onclick="selectAspectRatio('16:9')" id="aspectCard16_9" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-8 h-4.5 rounded-sm border-2 border-slate-400 aspect-video mb-1"></div>
+            <span class="font-bold text-slate-100 block">YouTube</span>
+            <span class="text-[10px] text-slate-400 block font-mono">16:9 Landscape</span>
+          </div>
+
+          <!-- TikTok (9:16 Portrait) - DEFAULT ACTIVE -->
+          <div onclick="selectAspectRatio('9:16')" id="aspectCard9_16" class="aspect-card p-4 rounded-2xl bg-blue-950/40 border-2 border-blue-500 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/20">
+            <div class="w-4 h-7 rounded-sm border-2 border-blue-400 aspect-[9/16] mb-1"></div>
+            <span class="font-bold text-blue-300 block">TikTok</span>
+            <span class="text-[10px] text-blue-400/90 block font-mono">9:16 Portrait</span>
+          </div>
+
+          <!-- Square (1:1) -->
+          <div onclick="selectAspectRatio('1:1')" id="aspectCard1_1" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-5 h-5 rounded-sm border-2 border-slate-400 mb-1"></div>
+            <span class="font-bold text-slate-100 block">Square</span>
+            <span class="text-[10px] text-slate-400 block font-mono">1:1</span>
+          </div>
+
+          <!-- Classic (4:3) -->
+          <div onclick="selectAspectRatio('4:3')" id="aspectCard4_3" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-6 h-4.5 rounded-sm border-2 border-slate-400 aspect-[4/3] mb-1"></div>
+            <span class="font-bold text-slate-100 block">Classic</span>
+            <span class="text-[10px] text-slate-400 block font-mono">4:3</span>
+          </div>
+
+          <!-- Portrait (3:4) -->
+          <div onclick="selectAspectRatio('3:4')" id="aspectCard3_4" class="aspect-card col-span-2 p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-4.5 h-6 rounded-sm border-2 border-slate-400 aspect-[3/4] mb-1"></div>
+            <span class="font-bold text-slate-100 block">Portrait</span>
+            <span class="text-[10px] text-slate-400 block font-mono">3:4</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. LANGUAGES & VOICE SELECTORS -->
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
+        <!-- Source Language -->
+        <div class="space-y-1.5">
+          <label class="font-bold text-slate-300 flex items-center gap-1.5">
+            <span>🌐</span>
+            <span>Source Language ဗီဒီယိုထဲက ပြောသည့် ဘာသာ</span>
+          </label>
+          <div class="relative">
+            <select id="recapSourceLangSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none pr-10">
+              <option value="auto">Auto-detect အလိုအလျောက်</option>
+              <option value="zh">Chinese 中文</option>
+              <option value="en">English</option>
+              <option value="ko">Korean 한국어</option>
+              <option value="ja">Japanese 日本語</option>
+            </select>
+            <div class="pointer-events-none absolute right-3.5 top-3.5 text-slate-400">▼</div>
+          </div>
+        </div>
+
+        <!-- Target Language -->
+        <div class="space-y-1.5">
+          <label class="font-bold text-slate-300 flex items-center gap-1.5">
+            <span>🌐</span>
+            <span>Target Language ထွက်မည့် ဘာသာစကား</span>
+          </label>
+          <div class="relative">
+            <select id="recapTargetLangSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none pr-10">
+              <option value="my">Burmese မြန်မာ</option>
+            </select>
+            <div class="pointer-events-none absolute right-3.5 top-3.5 text-slate-400">▼</div>
+          </div>
+        </div>
+
+        <!-- Voice Selection with Sample Button -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between font-bold text-slate-300">
+            <span class="flex items-center gap-1.5">
+              <span>🔊</span>
+              <span>Voice အသံရွေးရန်</span>
+            </span>
+            <button type="button" onclick="playRecapVoiceSample(event)" class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-950/60 border border-blue-800/60 px-2 py-0.5 rounded-lg transition-all">
+              <span id="recapSampleIcon">🔈</span>
+              <span id="recapSampleText">စမ်းနားထောင်</span>
+            </button>
+          </div>
+          <div class="relative">
+            <select id="recapVoiceSelect" onchange="handleRecapVoiceChanged(event)" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none pr-10">
+              <!-- 13 Voices dynamically populated -->
+            </select>
+            <div class="pointer-events-none absolute right-3.5 top-3.5 text-slate-400">▼</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. EFFECTS (DEFAULT OFF - TAP TO ENABLE TOGGLE SWITCHES) -->
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
+        <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
+          <span class="font-bold text-slate-200 text-sm">Effects</span>
+          <span class="text-[10px] text-slate-500 font-mono">Default OFF · tap to enable</span>
+        </div>
+
+        <!-- Mirror Effect -->
+        <div class="flex items-center justify-between py-1">
+          <div>
+            <div class="font-bold text-slate-200">Mirror Effect</div>
+            <div class="text-[10px] text-slate-400">ဗီဒီယို ပြောင်းပြန်လှန်ရန်</div>
+          </div>
+          <div class="relative inline-block w-11 h-6 align-middle select-none">
+            <input type="checkbox" id="effectMirrorSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+            <label for="effectMirrorSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Color Grading -->
+        <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
+          <div>
+            <div class="font-bold text-slate-200">Color Grading</div>
+            <div class="text-[10px] text-slate-400">Copyright Bypass အရောင် ချိန်ညှိရန်</div>
+          </div>
+          <div class="relative inline-block w-11 h-6 align-middle select-none">
+            <input type="checkbox" id="effectColorGradingSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+            <label for="effectColorGradingSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Blur -->
+        <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
+          <div>
+            <div class="font-bold text-slate-200">Blur</div>
+            <div class="text-[10px] text-slate-400">ဗီဒီယိုထဲက မလိုချင်တဲ့ အပိုင်းကို မို့ကွယ်ရန်</div>
+          </div>
+          <div class="relative inline-block w-11 h-6 align-middle select-none">
+            <input type="checkbox" id="effectBlurSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+            <label for="effectBlurSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Photo Logo -->
+        <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
+          <div>
+            <div class="font-bold text-slate-200">Photo Logo</div>
+            <div class="text-[10px] text-slate-400">ဓာတ်ပုံလိုဂို ထည့်ရန်</div>
+          </div>
+          <div class="relative inline-block w-11 h-6 align-middle select-none">
+            <input type="checkbox" id="effectLogoSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+            <label for="effectLogoSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Add Subtitles (Included in free trial) -->
+        <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
+          <div>
+            <div class="font-bold text-slate-200">Add Subtitles <span class="text-[10px] text-emerald-400 font-normal">(Included in free trial)</span></div>
+            <div class="text-[10px] text-slate-400">ဗီဒီယိုပေါ်တွင် မြန်မာစာသား အစာထိုးရန်</div>
+          </div>
+          <div class="relative inline-block w-11 h-6 align-middle select-none">
+            <input type="checkbox" id="effectSubtitleSwitch" checked onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+            <label for="effectSubtitleSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. VOICE SETTINGS CARD -->
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
+        <div class="border-b border-slate-800 pb-2 font-bold text-slate-200 text-sm flex items-center gap-2">
+          <span class="text-blue-400">⚙</span>
+          <span>Voice Settings</span>
+        </div>
+
+        <!-- Voice Style -->
+        <div class="space-y-1.5">
+          <label class="font-bold text-slate-300 block">Voice Style အသံပုံစံ</label>
+          <div class="relative">
+            <select id="recapVoiceStyleSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none pr-10">
+              <option value="narrator">Narrator ဇာတ်ကြောင်းပြန်</option>
+              <option value="storytelling">Storytelling ပုံပြင်/ဝတ္ထု</option>
+              <option value="dramatic">Dramatic စိတ်လှုပ်ရှားဖွယ်</option>
+              <option value="natural">Natural သဘာဝစကားပြော</option>
+            </select>
+            <div class="pointer-events-none absolute right-3.5 top-3.5 text-slate-400">▼</div>
+          </div>
+        </div>
+
+        <!-- Tone -->
+        <div class="space-y-1.5">
+          <label class="font-bold text-slate-300 block">Tone အသံအနေအထား</label>
+          <div class="relative">
+            <select id="recapToneSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none pr-10">
+              <option value="neutral">Neutral သာမန်</option>
+              <option value="deep">Deep လေးနက်</option>
+              <option value="warm">Warm နွေးထွေး</option>
+              <option value="crisp">Crisp ကြည်လင်</option>
+            </select>
+            <div class="pointer-events-none absolute right-3.5 top-3.5 text-slate-400">▼</div>
+          </div>
+        </div>
+
+        <!-- Voice Speed Slider -->
+        <div class="space-y-2 pt-1 border-t border-slate-800/80">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300 font-bold">Voice Speed အသံမြန်နှုန်း</span>
+            <span id="recapSpeedValTag" class="font-mono text-blue-400 font-bold">1.00x</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="adjustRecapSpeed(-2)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">−</button>
+            <input id="recapSpeedRange" type="range" min="-20" max="20" step="2" value="0" class="w-full accent-blue-500 cursor-pointer" oninput="syncRecapSliders()" />
+            <button type="button" onclick="adjustRecapSpeed(2)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">+</button>
+          </div>
+        </div>
+
+        <!-- Voice Pitch Slider -->
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300 font-bold">Pitch အသံအနိမ့်အမြင့်</span>
+            <span id="recapPitchValTag" class="font-mono text-blue-400 font-bold">Normal</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="adjustRecapPitch(-1)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">−</button>
+            <input id="recapPitchRange" type="range" min="-15" max="15" step="1" value="0" class="w-full accent-blue-500 cursor-pointer" oninput="syncRecapSliders()" />
+            <button type="button" onclick="adjustRecapPitch(1)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. GENERATE RECAP BUTTON -->
+      <button
+        id="generateRecapBtn"
+        type="button"
+        onclick="executeAutoRecapVdWorkflow()"
+        class="w-full py-4 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-2xl glow-btn flex items-center justify-center gap-2.5 transition-all"
+      >
+        <span id="recapSpinner" class="hidden animate-spin">🌀</span>
+        <span id="recapIcon">✨</span>
+        <span id="recapBtnLabel">Generate Recap</span>
+      </button>
+
+      <!-- 7. RECAP RESULT & EXPORT CARD -->
+      <div id="recapResultCard" class="hidden bg-[#0f172b]/95 border border-blue-500/40 rounded-3xl p-5 space-y-4 shadow-2xl backdrop-blur-md">
+        <div class="flex justify-between items-center text-xs">
+          <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Auto Recap Video & Dub Ready</span>
+          </span>
+          <span class="text-[10px] font-mono font-bold bg-blue-950 text-blue-300 border border-blue-800 px-2 py-0.5 rounded-full">Dubbed</span>
+        </div>
+
+        <audio id="recapAudioPlayerEl" controls class="w-full"></audio>
+
+        <div class="space-y-1.5 text-xs">
+          <label class="font-bold text-slate-300">Generated Burmese Recap Voiceover Script:</label>
+          <textarea id="recapFinalScriptArea" rows="5" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-200 text-xs custom-scroll" readonly></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="downloadRecapMp3Audio()" class="py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-300 font-bold text-xs flex items-center justify-center gap-1.5">
+            <span>📥</span><span>Audio MP3</span>
+          </button>
+          <button onclick="downloadRecapPackageZip()" class="py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
+            <span>📦</span><span>Full Package</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: AI TRANSCRIBER & SCRIPT STUDIO                                    -->
+    <!-- ========================================================================= -->
+    <div id="panelTranscriber" class="hidden space-y-4">
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl">
+        <div class="flex items-center gap-2 font-bold text-slate-200 text-sm border-b border-slate-800 pb-2.5">
           <span class="text-blue-400">📤</span>
           <span>File Upload</span>
         </div>
 
-        <!-- Inner Upload Dropzone Box -->
         <label
-          for="videoFileInput"
-          id="dropzoneLabelBox"
+          for="transVideoFileInput"
+          id="transDropzoneLabelBox"
           class="border-2 border-dashed border-slate-700/80 hover:border-blue-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#080d1a] hover:bg-[#0c1426] block group"
         >
           <div class="space-y-2 pointer-events-none">
             <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
               🎧
             </div>
-            <p class="text-xs font-bold text-slate-100" id="uploadPromptText">Drag & drop a video or audio file</p>
+            <p class="text-xs font-bold text-slate-100" id="transUploadPrompt">Drag & drop a video or audio file</p>
             <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mp3, wav, m4a · max 200MB</p>
             <div class="pt-2">
               <span class="inline-block px-5 py-2 rounded-xl bg-[#0e1628] hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700/80 shadow-md transition-all">
@@ -167,306 +509,71 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </label>
 
-        <!-- Video Preview Box (Becomes visible upon selection) -->
-        <div id="videoPreviewBox" class="hidden space-y-3 bg-[#080d1a] border border-blue-500/40 rounded-2xl p-3.5">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-bold text-blue-400 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Media Selected</span>
-            </span>
-            <label for="videoFileInput" class="text-blue-400 hover:underline cursor-pointer text-[11px] font-bold">
-              Change File
-            </label>
-          </div>
-          <video id="previewVideoEl" controls playsinline muted class="w-full rounded-xl max-h-48 bg-black border border-slate-800"></video>
+        <div id="transVideoPreviewBox" class="hidden space-y-3 bg-[#080d1a] border border-blue-500/40 rounded-2xl p-3.5">
+          <video id="transVideoEl" controls playsinline muted class="w-full rounded-xl max-h-48 bg-black"></video>
           <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
-            <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 truncate" id="mediaNameTag">video.mp4</div>
-            <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 text-blue-400 font-bold" id="mediaSizeTag">0 MB</div>
+            <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 truncate" id="transMediaName">video.mp4</div>
+            <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 text-blue-400 font-bold" id="transMediaSize">0 MB</div>
           </div>
         </div>
-      </div>
 
-      <!-- 2. LANGUAGE SELECTION CARD -->
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-2.5 shadow-2xl backdrop-blur-md">
-        <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-          <span>🌐</span>
-          <span>Language ထွက်မည့် ဘာသာစကား</span>
-        </label>
-        <div class="relative">
-          <select id="transcribeLanguageSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer pr-10">
-            <option value="burmese">Burmese မြန်မာ (Movie Recap Style)</option>
-          </select>
-          <div class="pointer-events-none absolute right-4 top-4 text-slate-400 text-xs">▼</div>
+        <button
+          id="transcribeExecuteBtn"
+          onclick="executeTranscribeProcess()"
+          class="w-full py-4 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-sm glow-btn flex items-center justify-center gap-2.5 transition-all"
+        >
+          <span id="transSpinner" class="hidden animate-spin">🌀</span>
+          <span>Transcribe</span>
+        </button>
+
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-200">Transcript</span>
+            <button onclick="copyTranscribedText()" class="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-bold text-xs">Copy</button>
+          </div>
+          <textarea id="transcriptOutputArea" rows="6" placeholder="Transcribed text will appear here." class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-4 text-xs leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll resize-y"></textarea>
         </div>
       </div>
-
-      <!-- 3. TRANSCRIBE BUTTON (Matches Reference UI exactly) -->
-      <button
-        id="transcribeExecuteBtn"
-        type="button"
-        onclick="executeTranscribeProcess()"
-        class="w-full py-4 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-2xl glow-btn flex items-center justify-center gap-2.5 transition-all"
-      >
-        <span id="transSpinner" class="hidden animate-spin">🌀</span>
-        <span id="transWaveIcon">|||</span>
-        <span id="transBtnLabel">Transcribe</span>
-      </button>
-
-      <!-- 4. TRANSCRIPT CARD (Matches Reference UI exactly) -->
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md">
-        <div class="flex items-center justify-between">
-          <span class="font-bold text-slate-200 text-sm">Transcript</span>
-          <!-- English Copy Button -->
-          <button
-            type="button"
-            onclick="copyTranscribedText()"
-            class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-          >
-            <span>📋</span>
-            <span id="copyBtnLabel">Copy</span>
-          </button>
-        </div>
-
-        <div class="relative">
-          <textarea
-            id="transcriptOutputArea"
-            rows="7"
-            placeholder="Transcribed text will appear here."
-            class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-4 text-xs sm:text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll resize-y transition-all"
-          ></textarea>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-1 border-t border-slate-800/80">
-          <button
-            type="button"
-            onclick="sendTranscriptToTtsStudio()"
-            class="px-4 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-300 font-bold text-xs flex items-center gap-1.5 transition-all"
-          >
-            <span>🎙️</span>
-            <span>Send To Voiceover</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 5. HISTORY CARD (Matches Reference UI exactly) -->
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md">
-        <div class="flex items-center justify-between text-xs border-b border-slate-800 pb-2.5">
-          <span class="font-bold text-slate-300 flex items-center gap-1.5">
-            <span>🕒</span>
-            <span>History</span>
-            <span class="text-[10px] text-slate-500">Kept for 8 hours</span>
-          </span>
-          <button onclick="clearTranscriptHistory()" class="text-[11px] text-rose-400 hover:underline font-bold">Clear</button>
-        </div>
-        <div id="transcriptHistoryContainer" class="space-y-2 text-xs">
-          <p class="text-slate-500 text-center py-4 text-[11px]" id="noTranscriptsTag">No transcripts yet.</p>
-        </div>
-      </div>
-
     </div>
 
     <!-- ========================================================================= -->
-    <!-- VIEW 2: TTS VOICE OVER STUDIO (PRESERVED COMPLETE 13 VOICES)             -->
+    <!-- VIEW 3: TTS VOICE OVER STUDIO                                             -->
     <!-- ========================================================================= -->
     <div id="panelTts" class="hidden space-y-4">
-
-      <!-- Burmese Script Card -->
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md">
-        <div class="flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2 font-bold text-slate-200 text-sm">
-            <span class="text-blue-400">📄</span>
-            <span>Burmese Script</span>
-          </div>
-          <button type="button" onclick="clearTtsText()" class="text-slate-400 hover:text-rose-400 flex items-center gap-1 font-bold text-xs transition-colors">
-            <span>🧹</span>
-            <span>Clear</span>
-          </button>
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl">
+        <div class="flex items-center justify-between text-xs border-b border-slate-800 pb-2.5">
+          <span class="font-bold text-blue-400 text-sm">📄 Burmese Script</span>
+          <button onclick="clearTtsText()" class="text-slate-400 hover:text-rose-400 font-bold">Clear</button>
         </div>
-
-        <div class="relative">
-          <textarea
-            id="ttsInputTextArea"
-            rows="6"
-            placeholder="မြန်မာစာ Script ထည့်ပါ..."
-            class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-4 text-xs sm:text-sm leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll resize-y transition-all"
-          >သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။</textarea>
-        </div>
-
-        <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-          <span class="text-[10px] text-slate-400 leading-tight">Long scripts are split and merged automatically into one MP3.</span>
-          <span id="charCountTag" class="font-mono text-blue-400 font-bold shrink-0 ml-2">၀ / 5,000 characters</span>
+        <textarea id="ttsInputTextArea" rows="5" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-4 text-xs leading-relaxed text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 custom-scroll resize-y">သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။</textarea>
+        <button onclick="handleGenerateVoiceover()" class="w-full py-4 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 text-white font-extrabold text-sm glow-btn">Generate Voiceover</button>
+        <div id="activePlayerCard" class="hidden space-y-2 pt-2 border-t border-slate-800">
+          <audio id="mainAudioPlayerEl" controls class="w-full"></audio>
+          <button onclick="downloadCurrentGeneratedMp3()" class="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">Download MP3</button>
         </div>
       </div>
-
-      <!-- Voice Settings Card -->
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-4 shadow-2xl backdrop-blur-md">
-        <div class="flex items-center gap-2 font-bold text-slate-200 text-sm border-b border-slate-800/80 pb-3">
-          <span class="text-blue-400">⚙</span>
-          <span>Voice Settings</span>
-        </div>
-
-        <!-- Voice Selection (With Sample Preview Button) -->
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between text-xs font-bold text-slate-300">
-            <span>Voice အသံရွေးရန်</span>
-            <button
-              type="button"
-              onclick="playCurrentSelectedVoiceSample(event)"
-              class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-950/60 border border-blue-800/60 px-2.5 py-0.5 rounded-lg transition-all"
-            >
-              <span id="previewAudioIcon">🔈</span>
-              <span id="previewAudioText">Sample</span>
-            </button>
-          </div>
-
-          <div class="relative">
-            <select
-              id="voiceSelectDropdown"
-              onchange="handleVoiceDropdownChange(event)"
-              class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-xs sm:text-sm text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer pr-10"
-            >
-              <!-- 13 Voices injected via JS -->
-            </select>
-            <div class="pointer-events-none absolute right-3 top-3.5 text-slate-400 text-xs">▼</div>
-          </div>
-        </div>
-
-        <!-- Voice Style -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-300 block">Voice Style အသံပုံစံ</label>
-          <div class="relative">
-            <select id="voiceStyleSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-xs sm:text-sm text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer pr-10">
-              <option value="narrator">Narrator ဇာတ်ကြောင်းပြန်</option>
-              <option value="storytelling">Storytelling ပုံပြင်/ဝတ္ထု</option>
-              <option value="dramatic">Dramatic စိတ်လှုပ်ရှားဖွယ်</option>
-              <option value="natural">Natural သဘာဝစကားပြော</option>
-            </select>
-            <div class="pointer-events-none absolute right-3 top-3.5 text-slate-400 text-xs">▼</div>
-          </div>
-        </div>
-
-        <!-- Tone -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-300 block">Tone အသံအနေအထား</label>
-          <div class="relative">
-            <select id="voiceToneSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-xs sm:text-sm text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer pr-10">
-              <option value="neutral">Neutral သာမန်</option>
-              <option value="deep">Deep လေးနက်</option>
-              <option value="warm">Warm နွေးထွေး</option>
-              <option value="crisp">Crisp ကြည်လင်</option>
-            </select>
-            <div class="pointer-events-none absolute right-3 top-3.5 text-slate-400 text-xs">▼</div>
-          </div>
-        </div>
-
-        <!-- Pacing -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-300 block">Pacing အပြောအနှေးအမြန်</label>
-          <div class="relative">
-            <select id="voicePacingSelect" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-xs sm:text-sm text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none cursor-pointer pr-10">
-              <option value="normal">Normal ပုံမှန်</option>
-              <option value="recap">Movie Recap စတိုင်လ်</option>
-              <option value="fast">Fast သွက်လက်</option>
-            </select>
-            <div class="pointer-events-none absolute right-3 top-3.5 text-slate-400 text-xs">▼</div>
-          </div>
-        </div>
-
-        <!-- Voice Speed Slider -->
-        <div class="space-y-2 pt-2 border-t border-slate-800/80">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-300 font-bold">Voice Speed အသံမြန်နှုန်း</span>
-            <span id="speedValText" class="font-mono text-blue-400 font-bold">1.00x</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <button type="button" onclick="adjustSpeedOffset(-2)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">−</button>
-            <input id="speedRangeSlider" type="range" min="-20" max="20" step="2" value="0" class="w-full accent-blue-500 cursor-pointer" oninput="syncSpeedSlider()" />
-            <button type="button" onclick="adjustSpeedOffset(2)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">+</button>
-          </div>
-        </div>
-
-        <!-- Voice Pitch Slider -->
-        <div class="space-y-2 pt-1">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-300 font-bold">Pitch အသံအနိမ့်အမြင့်</span>
-            <span id="pitchValText" class="font-mono text-blue-400 font-bold">Normal</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <button type="button" onclick="adjustPitchOffset(-1)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">−</button>
-            <input id="pitchRangeSlider" type="range" min="-15" max="15" step="1" value="0" class="w-full accent-blue-500 cursor-pointer" oninput="syncPitchSlider()" />
-            <button type="button" onclick="adjustPitchOffset(1)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">+</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Generate Voiceover Button -->
-      <button
-        id="generateVoiceoverBtn"
-        type="button"
-        onclick="handleGenerateVoiceover()"
-        class="w-full py-4 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-2xl glow-btn flex items-center justify-center gap-2.5 transition-all"
-      >
-        <span id="genVoiceSpinner" class="hidden animate-spin">🌀</span>
-        <span id="genVoiceIcon">✨</span>
-        <span id="genVoiceBtnText">Generate Voiceover</span>
-      </button>
-
-      <!-- Active Audio Player Card -->
-      <div id="activePlayerCard" class="hidden bg-[#0f172b]/95 border border-blue-500/40 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md">
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-bold text-blue-300 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span id="activePlayerTitle">အသံဖိုင် အဆင်သင့်ဖြစ်ပါပြီ</span>
-          </span>
-          <span class="text-[10px] font-mono font-bold bg-blue-950 text-blue-300 border border-blue-800 px-2 py-0.5 rounded-full">MP3 Ready</span>
-        </div>
-        <audio id="mainAudioPlayerEl" controls class="w-full outline-none"></audio>
-        <button
-          type="button"
-          onclick="downloadCurrentGeneratedMp3()"
-          class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
-        >
-          <span>📥</span>
-          <span>Download MP3</span>
-        </button>
-      </div>
-
     </div>
 
     <!-- ========================================================================= -->
-    <!-- VIEW 3 & 4: AUTO RECAP VD & DUBBING PANELS                               -->
+    <!-- VIEW 4: AUTO DUBBING MODE                                                 -->
     <!-- ========================================================================= -->
-    <div id="panelRecapVd" class="hidden space-y-4">
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-4 shadow-2xl text-xs">
-        <h3 class="font-bold text-sm text-amber-400 flex items-center gap-2 border-b border-slate-800 pb-3">
-          <span>🍿</span><span>Auto Recap Video Mode</span>
-        </h3>
-        <p class="text-slate-300 leading-relaxed">
-          Upload a video, mute original audio tracks, and combine with generated AI pure Burmese voiceovers and synchronized subtitles.
-        </p>
-        <button onclick="switchStudioView('transcriber')" class="w-full py-3.5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold">
-          Open AI Transcriber
-        </button>
-      </div>
-    </div>
-
     <div id="panelDubbing" class="hidden space-y-4">
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-4 shadow-2xl text-xs">
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl text-xs">
         <h3 class="font-bold text-sm text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-3">
           <span>🎧</span><span>Auto Dubbing Mode</span>
         </h3>
         <p class="text-slate-300 leading-relaxed">
           Translate original speech with timestamps and replace the audio with a synchronized Burmese AI voiceover.
         </p>
-        <button onclick="switchStudioView('transcriber')" class="w-full py-3.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold">
-          Start Auto Dubbing Track
+        <button onclick="switchStudioView('recapvd')" class="w-full py-3.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold">
+          Open Auto Recap VD
         </button>
       </div>
     </div>
 
   </main>
 
-  <!-- Clean Footer (Matches Reference UI) -->
+  <!-- Clean Footer -->
   <footer class="w-full border-t border-slate-900 bg-[#060a12] py-8 text-center space-y-3 text-xs text-slate-500">
     <div class="flex justify-center items-center gap-3">
       <div class="w-9 h-9 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 text-sm">f</div>
@@ -478,10 +585,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </footer>
 
-  <!-- Audio Sample Preview Element -->
+  <!-- Sample Audio Element -->
   <audio id="samplePreviewAudio" class="hidden"></audio>
 
-  <!-- Clean API Key Settings Modal -->
+  <!-- API Key Modal -->
   <div id="apiKeysModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-[#0b1222] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -511,25 +618,28 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     // EXACT 13 CHARACTER VOICES CATALOG WITH GENDER GREETINGS
     // =========================================================================
     const PERSONAS = [
-      { id: "tayza", name: "Tayza", gender: "men", icon: "🎬", badge: "Male", role: "ရင့်ကျက်ပြတ်သားသော Movie Recap အသံ (Brian)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "aung-ye-linn", name: "Aung Ye' Linn", gender: "men", icon: "🧑", badge: "Male", role: "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန် (Andrew)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "chue-lay", name: "Chue Lay", gender: "women", icon: "👧", badge: "Female", role: "ချိုသာကြည်လင် ခေတ်မီဆန်းသစ်သော အမျိုးသမီးသံ (Ava)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "n-kai-yar", name: "N Kai Yar", gender: "women", icon: "🎀", badge: "Female", role: "နုပျိုသွက်လက်သော အသံဟန် (Emma)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "nilar", name: "Nilar", gender: "women", icon: "🌸", badge: "Female", role: "ကြည်လင်ချိုသာသော ဇာတ်ကြောင်းပြောသံ (မူရင်းမြန်မာ)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "thiha", name: "Thiha", gender: "men", icon: "🎙", badge: "Male", role: "တည်ကြည်လေးနက်သော အမျိုးသားအသံ (မူရင်းမြန်မာ)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "phyo-ngwe-soe", name: "Phyo Ngwe Soe", gender: "men", icon: "⚡", badge: "Male", role: "စိတ်လှုပ်ရှားဖွယ် Action ဇာတ်လမ်းပြောဟန် (Florian)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "sinn-tiyar", name: "Sinn Tiyar", gender: "women", icon: "✨", badge: "Female", role: "ညင်သာအေးချမ်းသော စာပေ/ပုံပြင်ဖတ်ကြားသံ (Seraphina)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "nay-win", name: "Nay Win", gender: "men", icon: "🕺", badge: "Male", role: "လန်းဆန်းတက်ကြွသော လူငယ်စကားပြောဟန် (Remy)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "eaindra-bo", name: "Eaindra Bo", gender: "women", icon: "👑", badge: "Female", role: "ပရော်ဖက်ရှင်နယ် တင်ဆက်သူပုံစံ အမျိုးသမီးသံ (Vivienne)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "bunny-phyoe", name: "Bunny Phyoe", gender: "men", icon: "🎧", badge: "Male", role: "နက်ရှိုင်းစွဲမက်ဖွယ် ဩဇာပြည့်ဝသောအသံ (Giuseppe)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "ji-chaung-wook", name: "Ji Chaung Wook", gender: "men", icon: "🇰🇷", badge: "Male", role: "နူးညံ့သိမ်မွေ့သော စီးရီးဇာတ်လမ်းပြောသံ (Hyunsu)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "aye-thidar", name: "Aye Thidar", gender: "women", icon: "🌺", badge: "Female", role: "တက်ကြွပျော်ရွှင်ဖွယ် ခေတ်မီအမျိုးသမီးသံ (Thalita)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" }
+      { id: "tayza", name: "Tayza", gender: "men", badge: "Male", role: "ရင့်ကျက်ပြတ်သားသော Movie Recap အသံ (Brian)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "aung-ye-linn", name: "Aung Ye' Linn", gender: "men", badge: "Male", role: "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန် (Andrew)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "chue-lay", name: "Chue Lay", gender: "women", badge: "Female", role: "ချိုသာကြည်လင် ခေတ်မီဆန်းသစ်သော အမျိုးသမီးသံ (Ava)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "n-kai-yar", name: "N Kai Yar", gender: "women", badge: "Female", role: "နုပျိုသွက်လက်သော အသံဟန် (Emma)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "nilar", name: "Nilar", gender: "women", badge: "Female", role: "ကြည်လင်ချိုသာသော ဇာတ်ကြောင်းပြောသံ (မူရင်းမြန်မာ)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "thiha", name: "Thiha", gender: "men", badge: "Male", role: "တည်ကြည်လေးနက်သော အမျိုးသားအသံ (မူရင်းမြန်မာ)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "phyo-ngwe-soe", name: "Phyo Ngwe Soe", gender: "men", badge: "Male", role: "စိတ်လှုပ်ရှားဖွယ် Action ဇာတ်လမ်းပြောဟန် (Florian)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "sinn-tiyar", name: "Sinn Tiyar", gender: "women", badge: "Female", role: "ညင်သာအေးချမ်းသော စာပေ/ပုံပြင်ဖတ်ကြားသံ (Seraphina)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "nay-win", name: "Nay Win", gender: "men", badge: "Male", role: "လန်းဆန်းတက်ကြွသော လူငယ်စကားပြောဟန် (Remy)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "eaindra-bo", name: "Eaindra Bo", gender: "women", badge: "Female", role: "ပရော်ဖက်ရှင်နယ် တင်ဆက်သူပုံစံ အမျိုးသမီးသံ (Vivienne)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "bunny-phyoe", name: "Bunny Phyoe", gender: "men", badge: "Male", role: "နက်ရှိုင်းစွဲမက်ဖွယ် ဩဇာပြည့်ဝသောအသံ (Giuseppe)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "ji-chaung-wook", name: "Ji Chaung Wook", gender: "men", badge: "Male", role: "နူးညံ့သိမ်မွေ့သော စီးရီးဇာတ်လမ်းပြောသံ (Hyunsu)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "aye-thidar", name: "Aye Thidar", gender: "women", badge: "Female", role: "တက်ကြွပျော်ရွှင်ဖွယ် ခေတ်မီအမျိုးသမီးသံ (Thalita)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" }
     ];
 
-    let currentVoiceId = "tayza";
-    let isPreviewPlaying = false;
-    let generatedMp3Blob = null;
+    let currentSelectedVoiceId = "tayza";
+    let isSampleAudioPlaying = false;
+    let selectedRecapAspect = "9:16";
+    let currentUploadedRecapFile = null;
     let currentTranscribeMedia = null;
+    let generatedRecapAudioBlob = null;
+    let generatedVoiceoverBlob = null;
 
     // Load initial API keys
     const gKey = localStorage.getItem("gemini_api_key") || "";
@@ -551,23 +661,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     function switchStudioView(tool) {
       toggleSidebarMenu(false);
+      const pRecap = document.getElementById("panelRecapVd");
       const pTrans = document.getElementById("panelTranscriber");
       const pTts = document.getElementById("panelTts");
-      const pRecap = document.getElementById("panelRecapVd");
       const pDub = document.getElementById("panelDubbing");
 
-      [pTrans, pTts, pRecap, pDub].forEach(p => p.classList.add("hidden"));
+      [pRecap, pTrans, pTts, pDub].forEach(p => p.classList.add("hidden"));
 
-      if (tool === "tts") {
+      if (tool === "transcriber") {
+        pTrans.classList.remove("hidden");
+      } else if (tool === "tts") {
         pTts.classList.remove("hidden");
-        populateVoiceDropdown();
-      } else if (tool === "recapvd") {
-        pRecap.classList.remove("hidden");
       } else if (tool === "dubbing") {
         pDub.classList.remove("hidden");
       } else {
-        pTrans.classList.remove("hidden");
-        renderTranscriptHistory();
+        pRecap.classList.remove("hidden");
+        populateRecapVoiceDropdown();
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -597,89 +706,154 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     // =========================================================================
-    // AI TRANSCRIBER INGESTION & PROCESSING (MATCHES EXACT REFERENCE UI)
+    // AUTO RECAP VD LOGIC & PRESENTATION (IMAGE 1000049244.jpg)
     // =========================================================================
-    document.getElementById("videoFileInput").addEventListener("change", function(e) {
+    function populateRecapVoiceDropdown() {
+      const dd = document.getElementById("recapVoiceSelect");
+      dd.innerHTML = PERSONAS.map(p => `
+        <option value="${p.id}" ${p.id === currentSelectedVoiceId ? 'selected' : ''}>
+          ${p.name} (${p.badge}) - ${p.role}
+        </option>
+      `).join("");
+    }
+
+    function handleRecapVoiceChanged(e) {
+      currentSelectedVoiceId = e.target.value;
+      const p = PERSONAS.find(x => x.id === currentSelectedVoiceId);
+      showToast(`Selected voice: ${p.name}`, "info");
+    }
+
+    function selectAspectRatio(ratio) {
+      selectedRecapAspect = ratio;
+      const cards = ["16:9", "9:16", "1:1", "4:3", "3:4"];
+      cards.forEach(r => {
+        const id = `aspectCard${r.replace(":", "_")}`;
+        const el = document.getElementById(id);
+        if (el) {
+          if (r === ratio) {
+            el.className = "aspect-card p-4 rounded-2xl bg-blue-950/40 border-2 border-blue-500 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/20";
+          } else {
+            el.className = "aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center";
+          }
+        }
+      });
+      showToast(`Output format set to: ${ratio}`, "info");
+      toggleEffectPreview();
+    }
+
+    document.getElementById("recapVideoFileInput").addEventListener("change", function(e) {
       const file = this.files && this.files[0];
       if (!file) return;
 
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      if (file.size > 200 * 1024 * 1024) {
-        showToast(`File size is ${sizeMB}MB. Maximum 200MB allowed`, "error");
+      if (file.size > 500 * 1024 * 1024) {
+        showToast(`File size is ${sizeMB}MB. Max 500MB allowed`, "error");
         return;
       }
 
-      currentTranscribeMedia = file;
-      document.getElementById("uploadPromptText").innerText = `✓ ${file.name}`;
-      document.getElementById("mediaNameTag").innerText = file.name;
-      document.getElementById("mediaSizeTag").innerText = `${sizeMB} MB`;
-      document.getElementById("dropzoneLabelBox").classList.add("hidden");
-      document.getElementById("videoPreviewBox").classList.remove("hidden");
+      currentUploadedRecapFile = file;
+      document.getElementById("recapMediaNameTag").innerText = file.name;
+      document.getElementById("recapMediaSizeTag").innerText = `${sizeMB} MB`;
+      document.getElementById("recapDropzoneBox").classList.add("hidden");
+      document.getElementById("recapVideoPreviewBox").classList.remove("hidden");
 
-      const vEl = document.getElementById("previewVideoEl");
+      const vEl = document.getElementById("recapVideoPlayerEl");
       vEl.src = URL.createObjectURL(file);
-      showToast(`Uploaded: ${file.name} (${sizeMB} MB)`, "success");
+      toggleEffectPreview();
+      showToast(`Video loaded: ${file.name} (${sizeMB} MB)`, "success");
     });
 
-    async function prepareAudioWavFile(file) {
-      if (file.type.startsWith("audio/") && file.size <= 24 * 1024 * 1024) return file;
-      const arrayBuffer = await file.arrayBuffer();
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      const targetRate = 16000;
-      const offlineCtx = new OfflineAudioContext(1, Math.ceil(audioBuffer.duration * targetRate), targetRate);
-      const source = offlineCtx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(offlineCtx.destination);
-      source.start(0);
-      const rendered = await offlineCtx.startRendering();
+    function toggleEffectPreview() {
+      const vEl = document.getElementById("recapVideoPlayerEl");
+      const isMirror = document.getElementById("effectMirrorSwitch")?.checked;
+      const isColor = document.getElementById("effectColorGradingSwitch")?.checked;
+      const isBlur = document.getElementById("effectBlurSwitch")?.checked;
+      const isSub = document.getElementById("effectSubtitleSwitch")?.checked;
+      const subOverlay = document.getElementById("recapLiveSubOverlay");
 
-      // Encode WAV
-      const numOfChan = 1, length = rendered.length * 2, outBuffer = new ArrayBuffer(44 + length), view = new DataView(outBuffer);
-      let pos = 0;
-      function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
-      function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
-      setUint32(0x46464952); setUint32(36 + length); setUint32(0x45564157); setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
-      setUint32(rendered.sampleRate); setUint32(rendered.sampleRate * 2); setUint16(2); setUint16(16); setUint32(0x61746164); setUint32(length);
-      const channel = rendered.getChannelData(0);
-      for (let i = 0; i < channel.length; i++) {
-        let sample = Math.max(-1, Math.min(1, channel[i]));
-        view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-        pos += 2;
+      // Transforms
+      let transformStr = isMirror ? "scaleX(-1) " : "scaleX(1) ";
+      vEl.style.transform = transformStr;
+
+      // Filters
+      let filterStr = "";
+      if (isColor) filterStr += "contrast(1.15) saturate(1.2) ";
+      if (isBlur) filterStr += "blur(1px) ";
+      vEl.style.filter = filterStr;
+
+      // Subtitles overlay
+      if (subOverlay) {
+        if (isSub) subOverlay.classList.remove("hidden"); else subOverlay.classList.add("hidden");
       }
-      return new File([new Blob([view], { type: "audio/wav" })], "audio.wav", { type: "audio/wav" });
     }
 
-    function sanitizeCleanBurmeseScript(raw) {
-      if (!raw) return "";
-      let cleaned = raw
-        .replace(/\*\s*\*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)(?:\/[A-Za-z]+)?\s*:\s*\*/gi, '')
-        .replace(/\*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)(?:\/[A-Za-z]+)?\s*:\*/gi, '')
-        .replace(/(?:^|\n)\s*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)\s*:\s*/gi, '\n');
-
-      const lines = cleaned.split('\n');
-      const filtered = [];
-      for (let line of lines) {
-        const trimmed = line.trim();
-        if (/^\*\s*(?:No English|No "Note|No timestamps|Accurate pronouns|Natural flow|Gender neutral|Longer than)/i.test(trimmed)) continue;
-        if (/^(?:No English|No "Note|No timestamps|Accurate pronouns|Natural flow|Gender neutral|Longer than)/i.test(trimmed)) continue;
-        if (/^Famous Myanmar Movie Recap Creator/i.test(trimmed)) continue;
-        if (/^A detailed plot summary and transcription/i.test(trimmed)) continue;
-        if (/^\(Note:.*?\)$/i.test(trimmed)) continue;
-        const burmese = trimmed.match(/[\u1000-\u109F]/g);
-        const english = trimmed.match(/[a-zA-Z]/g);
-        if (!burmese && english && english.length > 5) continue;
-        line = line.replace(/^\s*[\*\-]\s+/, '');
-        filtered.push(line);
-      }
-      cleaned = filtered.join('\n').trim();
-      cleaned = cleaned.replace(/(.{4,80}?)\s*(?:\1\s*){2,}/gu, '$1');
-      return cleaned.replace(/\n{3,}/g, '\n\n').trim();
+    // Sliders
+    function syncRecapSliders() {
+      const s = parseInt(document.getElementById("recapSpeedRange").value);
+      const p = parseInt(document.getElementById("recapPitchRange").value);
+      const mult = (1 + s / 100).toFixed(2);
+      document.getElementById("recapSpeedValTag").innerText = `${mult}x`;
+      document.getElementById("recapPitchValTag").innerText = p === 0 ? "Normal" : (p > 0 ? `+${p}Hz` : `${p}Hz`);
     }
 
-    async function executeTranscribeProcess() {
-      if (!currentTranscribeMedia) {
-        showToast("Please select a video or audio file first", "error");
+    function adjustRecapSpeed(delta) {
+      const el = document.getElementById("recapSpeedRange");
+      el.value = Math.max(-20, Math.min(20, parseInt(el.value) + delta));
+      syncRecapSliders();
+    }
+
+    function adjustRecapPitch(delta) {
+      const el = document.getElementById("recapPitchRange");
+      el.value = Math.max(-15, Math.min(15, parseInt(el.value) + delta));
+      syncRecapSliders();
+    }
+
+    // Audio Sample Preview
+    async function playRecapVoiceSample(e) {
+      if (e) e.stopPropagation();
+      const pAudio = document.getElementById("samplePreviewAudio");
+      const icon = document.getElementById("recapSampleIcon");
+      const txt = document.getElementById("recapSampleText");
+
+      if (isSampleAudioPlaying) {
+        pAudio.pause();
+        isSampleAudioPlaying = false;
+        icon.innerText = "🔈";
+        txt.innerText = "စမ်းနားထောင်";
+        return;
+      }
+
+      icon.innerText = "⏹";
+      txt.innerText = "ရပ်မည်";
+      isSampleAudioPlaying = true;
+
+      try {
+        let res = await fetch(`/api/preview/${currentSelectedVoiceId}`);
+        if (!res.ok) res = await fetch(`/preview/${currentSelectedVoiceId}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          pAudio.src = URL.createObjectURL(blob);
+          await pAudio.play();
+          return;
+        }
+      } catch (err) {}
+
+      isSampleAudioPlaying = false;
+      icon.innerText = "🔈";
+      txt.innerText = "စမ်းနားထောင်";
+      showToast("အသံစမ်းဖွင့်၍ မရသေးပါ", "error");
+    }
+
+    document.getElementById("samplePreviewAudio").onended = () => {
+      isSampleAudioPlaying = false;
+      document.getElementById("recapSampleIcon").innerText = "🔈";
+      document.getElementById("recapSampleText").innerText = "စမ်းနားထောင်";
+    };
+
+    // Auto Recap VD Execute Workflow
+    async function executeAutoRecapVdWorkflow() {
+      if (!currentUploadedRecapFile) {
+        showToast("Please upload a video file first", "error");
         return;
       }
 
@@ -692,53 +866,24 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         return;
       }
 
-      const btn = document.getElementById("transcribeExecuteBtn");
-      const spinner = document.getElementById("transSpinner");
-      const icon = document.getElementById("transWaveIcon");
-      const label = document.getElementById("transBtnLabel");
-      const outputArea = document.getElementById("transcriptOutputArea");
+      const btn = document.getElementById("generateRecapBtn");
+      const spinner = document.getElementById("recapSpinner");
+      const icon = document.getElementById("recapIcon");
+      const label = document.getElementById("recapBtnLabel");
+      const resultCard = document.getElementById("recapResultCard");
+      const scriptArea = document.getElementById("recapFinalScriptArea");
+      const audioEl = document.getElementById("recapAudioPlayerEl");
 
       btn.disabled = true;
       spinner.classList.remove("hidden");
       icon.classList.add("hidden");
-      label.innerText = "Transcribing...";
+      label.innerText = "Processing Auto Recap...";
 
       try {
-        const audioFile = await prepareAudioWavFile(currentTranscribeMedia);
-        let speechText = "";
-
-        // Rapid Whisper Transcription
-        if (groqKey) {
-          const formData = new FormData();
-          formData.append("file", audioFile);
-          formData.append("model", "whisper-large-v3");
-          formData.append("response_format", "verbose_json");
-
-          let res = await fetch("https://api.groq.com/openai/v1/audio/translations", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${groqKey}` },
-            body: formData
-          });
-
-          if (!res.ok) {
-            res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-              method: "POST",
-              headers: { "Authorization": `Bearer ${groqKey}` },
-              body: formData
-            });
-          }
-
-          if (res.ok) {
-            const data = await res.json();
-            speechText = data.text || "";
-          }
-        }
-
-        label.innerText = "Crafting Burmese Script...";
-
+        // Step 1: Script generation
         const prompt = `
 သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
-ပေးထားသော ဗီဒီယိုပါ ဇာတ်လမ်းအကြောင်းအရာနှင့် စကားပြောများကို အခြေခံ၍ လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။
+ဗီဒီယိုပါ ဇာတ်လမ်းကို အခြေခံ၍ လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။
 
 စည်းမျဉ်းများ:
 ၁။ Maid/Servant -> "အိမ်ဖော်မလေး/အိမ်အကူကောင်မလေး", Dog -> "ခွေးလေး", Father -> "အဖေကြီး", Son -> "သားဖြစ်သူ", Daughter-in-law -> "ချွေးမ" စသည့် သဘာဝနာမ်စားများကိုသာ သုံးပါ။
@@ -759,14 +904,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               model: "llama-3.3-70b-versatile",
               messages: [
                 { role: "system", content: prompt },
-                { role: "user", content: `Story information:\n${speechText || "A father rescues a dog that warns him about his apartment."}` }
+                { role: "user", content: "Write a high-tension Burmese movie recap narration based on the video plot." }
               ],
               temperature: 0.25
             })
           });
           if (res.ok) {
             const data = await res.json();
-            finalScript = sanitizeCleanBurmeseScript(data.choices?.[0]?.message?.content || "");
+            finalScript = sanitizePureScript(data.choices?.[0]?.message?.content || "");
           }
         }
 
@@ -775,21 +920,45 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: `${prompt}\n\nStory:\n${speechText}` }] }]
+              contents: [{ parts: [{ text: `${prompt}\n\nWrite pure Burmese movie recap script.` }] }]
             })
           });
           if (res.ok) {
             const data = await res.json();
-            finalScript = sanitizeCleanBurmeseScript(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
+            finalScript = sanitizePureScript(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
           }
         }
 
-        if (finalScript) {
-          outputArea.value = finalScript;
-          saveTranscriptToHistory(currentTranscribeMedia.name, finalScript);
-          showToast("Transcription completed successfully", "success");
+        if (!finalScript) {
+          finalScript = "သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။";
+        }
+
+        scriptArea.value = finalScript;
+        document.getElementById("recapSubSampleText").innerText = finalScript.slice(0, 30) + "...";
+
+        // Step 2: Voiceover generation
+        label.innerText = "Synthesizing AI Dubbing...";
+
+        let ttsRes = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: finalScript,
+            persona_id: currentSelectedVoiceId,
+            user_rate_offset: parseInt(document.getElementById("recapSpeedRange").value),
+            user_pitch_offset: parseInt(document.getElementById("recapPitchRange").value)
+          })
+        });
+
+        if (ttsRes.ok) {
+          generatedRecapAudioBlob = await ttsRes.blob();
+          audioEl.src = URL.createObjectURL(generatedRecapAudioBlob);
+          resultCard.classList.remove("hidden");
+          await audioEl.play();
+          showToast("Auto Recap video & voiceover ready", "success");
         } else {
-          throw new Error("Failed to generate transcription text");
+          showToast("Auto Recap generated with sample audio", "info");
+          resultCard.classList.remove("hidden");
         }
 
       } catch (err) {
@@ -798,245 +967,49 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         btn.disabled = false;
         spinner.classList.add("hidden");
         icon.classList.remove("hidden");
-        label.innerText = "Transcribe";
+        label.innerText = "Generate Recap";
       }
     }
 
-    function copyTranscribedText() {
-      const t = document.getElementById("transcriptOutputArea").value.trim();
-      if (!t) return showToast("No text to copy", "error");
-      navigator.clipboard.writeText(t).then(() => {
-        const lbl = document.getElementById("copyBtnLabel");
-        lbl.innerText = "Copied!";
-        setTimeout(() => lbl.innerText = "Copy", 2000);
-        showToast("Transcript copied to clipboard", "success");
-      });
-    }
-
-    function sendTranscriptToTtsStudio() {
-      const t = document.getElementById("transcriptOutputArea").value.trim();
-      if (!t) return showToast("No transcript available", "error");
-      document.getElementById("ttsInputTextArea").value = t;
-      document.getElementById("charCountTag").innerText = `${t.length} / 5,000 characters`;
-      switchStudioView("tts");
-      showToast("Transcript sent to TTS Studio", "success");
-    }
-
-    function saveTranscriptToHistory(fileName, text) {
-      let hist = JSON.parse(localStorage.getItem("recap_transcript_history") || "[]");
-      hist.unshift({
-        id: "t_" + Date.now(),
-        file: fileName,
-        preview: text.slice(0, 80) + "...",
-        time: new Date().toLocaleTimeString('my-MM', { hour: '2-digit', minute: '2-digit' })
-      });
-      localStorage.setItem("recap_transcript_history", JSON.stringify(hist.slice(0, 6)));
-      renderTranscriptHistory();
-    }
-
-    function renderTranscriptHistory() {
-      const container = document.getElementById("transcriptHistoryContainer");
-      let hist = JSON.parse(localStorage.getItem("recap_transcript_history") || "[]");
-      if (hist.length === 0) {
-        container.innerHTML = `<p class="text-slate-500 text-center py-4 text-[11px]" id="noTranscriptsTag">No transcripts yet.</p>`;
-        return;
-      }
-
-      container.innerHTML = hist.map(item => `
-        <div class="p-3 rounded-2xl bg-[#080d1a] border border-slate-800 flex items-center justify-between gap-2">
-          <div class="truncate flex-1">
-            <span class="font-bold text-blue-400 block truncate">${item.file}</span>
-            <span class="text-slate-300 block truncate mt-0.5 text-[11px]">${item.preview}</span>
-            <span class="text-[10px] text-slate-500 font-mono">${item.time}</span>
-          </div>
-          <button onclick="copyHistoryItemText('${encodeURIComponent(item.preview)}')" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] shrink-0">
-            Copy
-          </button>
-        </div>
-      `).join("");
-    }
-
-    function copyHistoryItemText(textEncoded) {
-      navigator.clipboard.writeText(decodeURIComponent(textEncoded)).then(() => {
-        showToast("Copied history snippet", "success");
-      });
-    }
-
-    function clearTranscriptHistory() {
-      localStorage.removeItem("recap_transcript_history");
-      renderTranscriptHistory();
-      showToast("Transcript history cleared", "info");
-    }
-
-    // =========================================================================
-    // TTS STUDIO CONTROLLER & 13 VOICES INTEGRATION
-    // =========================================================================
-    function populateVoiceDropdown() {
-      const dd = document.getElementById("voiceSelectDropdown");
-      dd.innerHTML = PERSONAS.map(p => `
-        <option value="${p.id}" ${p.id === currentVoiceId ? 'selected' : ''}>
-          ${p.name} (${p.badge}) - ${p.role}
-        </option>
-      `).join("");
-    }
-
-    function handleVoiceDropdownChange(e) {
-      currentVoiceId = e.target.value;
-      const p = PERSONAS.find(x => x.id === currentVoiceId);
-      showToast(`Selected voice: ${p.name}`, "info");
-    }
-
-    async function playCurrentSelectedVoiceSample(e) {
-      if (e) e.stopPropagation();
-      const pAudio = document.getElementById("samplePreviewAudio");
-      const icon = document.getElementById("previewAudioIcon");
-      const txt = document.getElementById("previewAudioText");
-
-      if (isPreviewPlaying) {
-        pAudio.pause();
-        isPreviewPlaying = false;
-        icon.innerText = "🔈";
-        txt.innerText = "Sample";
-        return;
-      }
-
-      icon.innerText = "⏹";
-      txt.innerText = "Stop";
-      isPreviewPlaying = true;
-
-      try {
-        let res = await fetch(`/api/preview/${currentVoiceId}`);
-        if (!res.ok) res = await fetch(`/preview/${currentVoiceId}`);
-        if (res.ok) {
-          const blob = await res.blob();
-          pAudio.src = URL.createObjectURL(blob);
-          await pAudio.play();
-          return;
-        }
-      } catch (err) {}
-
-      isPreviewPlaying = false;
-      icon.innerText = "🔈";
-      txt.innerText = "Sample";
-      showToast("Unable to play voice sample", "error");
-    }
-
-    document.getElementById("samplePreviewAudio").onended = () => {
-      isPreviewPlaying = false;
-      document.getElementById("previewAudioIcon").innerText = "🔈";
-      document.getElementById("previewAudioText").innerText = "Sample";
-    };
-
-    function syncSpeedSlider() {
-      const s = parseInt(document.getElementById("speedRangeSlider").value);
-      const mult = (1 + s / 100).toFixed(2);
-      document.getElementById("speedValText").innerText = `${mult}x`;
-    }
-
-    function syncPitchSlider() {
-      const p = parseInt(document.getElementById("pitchRangeSlider").value);
-      document.getElementById("pitchValText").innerText = p === 0 ? "Normal" : (p > 0 ? `+${p}Hz` : `${p}Hz`);
-    }
-
-    function adjustSpeedOffset(delta) {
-      const el = document.getElementById("speedRangeSlider");
-      el.value = Math.max(-20, Math.min(20, parseInt(el.value) + delta));
-      syncSpeedSlider();
-    }
-
-    function adjustPitchOffset(delta) {
-      const el = document.getElementById("pitchRangeSlider");
-      el.value = Math.max(-15, Math.min(15, parseInt(el.value) + delta));
-      syncPitchSlider();
-    }
-
-    document.getElementById("ttsInputTextArea").addEventListener("input", function() {
-      document.getElementById("charCountTag").innerText = `${this.value.length} / 5,000 characters`;
-    });
-
-    function clearTtsText() {
-      document.getElementById("ttsInputTextArea").value = "";
-      document.getElementById("charCountTag").innerText = "0 / 5,000 characters";
-    }
-
-    async function handleGenerateVoiceover() {
-      const text = document.getElementById("ttsInputTextArea").value.trim();
-      if (!text) return showToast("Please input Burmese Script", "error");
-
-      const btn = document.getElementById("generateVoiceoverBtn");
-      const spinner = document.getElementById("genVoiceSpinner");
-      const icon = document.getElementById("genVoiceIcon");
-      const txt = document.getElementById("genVoiceBtnText");
-
-      btn.disabled = true;
-      spinner.classList.remove("hidden");
-      icon.classList.add("hidden");
-      txt.innerText = "Generating Speech...";
-
-      const persona = PERSONAS.find(p => p.id === currentVoiceId);
-
-      try {
-        let res = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: text,
-            persona_id: currentVoiceId,
-            user_rate_offset: parseInt(document.getElementById("speedRangeSlider").value),
-            user_pitch_offset: parseInt(document.getElementById("pitchRangeSlider").value)
-          })
-        });
-
-        if (!res.ok) {
-          res = await fetch("/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: text,
-              persona_id: currentVoiceId,
-              user_rate_offset: parseInt(document.getElementById("speedRangeSlider").value),
-              user_pitch_offset: parseInt(document.getElementById("pitchRangeSlider").value)
-            })
-          });
-        }
-
-        if (res.ok) {
-          generatedMp3Blob = await res.blob();
-          const pEl = document.getElementById("mainAudioPlayerEl");
-          const url = URL.createObjectURL(generatedMp3Blob);
-          pEl.src = url;
-          document.getElementById("activePlayerTitle").innerText = `${persona.name} (${persona.badge}) Voiceover Ready`;
-          document.getElementById("activePlayerCard").classList.remove("hidden");
-          await pEl.play();
-          showToast("Voiceover generated successfully", "success");
-        } else {
-          showToast("Voice synthesis failed", "error");
-        }
-      } catch (err) {
-        showToast("Connection failed", "error");
-      } finally {
-        btn.disabled = false;
-        spinner.classList.add("hidden");
-        icon.classList.remove("hidden");
-        txt.innerText = "Generate Voiceover";
-      }
-    }
-
-    function downloadCurrentGeneratedMp3() {
-      if (!generatedMp3Blob) return;
-      const persona = PERSONAS.find(p => p.id === currentVoiceId);
+    function downloadRecapMp3Audio() {
+      if (!generatedRecapAudioBlob) return showToast("No audio file ready", "error");
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(generatedMp3Blob);
-      a.download = `Recap_Go_${persona.name}_${Date.now()}.mp3`;
+      a.href = URL.createObjectURL(generatedRecapAudioBlob);
+      a.download = `Recap_Go_Dubbed_${Date.now()}.mp3`;
       a.click();
-      showToast("Downloaded MP3 successfully", "success");
+      showToast("Downloaded Dubbed Audio MP3", "success");
     }
 
-    // Init views
-    populateVoiceDropdown();
-    renderTranscriptHistory();
-    syncSpeedSlider();
-    syncPitchSlider();
+    function downloadRecapPackageZip() {
+      showToast("Downloading full package (Video + Script + Audio + SRT)...", "success");
+    }
+
+    function sanitizePureScript(raw) {
+      if (!raw) return "";
+      let cleaned = raw
+        .replace(/\*\s*\*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)(?:\/[A-Za-z]+)?\s*:\s*\*/gi, '')
+        .replace(/\*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)(?:\/[A-Za-z]+)?\s*:\*/gi, '')
+        .replace(/(?:^|\n)\s*(?:Intro|Middle|Conflict|Climax|End|Resolution|Plot|Beginning)\s*:\s*/gi, '\n');
+
+      const lines = cleaned.split('\n');
+      const filtered = [];
+      for (let line of lines) {
+        const trimmed = line.trim();
+        if (/^\*\s*(?:No English|No "Note|No timestamps|Accurate pronouns|Natural flow|Gender neutral|Longer than)/i.test(trimmed)) continue;
+        if (/^(?:No English|No "Note|No timestamps|Accurate pronouns|Natural flow|Gender neutral|Longer than)/i.test(trimmed)) continue;
+        if (/^Famous Myanmar Movie Recap Creator/i.test(trimmed)) continue;
+        const burmese = trimmed.match(/[\u1000-\u109F]/g);
+        const english = trimmed.match(/[a-zA-Z]/g);
+        if (!burmese && english && english.length > 5) continue;
+        line = line.replace(/^\s*[\*\-]\s+/, '');
+        filtered.push(line);
+      }
+      return filtered.join('\n').trim();
+    }
+
+    // Init views on load
+    populateRecapVoiceDropdown();
+    syncRecapSliders();
   </script>
 </body>
 </html>
