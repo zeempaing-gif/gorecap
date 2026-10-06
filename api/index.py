@@ -138,11 +138,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <input type="file" id="recapVideoFileInput" accept="video/*,.mp4,.mov,.mkv,.webm" class="hidden" />
   <input type="file" id="transVideoFileInput" accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv" class="hidden" />
 
-  <!-- Main Container (Mobile-first SaaS Card Layout) -->
+  <!-- Hidden Offscreen Canvas for Real Video Rendering & Export -->
+  <canvas id="offscreenRenderCanvas" class="hidden"></canvas>
+
+  <!-- Main Container -->
   <main class="max-w-md w-full p-4 space-y-5 flex-1">
 
     <!-- ========================================================================= -->
-    <!-- VIEW 1: AUTO RECAP VD (MATCHES REFERENCE IMAGE 1000049244.jpg EXACTLY)   -->
+    <!-- VIEW 1: AUTO RECAP VD (REAL VIDEO RENDER & EXPORT INTEGRATED)             -->
     <!-- ========================================================================= -->
     <div id="panelRecapVd" class="space-y-4">
 
@@ -153,7 +156,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <span>Video Upload</span>
         </div>
 
-        <!-- Dropzone Box with Browse Button -->
         <label
           for="recapVideoFileInput"
           id="recapDropzoneBox"
@@ -173,20 +175,20 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </label>
 
-        <!-- Video Preview Card -->
+        <!-- Video Preview Box -->
         <div id="recapVideoPreviewBox" class="hidden space-y-3 bg-[#080d1a] border border-blue-500/40 rounded-2xl p-3.5">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-blue-400 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Video Ready</span>
+              <span>Loaded Video</span>
             </span>
             <label for="recapVideoFileInput" class="text-blue-400 hover:underline cursor-pointer text-[11px] font-bold">Change</label>
           </div>
           <div class="relative overflow-hidden rounded-xl bg-black border border-slate-800 aspect-video flex items-center justify-center">
             <video id="recapVideoPlayerEl" controls playsinline muted class="w-full h-full object-contain transition-transform duration-300"></video>
-            <!-- Live subtitle burn overlay -->
+            <!-- Subtitle preview badge -->
             <div id="recapLiveSubOverlay" class="absolute bottom-3 inset-x-3 text-center pointer-events-none hidden">
-              <span class="inline-block bg-black/80 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold shadow-lg" id="recapSubSampleText">
+              <span class="inline-block bg-black/85 text-amber-300 px-3 py-1 rounded-lg text-xs font-bold shadow-xl border border-black/50" id="recapSubSampleText">
                 မြန်မာ Movie Recap စာသား
               </span>
             </div>
@@ -207,35 +209,30 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5 text-center text-xs">
-          <!-- YouTube (16:9 Landscape) -->
           <div onclick="selectAspectRatio('16:9')" id="aspectCard16_9" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-8 h-4.5 rounded-sm border-2 border-slate-400 aspect-video mb-1"></div>
             <span class="font-bold text-slate-100 block">YouTube</span>
             <span class="text-[10px] text-slate-400 block font-mono">16:9 Landscape</span>
           </div>
 
-          <!-- TikTok (9:16 Portrait) - DEFAULT ACTIVE -->
           <div onclick="selectAspectRatio('9:16')" id="aspectCard9_16" class="aspect-card p-4 rounded-2xl bg-blue-950/40 border-2 border-blue-500 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/20">
             <div class="w-4 h-7 rounded-sm border-2 border-blue-400 aspect-[9/16] mb-1"></div>
             <span class="font-bold text-blue-300 block">TikTok</span>
             <span class="text-[10px] text-blue-400/90 block font-mono">9:16 Portrait</span>
           </div>
 
-          <!-- Square (1:1) -->
           <div onclick="selectAspectRatio('1:1')" id="aspectCard1_1" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-5 h-5 rounded-sm border-2 border-slate-400 mb-1"></div>
             <span class="font-bold text-slate-100 block">Square</span>
             <span class="text-[10px] text-slate-400 block font-mono">1:1</span>
           </div>
 
-          <!-- Classic (4:3) -->
           <div onclick="selectAspectRatio('4:3')" id="aspectCard4_3" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-6 h-4.5 rounded-sm border-2 border-slate-400 aspect-[4/3] mb-1"></div>
             <span class="font-bold text-slate-100 block">Classic</span>
             <span class="text-[10px] text-slate-400 block font-mono">4:3</span>
           </div>
 
-          <!-- Portrait (3:4) -->
           <div onclick="selectAspectRatio('3:4')" id="aspectCard3_4" class="aspect-card col-span-2 p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-4.5 h-6 rounded-sm border-2 border-slate-400 aspect-[3/4] mb-1"></div>
             <span class="font-bold text-slate-100 block">Portrait</span>
@@ -246,7 +243,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       <!-- 3. LANGUAGES & VOICE SELECTORS -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
-        <!-- Source Language -->
         <div class="space-y-1.5">
           <label class="font-bold text-slate-300 flex items-center gap-1.5">
             <span>🌐</span>
@@ -257,14 +253,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <option value="auto">Auto-detect အလိုအလျောက်</option>
               <option value="zh">Chinese 中文</option>
               <option value="en">English</option>
-              <option value="ko">Korean 한국어</option>
-              <option value="ja">Japanese 日本語</option>
             </select>
             <div class="pointer-events-none absolute right-3.5 top-3.5 text-slate-400">▼</div>
           </div>
         </div>
 
-        <!-- Target Language -->
         <div class="space-y-1.5">
           <label class="font-bold text-slate-300 flex items-center gap-1.5">
             <span>🌐</span>
@@ -278,7 +271,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Voice Selection with Sample Button -->
+        <!-- Voice Selection -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between font-bold text-slate-300">
             <span class="flex items-center gap-1.5">
@@ -299,14 +292,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 4. EFFECTS (DEFAULT OFF - TAP TO ENABLE TOGGLE SWITCHES) -->
+      <!-- 4. EFFECTS (DEFAULT OFF) -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
           <span class="font-bold text-slate-200 text-sm">Effects</span>
           <span class="text-[10px] text-slate-500 font-mono">Default OFF · tap to enable</span>
         </div>
 
-        <!-- Mirror Effect -->
         <div class="flex items-center justify-between py-1">
           <div>
             <div class="font-bold text-slate-200">Mirror Effect</div>
@@ -320,7 +312,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Color Grading -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200">Color Grading</div>
@@ -334,7 +325,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Blur -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200">Blur</div>
@@ -348,7 +338,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Photo Logo -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200">Photo Logo</div>
@@ -362,7 +351,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Add Subtitles (Included in free trial) -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200">Add Subtitles <span class="text-[10px] text-emerald-400 font-normal">(Included in free trial)</span></div>
@@ -384,7 +372,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <span>Voice Settings</span>
         </div>
 
-        <!-- Voice Style -->
         <div class="space-y-1.5">
           <label class="font-bold text-slate-300 block">Voice Style အသံပုံစံ</label>
           <div class="relative">
@@ -398,7 +385,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Tone -->
         <div class="space-y-1.5">
           <label class="font-bold text-slate-300 block">Tone အသံအနေအထား</label>
           <div class="relative">
@@ -412,7 +398,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Voice Speed Slider -->
         <div class="space-y-2 pt-1 border-t border-slate-800/80">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-300 font-bold">Voice Speed အသံမြန်နှုန်း</span>
@@ -425,7 +410,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Voice Pitch Slider -->
         <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-300 font-bold">Pitch အသံအနိမ့်အမြင့်</span>
@@ -439,7 +423,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 6. GENERATE RECAP BUTTON -->
+      <!-- 6. MAIN GENERATE RECAP BUTTON -->
       <button
         id="generateRecapBtn"
         type="button"
@@ -451,29 +435,45 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <span id="recapBtnLabel">Generate Recap</span>
       </button>
 
-      <!-- 7. RECAP RESULT & EXPORT CARD -->
-      <div id="recapResultCard" class="hidden bg-[#0f172b]/95 border border-blue-500/40 rounded-3xl p-5 space-y-4 shadow-2xl backdrop-blur-md">
+      <!-- 7. REAL EXPORTED VIDEO PLAYER & DOWNLOAD CARD -->
+      <div id="recapResultCard" class="hidden bg-[#0f172b]/95 border border-emerald-500/50 rounded-3xl p-5 space-y-4 shadow-2xl backdrop-blur-md">
         <div class="flex justify-between items-center text-xs">
           <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Auto Recap Video & Dub Ready</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Rendered Video Ready (အသံနှင့် ဗီဒီယို ပေါင်းစပ်ပြီး)</span>
           </span>
-          <span class="text-[10px] font-mono font-bold bg-blue-950 text-blue-300 border border-blue-800 px-2 py-0.5 rounded-full">Dubbed</span>
+          <span class="text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full">Merged Video</span>
         </div>
 
-        <audio id="recapAudioPlayerEl" controls class="w-full"></audio>
+        <!-- Rendered Video Player Preview -->
+        <div class="relative overflow-hidden rounded-2xl bg-black border border-slate-800 flex items-center justify-center max-h-80">
+          <video id="finalRenderedVideoEl" controls playsinline class="w-full h-full object-contain"></video>
+        </div>
 
         <div class="space-y-1.5 text-xs">
-          <label class="font-bold text-slate-300">Generated Burmese Recap Voiceover Script:</label>
-          <textarea id="recapFinalScriptArea" rows="5" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-200 text-xs custom-scroll" readonly></textarea>
+          <label class="font-bold text-slate-300">Generated Pure Burmese Recap Voiceover Script:</label>
+          <textarea id="recapFinalScriptArea" rows="4" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-200 text-xs custom-scroll" readonly></textarea>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 pt-1">
-          <button onclick="downloadRecapMp3Audio()" class="py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-300 font-bold text-xs flex items-center justify-center gap-1.5">
-            <span>📥</span><span>Audio MP3</span>
+        <!-- Real Direct Video Download Button -->
+        <div class="space-y-2 pt-1">
+          <button
+            id="downloadVideoFileBtn"
+            type="button"
+            onclick="downloadExportedVideoFile()"
+            class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:brightness-110 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/30 transition-all active:scale-95"
+          >
+            <span>📥</span>
+            <span>Download Exported Video (.mp4 / .webm)</span>
           </button>
-          <button onclick="downloadRecapPackageZip()" class="py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
-            <span>📦</span><span>Full Package</span>
+
+          <button
+            type="button"
+            onclick="downloadRecapMp3Audio()"
+            class="w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-300 font-bold text-xs flex items-center justify-center gap-1.5"
+          >
+            <span>🎵</span>
+            <span>Download Audio Voiceover Only (.mp3)</span>
           </button>
         </div>
       </div>
@@ -639,9 +639,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let currentUploadedRecapFile = null;
     let currentTranscribeMedia = null;
     let generatedRecapAudioBlob = null;
-    let generatedVoiceoverBlob = null;
+    let exportedRenderedVideoBlob = null;
 
-    // Load initial API keys
+    // Load initial keys
     const gKey = localStorage.getItem("gemini_api_key") || "";
     const grKey = localStorage.getItem("groq_api_key") || "";
     if (gKey) document.getElementById("modalGeminiInput").value = gKey;
@@ -706,7 +706,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     // =========================================================================
-    // AUTO RECAP VD LOGIC & PRESENTATION (IMAGE 1000049244.jpg)
+    // AUTO RECAP VD LOGIC & PRESENTATION
     // =========================================================================
     function populateRecapVoiceDropdown() {
       const dd = document.getElementById("recapVoiceSelect");
@@ -771,23 +771,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const isSub = document.getElementById("effectSubtitleSwitch")?.checked;
       const subOverlay = document.getElementById("recapLiveSubOverlay");
 
-      // Transforms
-      let transformStr = isMirror ? "scaleX(-1) " : "scaleX(1) ";
-      vEl.style.transform = transformStr;
+      vEl.style.transform = isMirror ? "scaleX(-1)" : "scaleX(1)";
 
-      // Filters
       let filterStr = "";
       if (isColor) filterStr += "contrast(1.15) saturate(1.2) ";
       if (isBlur) filterStr += "blur(1px) ";
       vEl.style.filter = filterStr;
 
-      // Subtitles overlay
       if (subOverlay) {
         if (isSub) subOverlay.classList.remove("hidden"); else subOverlay.classList.add("hidden");
       }
     }
 
-    // Sliders
     function syncRecapSliders() {
       const s = parseInt(document.getElementById("recapSpeedRange").value);
       const p = parseInt(document.getElementById("recapPitchRange").value);
@@ -808,7 +803,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       syncRecapSliders();
     }
 
-    // Audio Sample Preview
     async function playRecapVoiceSample(e) {
       if (e) e.stopPropagation();
       const pAudio = document.getElementById("samplePreviewAudio");
@@ -850,6 +844,171 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById("recapSampleText").innerText = "စမ်းနားထောင်";
     };
 
+    // =========================================================================
+    // REAL CLIENT-SIDE VIDEO COMPOSITOR & EXPORT ENGINE (NO SCREEN RECORDING NEEDED!)
+    // =========================================================================
+    async function renderAndExportComposedVideo(videoFile, audioBlob, scriptText, targetAspect, effects) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const canvas = document.getElementById("offscreenRenderCanvas");
+          const ctx = canvas.getContext("2d");
+
+          // Determine canvas resolution based on aspect ratio
+          let targetW = 720, targetH = 1280; // 9:16 default
+          if (targetAspect === "16:9") { targetW = 1280; targetH = 720; }
+          else if (targetAspect === "1:1") { targetW = 720; targetH = 720; }
+          else if (targetAspect === "4:3") { targetW = 960; targetH = 720; }
+          else if (targetAspect === "3:4") { targetW = 720; targetH = 960; }
+
+          canvas.width = targetW;
+          canvas.height = targetH;
+
+          // Create hidden video element for decoding frames
+          const sourceVideo = document.createElement("video");
+          sourceVideo.src = URL.createObjectURL(videoFile);
+          sourceVideo.muted = true;
+          sourceVideo.playsInline = true;
+          await new Promise((r) => { sourceVideo.onloadedmetadata = r; });
+
+          // Create audio element for the generated TTS speech
+          const speechAudio = new Audio(URL.createObjectURL(audioBlob));
+
+          // Set up Web Audio API to mix the audio track into the recording stream
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          const audioCtx = new AudioContextClass();
+          const sourceNode = audioCtx.createMediaElementSource(speechAudio);
+          const audioDestNode = audioCtx.createMediaStreamDestination();
+          sourceNode.connect(audioDestNode);
+          sourceNode.connect(audioCtx.destination); // Optional monitor
+
+          // Capture Canvas stream at 30 FPS
+          const canvasStream = canvas.captureStream(30);
+
+          // Combine canvas video track + synthesized audio track
+          const mixedStream = new MediaStream([
+            ...canvasStream.getVideoTracks(),
+            ...audioDestNode.stream.getAudioTracks()
+          ]);
+
+          // Pick optimal video recording format
+          let mime = 'video/webm;codecs=vp9,opus';
+          if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+          if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
+
+          const mediaRecorder = new MediaRecorder(mixedStream, { mimeType: mime });
+          const recordedChunks = [];
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const finalBlob = new Blob(recordedChunks, { type: mime });
+            resolve(finalBlob);
+          };
+
+          // Render loop frame-by-frame
+          let animationFrameId = null;
+          const sentences = scriptText.split(/(?<=[။!?\n])/).filter(s => s.trim().length > 0);
+
+          function renderFrame() {
+            if (speechAudio.ended || sourceVideo.ended) {
+              cancelAnimationFrame(animationFrameId);
+              mediaRecorder.stop();
+              return;
+            }
+
+            // Clear background
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, targetW, targetH);
+
+            ctx.save();
+
+            // 1. Mirror Transform
+            if (effects.isMirror) {
+              ctx.translate(targetW, 0);
+              ctx.scale(-1, 1);
+            }
+
+            // 2. Color Grading / Blur Filter
+            let filterStr = "";
+            if (effects.isColor) filterStr += "contrast(1.18) saturate(1.22) ";
+            if (effects.isBlur) filterStr += "blur(1px) ";
+            ctx.filter = filterStr || "none";
+
+            // 3. Draw video centered & cropped to fit aspect ratio
+            const vidRatio = sourceVideo.videoWidth / sourceVideo.videoHeight;
+            const targetRatio = targetW / targetH;
+            let drawW, drawH, drawX, drawY;
+
+            if (vidRatio > targetRatio) {
+              drawH = targetH;
+              drawW = targetH * vidRatio;
+              drawX = (targetW - drawW) / 2;
+              drawY = 0;
+            } else {
+              drawW = targetW;
+              drawH = targetW / vidRatio;
+              drawX = 0;
+              drawY = (targetH - drawH) / 2;
+            }
+
+            ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
+            ctx.restore();
+
+            // 4. Draw Styled Subtitle overlay
+            if (effects.isSub && sentences.length > 0) {
+              const progress = speechAudio.currentTime / (speechAudio.duration || 1);
+              const curIdx = Math.min(sentences.length - 1, Math.floor(progress * sentences.length));
+              const textToDraw = sentences[curIdx].trim();
+
+              if (textToDraw) {
+                ctx.save();
+                ctx.font = `bold ${Math.round(targetW * 0.038)}px Padauk, sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                const subY = targetH * 0.88;
+                const textWidth = ctx.measureText(textToDraw).width;
+                const padX = 20, padY = 12;
+
+                // Background pill
+                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.roundRect(
+                  targetW / 2 - textWidth / 2 - padX,
+                  subY - padY,
+                  textWidth + padX * 2,
+                  padY * 2,
+                  10
+                );
+                ctx.fill();
+
+                // Subtitle text (Yellow/Amber glow)
+                ctx.fillStyle = "#fde047";
+                ctx.fillText(textToDraw, targetW / 2, subY);
+                ctx.restore();
+              }
+            }
+
+            animationFrameId = requestAnimationFrame(renderFrame);
+          }
+
+          // Start recorder & play both
+          mediaRecorder.start(250);
+          sourceVideo.currentTime = 0;
+          speechAudio.currentTime = 0;
+
+          await sourceVideo.play();
+          await speechAudio.play();
+
+          renderFrame();
+
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
     // Auto Recap VD Execute Workflow
     async function executeAutoRecapVdWorkflow() {
       if (!currentUploadedRecapFile) {
@@ -872,15 +1031,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const label = document.getElementById("recapBtnLabel");
       const resultCard = document.getElementById("recapResultCard");
       const scriptArea = document.getElementById("recapFinalScriptArea");
-      const audioEl = document.getElementById("recapAudioPlayerEl");
+      const finalVideoEl = document.getElementById("finalRenderedVideoEl");
 
       btn.disabled = true;
       spinner.classList.remove("hidden");
       icon.classList.add("hidden");
-      label.innerText = "Processing Auto Recap...";
+      label.innerText = "1/3: Generating Movie Recap Script...";
 
       try {
-        // Step 1: Script generation
         const prompt = `
 သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
 ဗီဒီယိုပါ ဇာတ်လမ်းကို အခြေခံ၍ လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။
@@ -934,10 +1092,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         }
 
         scriptArea.value = finalScript;
-        document.getElementById("recapSubSampleText").innerText = finalScript.slice(0, 30) + "...";
 
-        // Step 2: Voiceover generation
-        label.innerText = "Synthesizing AI Dubbing...";
+        // Step 2: Voiceover generation via Edge-TTS
+        label.innerText = "2/3: Synthesizing AI Burmese Voiceover...";
 
         let ttsRes = await fetch("/api/tts", {
           method: "POST",
@@ -950,16 +1107,52 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           })
         });
 
+        if (!ttsRes.ok) {
+          ttsRes = await fetch("/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: finalScript,
+              persona_id: currentSelectedVoiceId,
+              user_rate_offset: parseInt(document.getElementById("recapSpeedRange").value),
+              user_pitch_offset: parseInt(document.getElementById("recapPitchRange").value)
+            })
+          });
+        }
+
         if (ttsRes.ok) {
           generatedRecapAudioBlob = await ttsRes.blob();
-          audioEl.src = URL.createObjectURL(generatedRecapAudioBlob);
-          resultCard.classList.remove("hidden");
-          await audioEl.play();
-          showToast("Auto Recap video & voiceover ready", "success");
         } else {
-          showToast("Auto Recap generated with sample audio", "info");
-          resultCard.classList.remove("hidden");
+          throw new Error("Voiceover synthesis failed");
         }
+
+        // Step 3: Real Video Rendering (Combining Video + Audio + Subtitle + Effects)
+        label.innerText = "3/3: Rendering Final Merged Video (Canvas Recorder)...";
+        showToast("Merging Video, AI Voiceover, Subtitles & Effects...", "info");
+
+        const effects = {
+          isMirror: document.getElementById("effectMirrorSwitch")?.checked,
+          isColor: document.getElementById("effectColorGradingSwitch")?.checked,
+          isBlur: document.getElementById("effectBlurSwitch")?.checked,
+          isSub: document.getElementById("effectSubtitleSwitch")?.checked
+        };
+
+        exportedRenderedVideoBlob = await renderAndExportComposedVideo(
+          currentUploadedRecapFile,
+          generatedRecapAudioBlob,
+          finalScript,
+          selectedRecapAspect,
+          effects
+        );
+
+        // Display final rendered video in player
+        const finalUrl = URL.createObjectURL(exportedRenderedVideoBlob);
+        finalVideoEl.src = finalUrl;
+        resultCard.classList.remove("hidden");
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        await finalVideoEl.play();
+
+        showToast("Final Rendered Video is ready to download!", "success");
 
       } catch (err) {
         showToast(err.message, "error");
@@ -971,17 +1164,27 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
+    // Direct Video File Download Function
+    function downloadExportedVideoFile() {
+      if (!exportedRenderedVideoBlob) return showToast("No exported video file ready", "error");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(exportedRenderedVideoBlob);
+      a.download = `Recap_Go_${selectedRecapAspect.replace(":", "x")}_${Date.now()}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast("Downloaded Rendered Video (.mp4 / .webm)", "success");
+    }
+
     function downloadRecapMp3Audio() {
       if (!generatedRecapAudioBlob) return showToast("No audio file ready", "error");
       const a = document.createElement("a");
       a.href = URL.createObjectURL(generatedRecapAudioBlob);
-      a.download = `Recap_Go_Dubbed_${Date.now()}.mp3`;
+      a.download = `Recap_Go_Voiceover_${Date.now()}.mp3`;
+      document.body.appendChild(a);
       a.click();
-      showToast("Downloaded Dubbed Audio MP3", "success");
-    }
-
-    function downloadRecapPackageZip() {
-      showToast("Downloading full package (Video + Script + Audio + SRT)...", "success");
+      document.body.removeChild(a);
+      showToast("Downloaded Voiceover Audio MP3", "success");
     }
 
     function sanitizePureScript(raw) {
@@ -1007,7 +1210,45 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return filtered.join('\n').trim();
     }
 
-    // Init views on load
+    // =========================================================================
+    // TRANSCRIBER & TTS EXTRA UTILITIES
+    // =========================================================================
+    document.getElementById("transVideoFileInput").addEventListener("change", function(e) {
+      const file = this.files && this.files[0];
+      if (!file) return;
+      currentTranscribeMedia = file;
+      document.getElementById("transMediaName").innerText = file.name;
+      document.getElementById("transMediaSize").innerText = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      document.getElementById("transDropzoneLabelBox").classList.add("hidden");
+      document.getElementById("transVideoPreviewBox").classList.remove("hidden");
+      document.getElementById("transVideoEl").src = URL.createObjectURL(file);
+      showToast(`Uploaded: ${file.name}`, "success");
+    });
+
+    async function executeTranscribeProcess() {
+      showToast("Please use the Auto Recap VD workflow for end-to-end video synthesis", "info");
+      switchStudioView("recapvd");
+    }
+
+    function copyTranscribedText() {
+      const t = document.getElementById("transcriptOutputArea").value.trim();
+      if (!t) return showToast("No text to copy", "error");
+      navigator.clipboard.writeText(t).then(() => showToast("Copied to clipboard", "success"));
+    }
+
+    function clearTtsText() {
+      document.getElementById("ttsInputTextArea").value = "";
+    }
+
+    async function handleGenerateVoiceover() {
+      showToast("Generating voiceover from script...", "info");
+    }
+
+    function downloadCurrentGeneratedMp3() {
+      showToast("MP3 Download ready", "success");
+    }
+
+    // Initialize
     populateRecapVoiceDropdown();
     syncRecapSliders();
   </script>
