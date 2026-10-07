@@ -1,3 +1,4 @@
+# STREAMING_CHUNK:Configuring FastAPI server and core imports...
 import os
 import edge_tts
 from fastapi import FastAPI, HTTPException
@@ -15,6 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# STREAMING_CHUNK:Defining HTML UI styling, scripts and responsive layout...
 HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="my" class="dark">
 <head>
@@ -308,7 +310,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <span class="text-[10px] text-blue-400 font-mono">13 Voices Available</span>
         </div>
 
-        <!-- Custom Dropdown Trigger Button (Styled exactly like reference) -->
+        <!-- Custom Dropdown Trigger Button -->
         <div class="relative">
           <button
             type="button"
@@ -317,14 +319,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             class="w-full bg-[#080d1a] border border-slate-700/80 hover:border-blue-500 rounded-2xl p-3.5 flex items-center justify-between text-slate-100 font-bold transition-all shadow-md active:scale-[0.99]"
           >
             <div class="flex items-center gap-2.5 truncate">
-              <!-- Animated Waveform Icon -->
               <span class="text-blue-400 text-sm font-mono tracking-tighter animate-pulse">||||</span>
               <span id="selectedVoiceLabel" class="text-sm font-bold text-white truncate">တေဇ - Tayza (Male)</span>
             </div>
             <span class="text-slate-400 text-xs ml-2">▼</span>
           </button>
 
-          <!-- Floating Voice Selection Menu (Exact styling from image 1000049252.jpg) -->
+          <!-- Floating Voice Selection Menu with In-line Test Voice Buttons -->
           <div
             id="customVoiceDropdownMenu"
             class="hidden absolute left-0 right-0 top-full mt-2 z-50 bg-[#0d162a]/95 border border-slate-700/90 rounded-2xl shadow-2xl backdrop-blur-xl p-2 space-y-1 max-h-72 overflow-y-auto custom-scroll"
@@ -776,7 +777,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    // Close when clicking outside
     document.addEventListener("click", function(e) {
       const menu = document.getElementById("customVoiceDropdownMenu");
       const trigger = document.getElementById("voiceDropdownTriggerBtn");
@@ -802,12 +802,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               isSelected ? 'bg-blue-600/25 border border-blue-500/50 text-white' : 'hover:bg-slate-800/80 text-slate-200'
             }"
           >
-            <!-- Voice Name + Badge -->
             <div class="flex items-center gap-2 truncate">
               <span class="font-bold text-xs sm:text-sm truncate">${p.name} (${p.badge})</span>
             </div>
 
-            <!-- In-line Test Voice Button & Selected Checkmark -->
             <div class="flex items-center gap-2 shrink-0">
               <button
                 type="button"
@@ -842,7 +840,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       if (e) e.stopPropagation();
       const pAudio = document.getElementById("samplePreviewAudio");
 
-      // Toggle off if clicked again
       if (currentlyPlayingVoiceId === voiceId) {
         pAudio.pause();
         currentlyPlayingVoiceId = null;
@@ -1337,7 +1334,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
               ctx.restore();
 
-              // Subtle frosted border
               ctx.strokeStyle = "rgba(255,255,255,0.2)";
               ctx.lineWidth = 2;
               ctx.strokeRect(bx, by, bw, bh);
@@ -1614,7 +1610,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# 13 Guaranteed Native Burmese Voices (Pitch & Speed Variation, 100% Guaranteed Success)
+# STREAMING_CHUNK:Configuring Edge-TTS personas catalog with strictly quoted keys...
 PERSONA_VOICES = [
     {"id": "tayza", "name": "တေဇ - Tayza", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
     {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း - Aung Ye' Linn", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
@@ -1627,7 +1623,7 @@ PERSONA_VOICES = [
     {"id": "nay-win", "name": "နေဝင်း - Nay Win", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+6%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
     {"id": "eaindra-bo", "name": "အိန္ဒြာဘို - Eaindra Bo", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
     {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး - Bunny Phyoe", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု - Ji Chaung Wook", gender: "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု - Ji Chaung Wook", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
     {"id": "aye-thidar", "name": "အေးသီတာ - Aye Thidar", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
@@ -1638,6 +1634,7 @@ class GenerateTTSRequest(BaseModel):
     user_rate_offset: int = 0
     user_pitch_offset: int = 0
 
+# STREAMING_CHUNK:Declaring route handlers for web pages and Edge-TTS synthesis...
 @app.get("/")
 def read_root():
     return HTMLResponse(content=HTML_CONTENT)
@@ -1667,7 +1664,6 @@ async def get_persona_preview(persona_id: str):
                 audio_data += chunk["data"]
         return Response(content=audio_data, media_type="audio/mpeg")
     except Exception as e:
-        # Fallback to guaranteed native Burmese voice
         fallback_voice = "my-MM-ThihaNeural" if persona.get("gender") == "men" else "my-MM-NilarNeural"
         try:
             communicate = edge_tts.Communicate(
@@ -1728,6 +1724,7 @@ async def generate_speech(req: GenerateTTSRequest):
         except Exception:
             raise HTTPException(status_code=500, detail=str(e))
 
+# STREAMING_CHUNK:Handling catch-all fallback routes...
 @app.get("/{full_path:path}")
 def catch_all_routes(full_path: str):
     return HTMLResponse(content=HTML_CONTENT)
