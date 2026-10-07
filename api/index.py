@@ -301,7 +301,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 3. CLEAN VOICE SELECTION DROPDOWN (EXACT WT TALE FORGE STYLE) -->
+      <!-- 3. CLEAN VOICE SELECTION DROPDOWN (EXACT WT TALE FORGE STYLE: 1000049252.jpg) -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md text-xs">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <span class="font-bold text-slate-200 text-sm flex items-center gap-2">
@@ -324,10 +324,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <span class="text-slate-400 text-xs">▼</span>
           </button>
 
-          <!-- Floating Voice List (Exact match to image 1000049252.jpg) -->
+          <!-- Floating Voice List (Exact match to reference UI 1000049252.jpg) -->
           <div
             id="voiceDropdownPopover"
-            class="hidden absolute left-0 right-0 top-full mt-2 z-50 bg-[#0d162a]/98 border border-slate-700/90 rounded-2xl shadow-2xl backdrop-blur-2xl p-2 space-y-1 max-h-72 overflow-y-auto custom-scroll"
+            class="hidden absolute left-0 right-0 top-full mt-2 z-50 bg-[#0d162a]/98 border border-slate-700/90 rounded-2xl shadow-2xl backdrop-blur-2xl p-2 space-y-1 max-h-80 overflow-y-auto custom-scroll"
           >
             <!-- Injected via JavaScript -->
           </div>
@@ -1616,20 +1616,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
 PREVIEW_AUDIO_CACHE = {}
 
+# 13 Real Distinct Multilingual and Native Burmese Voice Personas
 PERSONA_VOICES = [
-    {"id": "tayza", "name": "တေဇ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "chue-lay", "name": "ချူးလေး", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "base_pitch": "+6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "base_pitch": "+10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "tayza", "name": "တေဇ", "gender": "men", "base_voice": "en-US-BrianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "gender": "men", "base_voice": "en-US-AndrewMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "chue-lay", "name": "ချူးလေး", "gender": "women", "base_voice": "en-US-AvaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "gender": "women", "base_voice": "en-US-EmmaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
     {"id": "nilar", "name": "နီလာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
     {"id": "thiha", "name": "သီဟ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+8Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "sinn-tiyar", "name": "စင်သီယာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nay-win", "name": "နေဝင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+6%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aye-thidar", "name": "အေးသီတာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
+    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "gender": "men", "base_voice": "de-DE-FlorianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "sinn-tiyar", "name": "စင်သီယာ", "gender": "women", "base_voice": "de-DE-SeraphinaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nay-win", "name": "နေဝင်း", "gender": "men", "base_voice": "fr-FR-RemyMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "gender": "women", "base_voice": "fr-FR-VivienneMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး", "gender": "men", "base_voice": "it-IT-GiuseppeMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "gender": "men", "base_voice": "ko-KR-HyunsuMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aye-thidar", "name": "အေးသီတာ", "gender": "women", "base_voice": "pt-BR-ThalitaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
@@ -1678,6 +1679,7 @@ async def get_persona_preview(persona_id: str):
 
     persona = PERSONA_DICT.get(persona_id, PERSONA_VOICES[0])
     
+    # Try Edge-TTS Multilingual Voice Synthesis
     try:
         communicate = edge_tts.Communicate(
             text=persona["sample_text"],
@@ -1698,6 +1700,28 @@ async def get_persona_preview(persona_id: str):
     except Exception:
         pass
 
+    # Instant Native Fallback Voice
+    fallback_voice = "my-MM-ThihaNeural" if persona["gender"] == "men" else "my-MM-NilarNeural"
+    try:
+        communicate = edge_tts.Communicate(
+            text=persona["sample_text"],
+            voice=fallback_voice
+        )
+        audio_data = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data += chunk["data"]
+        if audio_data and len(audio_data) > 500:
+            PREVIEW_AUDIO_CACHE[persona_id] = audio_data
+            return Response(
+                content=audio_data,
+                media_type="audio/mpeg",
+                headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"}
+            )
+    except Exception:
+        pass
+
+    # Instant Zero-Fail Google Burmese TTS Fallback
     fallback_audio = fetch_google_tts_burmese(persona["sample_text"])
     if fallback_audio and len(fallback_audio) > 200:
         PREVIEW_AUDIO_CACHE[persona_id] = fallback_audio
