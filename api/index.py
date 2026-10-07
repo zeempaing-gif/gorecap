@@ -1,4 +1,3 @@
-# STREAMING_CHUNK:Configuring FastAPI server and core imports...
 import os
 import edge_tts
 from fastapi import FastAPI, HTTPException
@@ -16,7 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# STREAMING_CHUNK:Defining embedded single-file application HTML content...
 HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="my" class="dark">
 <head>
@@ -232,12 +230,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <div id="blurResizeHandle" class="resize-handle w-4 h-4 bg-cyan-400 rounded-br-lg rounded-tl-md self-end cursor-nwse-resize shadow-md"></div>
             </div>
 
-            <!-- 2. Free Moveable & Customizable Subtitles Layer -->
+            <!-- 2. Free Moveable & Customizable Subtitles Layer (Shown only when Subtitle Switch is ON) -->
             <div
               id="draggableSubtitleBox"
               class="absolute z-30 px-3 py-1.5 rounded-xl cursor-move shadow-2xl text-center transition-transform select-none hidden"
               style="left: 10%; top: 82%; width: 80%;"
             >
+              <div class="text-[7px] text-amber-300/80 font-mono mb-0.5 pointer-events-none select-none">✥ စာတန်းထားမည့်နေရာ ရွှေ့ပါ</div>
               <span id="subPreviewSpanText" class="inline-block font-extrabold leading-relaxed drop-shadow-md">
                 မြန်မာ Movie Recap စာသားနမူနာ
               </span>
@@ -300,55 +299,32 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 3. SUBTITLES FULL STYLING & POSITIONING CARD -->
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-          <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
-            <span>💬</span>
-            <span>Subtitle Styling & Position (စာတန်းစနစ်)</span>
-          </div>
-          <span class="text-[10px] text-slate-400">ဗီဒီယိုပေါ် လက်ဖြင့် ရွှေ့နိုင်သည်</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <!-- Text Color Picker -->
-          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
-            <label class="text-[11px] font-bold text-slate-300 block">စာသားအရောင် (Text Color)</label>
-            <div class="flex items-center gap-2">
-              <input type="color" id="subTextColorInput" value="#fde047" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
-              <span id="subTextColorCode" class="font-mono text-[10px] text-slate-400">#fde047 (Yellow)</span>
-            </div>
-          </div>
-
-          <!-- Border / Stroke Color Picker -->
-          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
-            <label class="text-[11px] font-bold text-slate-300 block">ဘောင်အရောင် (Border / Stroke)</label>
-            <div class="flex items-center gap-2">
-              <input type="color" id="subBorderColorInput" value="#000000" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
-              <span id="subBorderColorCode" class="font-mono text-[10px] text-slate-400">#000000 (Black)</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Subtitle Size Slider -->
-        <div class="space-y-1.5 p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800">
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-slate-300">စာသားအရွယ်အစား (Font Size)</span>
-            <span id="subSizeLabel" class="font-mono text-amber-400 font-bold">18px</span>
-          </div>
-          <input type="range" id="subSizeRange" min="12" max="32" step="1" value="18" oninput="updateSubtitleStyles()" class="w-full accent-amber-500 cursor-pointer" />
-        </div>
-      </div>
-
-      <!-- 4. EFFECTS (COLOR GRADING 15+, RESIZABLE BLUR, BYPASS ZOOM) -->
+      <!-- 3. EFFECTS & BYPASS (WITH SUBTITLES TOGGLE SWITCH) -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
           <span class="font-bold text-slate-200 text-sm">Effects & Bypass</span>
           <span class="text-[10px] text-slate-500 font-mono">Custom Settings</span>
         </div>
 
-        <!-- Color Grading (Bright 15+, Sat 15+, Warmth 15+, Contrast 15+, Tint 5+) -->
+        <!-- Subtitles Toggle Switch (Controls visibility of settings card & draggable box) -->
         <div class="flex items-center justify-between py-1">
+          <div>
+            <div class="font-bold text-slate-100 flex items-center gap-1.5">
+              <span>💬 Add Subtitles (စာတန်းထိုးစနစ်)</span>
+              <span class="text-[9px] px-1.5 py-0.2 bg-amber-950 text-amber-300 border border-amber-800 rounded font-mono">Interactive</span>
+            </div>
+            <div class="text-[10px] text-slate-400">ဖွင့်ထားပါက ဗီဒီယိုပေါ်တွင် နေရာရွှေ့နိုင်ပြီး အရောင်/အရွယ်အစား ရွေးချယ်နိုင်မည်</div>
+          </div>
+          <div class="relative inline-block w-11 h-6 align-middle select-none">
+            <input type="checkbox" id="effectSubtitleSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+            <label for="effectSubtitleSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Color Grading (Bright 15+, Sat 15+, Warmth 15+, Contrast 15+, Tint 5+) -->
+        <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200 flex items-center gap-1.5">
               <span>Color Grading</span>
@@ -428,6 +404,50 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </label>
           </div>
         </div>
+      </div>
+
+      <!-- 4. SUBTITLES FULL STYLING CARD (CONDITIONAL: SHOWN ONLY WHEN SUBTITLE SWITCH IS ON) -->
+      <div id="subtitleStylingCard" class="hidden bg-[#0f172b]/95 border border-amber-500/40 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs transition-all">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
+            <span>✨</span>
+            <span>Subtitle Customizer (စာတန်း အရောင်နှင့် အရွယ်အစား)</span>
+          </div>
+          <span class="text-[10px] text-emerald-400 font-bold">Active</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Text Color Picker -->
+          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-300 block">စာသားအရောင် (Text Color)</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="subTextColorInput" value="#fde047" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
+              <span id="subTextColorCode" class="font-mono text-[10px] text-slate-400">#fde047</span>
+            </div>
+          </div>
+
+          <!-- Border / Stroke Color Picker -->
+          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-300 block">ဘောင်အရောင် (Border / Stroke)</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="subBorderColorInput" value="#000000" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
+              <span id="subBorderColorCode" class="font-mono text-[10px] text-slate-400">#000000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtitle Size Slider -->
+        <div class="space-y-1.5 p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-300">စာသားအရွယ်အစား (Font Size)</span>
+            <span id="subSizeLabel" class="font-mono text-amber-400 font-bold">18px</span>
+          </div>
+          <input type="range" id="subSizeRange" min="12" max="32" step="1" value="18" oninput="updateSubtitleStyles()" class="w-full accent-amber-500 cursor-pointer" />
+        </div>
+
+        <p class="text-[10px] text-slate-400 text-center font-mono">
+          💡 အပေါ်ရှိ ဗီဒီယိုပေါ်တွင် စာတန်း Box လေးကို လက်ဖြင့် ဖိဆွဲပြီး ကြိုက်သည့်နေရာသို့ ရွှေ့ထားနိုင်ပါသည်။
+        </p>
       </div>
 
       <!-- 5. VOICE SETTINGS CARD WITH 1.20X PACING SYNC -->
@@ -642,7 +662,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let blurInitialWidth = 160, blurInitialHeight = 50;
 
     // Draggable Subtitle Box State (Normalized 0.0 - 1.0)
-    let subBoxPos = { x: 0.08, y: 0.82 };
+    let subBoxPos = { x: 0.10, y: 0.82 };
     let isDraggingSub = false;
     let subDragStartX = 0, subDragStartY = 0;
 
@@ -827,8 +847,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       subSpan.style.color = textColor;
       subSpan.style.fontSize = `${fontSize}px`;
       subSpan.style.textShadow = `-2px -2px 0 ${borderColor}, 2px -2px 0 ${borderColor}, -2px 2px 0 ${borderColor}, 2px 2px 0 ${borderColor}, 0 4px 8px rgba(0,0,0,0.8)`;
-      subBox.style.backgroundColor = "rgba(0, 0, 0, 0.65)";
-      subBox.style.border = `1px solid ${borderColor}`;
+      subBox.style.backgroundColor = "rgba(0, 0, 0, 0.75)";
+      subBox.style.border = `1.5px solid ${borderColor}`;
     }
 
     // Draggable Subtitle Box Handling
@@ -1012,6 +1032,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const isBlur = document.getElementById("effectBlurSwitch")?.checked;
       const isSub = document.getElementById("effectSubtitleSwitch")?.checked;
       const blurControls = document.getElementById("blurDimensionControls");
+      const subCard = document.getElementById("subtitleStylingCard");
 
       // Transforms
       let transformStr = "";
@@ -1035,12 +1056,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         blurControls.classList.add("hidden");
       }
 
-      // Moveable Subtitles Layer
+      // Moveable Subtitles Layer & Settings Card (Shown ONLY when Subtitles switch is ON)
       if (isSub) {
         subBoxEl.classList.remove("hidden");
+        subCard.classList.remove("hidden");
         updateSubtitleStyles();
       } else {
         subBoxEl.classList.add("hidden");
+        subCard.classList.add("hidden");
       }
     }
 
@@ -1241,7 +1264,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.strokeRect(bx, by, bw, bh);
             }
 
-            // 7. Custom Position, Color & Sized Subtitles rendering
+            // 7. Custom Position, Color & Sized Subtitles rendering (Only if Subtitles switch is ON)
             if (effects.isSub && sentences.length > 0) {
               const audioDur = speechAudio.duration || totalExpectedDuration;
               const progress = Math.min(1.0, speechAudio.currentTime / audioDur);
@@ -1517,8 +1540,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# STREAMING_CHUNK:Configuring Edge-TTS personas catalog and voice metadata...
-# 13 Verified Voice Personas with Male / Female Greetings (100% strictly quoted keys)
+# 13 Character Voices Catalog
 PERSONA_VOICES = [
     {"id": "tayza", "name": "Tayza", "gender": "men", "base_voice": "en-US-BrianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
     {"id": "aung-ye-linn", "name": "Aung Ye' Linn", "gender": "men", "base_voice": "en-US-AndrewMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
@@ -1542,7 +1564,6 @@ class GenerateTTSRequest(BaseModel):
     user_rate_offset: int = 0
     user_pitch_offset: int = 0
 
-# STREAMING_CHUNK:Declaring route handlers for web pages and Edge-TTS synthesis...
 @app.get("/")
 def read_root():
     return HTMLResponse(content=HTML_CONTENT)
@@ -1604,7 +1625,6 @@ async def generate_speech(req: GenerateTTSRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# STREAMING_CHUNK:Handling catch-all fallback routes...
 @app.get("/{full_path:path}")
 def catch_all_routes(full_path: str):
     return HTMLResponse(content=HTML_CONTENT)
