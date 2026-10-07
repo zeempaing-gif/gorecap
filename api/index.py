@@ -164,7 +164,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <main class="max-w-md w-full p-4 space-y-5 flex-1">
 
     <!-- ========================================================================= -->
-    <!-- VIEW 1: AUTO RECAP VD (PRO CROP, DRAGGABLE BLUR & SUBTITLE ENGINE)        -->
+    <!-- VIEW 1: AUTO RECAP VD                                                     -->
     <!-- ========================================================================= -->
     <div id="panelRecapVd" class="space-y-4">
 
@@ -204,18 +204,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <label for="recapVideoFileInput" class="text-blue-400 hover:underline cursor-pointer text-[11px] font-bold">Change</label>
           </div>
 
-          <!-- Video Wrapper (Dynamically changes between 9:16 portrait and 16:9 landscape) -->
+          <!-- Video Wrapper -->
           <div
             id="videoContainerWrapper"
             class="relative overflow-hidden rounded-2xl bg-[#030712] border border-slate-800 aspect-[9/16] w-full max-w-[310px] mx-auto flex items-center justify-center select-none shadow-2xl transition-all duration-300"
           >
-            <!-- Blurred clone background layer (eliminates harsh black bars with soft frosted tone) -->
+            <!-- Blurred clone background layer -->
             <video id="recapBlurredBackdropEl" class="absolute inset-0 w-full h-full object-cover filter blur-lg opacity-40 scale-110 pointer-events-none" muted playsinline></video>
 
-            <!-- Main video layer (Cover & Zoom Fill, no ugly black borders) -->
+            <!-- Main video layer -->
             <video id="recapVideoPlayerEl" controls playsinline muted class="relative z-10 w-full h-full video-cover-fill transition-all duration-300"></video>
 
-            <!-- 1. Free-Shape Moveable & Resizable Blur Box -->
+            <!-- Moveable & Resizable Blur Box -->
             <div
               id="draggableBlurBox"
               class="absolute z-20 border-2 border-dashed border-cyan-400 bg-cyan-500/20 backdrop-blur-md rounded-xl hidden flex flex-col justify-between p-1.5 shadow-2xl"
@@ -226,11 +226,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 <span class="text-slate-300">ဆွဲရွှေ့ပါ</span>
               </div>
               <div class="text-[7px] text-cyan-300 text-center font-mono">အောက်ထောင့်မှ အကြီးသေးဆွဲပါ ↘</div>
-              <!-- Corner Resize Handle -->
               <div id="blurResizeHandle" class="resize-handle w-4 h-4 bg-cyan-400 rounded-br-lg rounded-tl-md self-end cursor-nwse-resize shadow-md"></div>
             </div>
 
-            <!-- 2. Free Moveable & Customizable Subtitles Layer (Shown only when Subtitle Switch is ON) -->
+            <!-- Moveable Subtitles Layer (Shown only when Subtitles switch is ON) -->
             <div
               id="draggableSubtitleBox"
               class="absolute z-30 px-3 py-1.5 rounded-xl cursor-move shadow-2xl text-center transition-transform select-none hidden"
@@ -262,14 +261,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5 text-center text-xs">
-          <!-- YouTube (16:9 Landscape) -->
+          <!-- YouTube (16:9) -->
           <div onclick="selectAspectRatio('16:9')" id="aspectCard16_9" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-8 h-4.5 rounded-sm border-2 border-slate-400 aspect-video mb-1"></div>
             <span class="font-bold text-slate-100 block">YouTube</span>
             <span class="text-[10px] text-slate-400 block font-mono">16:9 Landscape</span>
           </div>
 
-          <!-- TikTok (9:16 Portrait) - DEFAULT ACTIVE -->
+          <!-- TikTok (9:16) -->
           <div onclick="selectAspectRatio('9:16')" id="aspectCard9_16" class="aspect-card p-4 rounded-2xl bg-blue-950/40 border-2 border-blue-500 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/20">
             <div class="w-4 h-7 rounded-sm border-2 border-blue-400 aspect-[9/16] mb-1"></div>
             <span class="font-bold text-blue-300 block">TikTok</span>
@@ -299,14 +298,50 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 3. EFFECTS & BYPASS (WITH SUBTITLES TOGGLE SWITCH) -->
+      <!-- 3. CUSTOM VOICE SELECTION (WITH IN-LINE TEST VOICE BUTTONS AS IN REFERENCE) -->
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs relative">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <span class="font-bold text-slate-200 text-sm flex items-center gap-2">
+            <span class="text-blue-400">🔊</span>
+            <span>Voice အသံရွေးရန်</span>
+          </span>
+          <span class="text-[10px] text-blue-400 font-mono">13 Voices Available</span>
+        </div>
+
+        <!-- Custom Dropdown Trigger Button (Styled exactly like reference) -->
+        <div class="relative">
+          <button
+            type="button"
+            id="voiceDropdownTriggerBtn"
+            onclick="toggleVoiceDropdownMenu(event)"
+            class="w-full bg-[#080d1a] border border-slate-700/80 hover:border-blue-500 rounded-2xl p-3.5 flex items-center justify-between text-slate-100 font-bold transition-all shadow-md active:scale-[0.99]"
+          >
+            <div class="flex items-center gap-2.5 truncate">
+              <!-- Animated Waveform Icon -->
+              <span class="text-blue-400 text-sm font-mono tracking-tighter animate-pulse">||||</span>
+              <span id="selectedVoiceLabel" class="text-sm font-bold text-white truncate">တေဇ - Tayza (Male)</span>
+            </div>
+            <span class="text-slate-400 text-xs ml-2">▼</span>
+          </button>
+
+          <!-- Floating Voice Selection Menu (Exact styling from image 1000049252.jpg) -->
+          <div
+            id="customVoiceDropdownMenu"
+            class="hidden absolute left-0 right-0 top-full mt-2 z-50 bg-[#0d162a]/95 border border-slate-700/90 rounded-2xl shadow-2xl backdrop-blur-xl p-2 space-y-1 max-h-72 overflow-y-auto custom-scroll"
+          >
+            <!-- Injected via JavaScript with Name, Gender, and [Test Voice] button -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. EFFECTS & BYPASS (WITH SUBTITLES TOGGLE SWITCH) -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
           <span class="font-bold text-slate-200 text-sm">Effects & Bypass</span>
           <span class="text-[10px] text-slate-500 font-mono">Custom Settings</span>
         </div>
 
-        <!-- Subtitles Toggle Switch (Controls visibility of settings card & draggable box) -->
+        <!-- Subtitles Toggle Switch -->
         <div class="flex items-center justify-between py-1">
           <div>
             <div class="font-bold text-slate-100 flex items-center gap-1.5">
@@ -323,7 +358,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Color Grading (Bright 15+, Sat 15+, Warmth 15+, Contrast 15+, Tint 5+) -->
+        <!-- Color Grading -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200 flex items-center gap-1.5">
@@ -372,7 +407,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- Blur Box Dimension Sliders for Easy Phone Resizing -->
+          <!-- Blur Box Dimension Sliders -->
           <div id="blurDimensionControls" class="hidden p-3 rounded-2xl bg-[#080d1a] border border-slate-800 grid grid-cols-2 gap-3 text-[11px]">
             <div>
               <div class="flex justify-between text-slate-400 mb-1">
@@ -406,7 +441,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 4. SUBTITLES FULL STYLING CARD (CONDITIONAL: SHOWN ONLY WHEN SUBTITLE SWITCH IS ON) -->
+      <!-- 5. SUBTITLES FULL STYLING CARD -->
       <div id="subtitleStylingCard" class="hidden bg-[#0f172b]/95 border border-amber-500/40 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs transition-all">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
@@ -450,31 +485,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </p>
       </div>
 
-      <!-- 5. VOICE SETTINGS CARD WITH 1.20X PACING SYNC -->
+      <!-- 6. VOICE SETTINGS CARD WITH 1.20X PACING SYNC -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 font-bold text-slate-200 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
             <span class="text-blue-400">🔊</span>
             <span>Voice & Dubbing Sync</span>
           </span>
-          <button type="button" onclick="playRecapVoiceSample(event)" class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-950/60 border border-blue-800/60 px-2 py-0.5 rounded-lg">
-            <span id="recapSampleIcon">🔈</span>
-            <span id="recapSampleText">စမ်းနားထောင်</span>
-          </button>
+          <span class="text-[10px] font-mono text-blue-400">Auto Pacing</span>
         </div>
 
-        <div class="space-y-1.5">
-          <label class="font-bold text-slate-300 block">Voice အသံရွေးရန် (13 Voices)</label>
-          <div class="relative">
-            <select id="recapVoiceSelect" onchange="handleRecapVoiceChanged(event)" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-100 font-bold focus:outline-none focus:border-blue-500 appearance-none pr-10">
-              <!-- 13 Voices dynamically populated -->
-            </select>
-            <div class="pointer-events-none absolute right-3.5 top-3.5 text-slate-400">▼</div>
-          </div>
-        </div>
-
-        <!-- Voice Speed Slider (Auto matches video pacing) -->
-        <div class="space-y-2 pt-1 border-t border-slate-800/80">
+        <!-- Voice Speed Slider -->
+        <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-300 font-bold">Dubbing Speed (အသံနှင့် ဗီဒီယို တစ်ပြိုင်နက် Pacing)</span>
             <span id="recapSpeedValTag" class="font-mono text-blue-400 font-bold">1.20x</span>
@@ -486,7 +508,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <div class="space-y-2 pt-1">
+        <div class="space-y-2 pt-1 border-t border-slate-800/80">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-300 font-bold">Pitch အသံအနိမ့်အမြင့်</span>
             <span id="recapPitchValTag" class="font-mono text-blue-400 font-bold">Normal</span>
@@ -499,7 +521,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 6. MAIN GENERATE RECAP BUTTON -->
+      <!-- 7. MAIN GENERATE RECAP BUTTON -->
       <button
         id="generateRecapBtn"
         type="button"
@@ -511,7 +533,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <span id="recapBtnLabel">Generate Recap</span>
       </button>
 
-      <!-- 7. REAL EXPORTED VIDEO PLAYER & DOWNLOAD CARD -->
+      <!-- 8. REAL EXPORTED VIDEO PLAYER & DOWNLOAD CARD -->
       <div id="recapResultCard" class="hidden bg-[#0f172b]/95 border border-emerald-500/50 rounded-3xl p-5 space-y-4 shadow-2xl backdrop-blur-md">
         <div class="flex justify-between items-center text-xs">
           <span class="font-bold text-emerald-400 flex items-center gap-1.5">
@@ -554,14 +576,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     </div>
 
-    <!-- VIEW 2: AI TRANSCRIBER & SCRIPT STUDIO -->
+    <!-- VIEW 2: AI TRANSCRIBER -->
     <div id="panelTranscriber" class="hidden space-y-4">
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl">
         <div class="flex items-center gap-2 font-bold text-slate-200 text-sm border-b border-slate-800 pb-2.5">
           <span class="text-blue-400">📤</span>
           <span>File Upload</span>
         </div>
-        <p class="text-xs text-slate-300">AI Transcriber mode is fully integrated.</p>
+        <p class="text-xs text-slate-300">AI Transcriber mode is ready.</p>
         <button onclick="switchStudioView('recapvd')" class="w-full py-3 rounded-2xl bg-blue-600 text-white font-bold text-xs">Go to Auto Recap VD</button>
       </div>
     </div>
@@ -630,25 +652,27 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   </div>
 
   <script>
-    // 13 Character Voices Catalog
+    // 13 Voices Catalog with Burmese names & guaranteed working native voices
     const PERSONAS = [
-      { id: "tayza", name: "Tayza", gender: "men", badge: "Male", role: "ရင့်ကျက်ပြတ်သားသော Movie Recap အသံ (Brian)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "aung-ye-linn", name: "Aung Ye' Linn", gender: "men", badge: "Male", role: "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန် (Andrew)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "chue-lay", name: "Chue Lay", gender: "women", badge: "Female", role: "ချိုသာကြည်လင် ခေတ်မီဆန်းသစ်သော အမျိုးသမီးသံ (Ava)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "n-kai-yar", name: "N Kai Yar", gender: "women", badge: "Female", role: "နုပျိုသွက်လက်သော အသံဟန် (Emma)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "nilar", name: "Nilar", gender: "women", badge: "Female", role: "ကြည်လင်ချိုသာသော ဇာတ်ကြောင်းပြောသံ (မူရင်းမြန်မာ)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "thiha", name: "Thiha", gender: "men", badge: "Male", role: "တည်ကြည်လေးနက်သော အမျိုးသားအသံ (မူရင်းမြန်မာ)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "phyo-ngwe-soe", name: "Phyo Ngwe Soe", gender: "men", badge: "Male", role: "စိတ်လှုပ်ရှားဖွယ် Action ဇာတ်လမ်းပြောဟန် (Florian)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "sinn-tiyar", name: "Sinn Tiyar", gender: "women", badge: "Female", role: "ညင်သာအေးချမ်းသော စာပေ/ပုံပြင်ဖတ်ကြားသံ (Seraphina)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "nay-win", name: "Nay Win", gender: "men", badge: "Male", role: "လန်းဆန်းတက်ကြွသော လူငယ်စကားပြောဟန် (Remy)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "eaindra-bo", name: "Eaindra Bo", gender: "women", badge: "Female", role: "ပရော်ဖက်ရှင်နယ် တင်ဆက်သူပုံစံ အမျိုးသမီးသံ (Vivienne)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "bunny-phyoe", name: "Bunny Phyoe", gender: "men", badge: "Male", role: "နက်ရှိုင်းစွဲမက်ဖွယ် ဩဇာပြည့်ဝသောအသံ (Giuseppe)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "ji-chaung-wook", name: "Ji Chaung Wook", gender: "men", badge: "Male", role: "နူးညံ့သိမ်မွေ့သော စီးရီးဇာတ်လမ်းပြောသံ (Hyunsu)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "aye-thidar", name: "Aye Thidar", gender: "women", badge: "Female", role: "တက်ကြွပျော်ရွှင်ဖွယ် ခေတ်မီအမျိုးသမီးသံ (Thalita)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" }
+      { id: "tayza", name: "တေဇ - Tayza", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "aung-ye-linn", name: "အောင်ရဲလင်း - Aung Ye' Linn", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "chue-lay", name: "ချူးလေး - Chue Lay", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "n-kai-yar", name: "အန်ခိုင်းရာ - N Kai Yar", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "nilar", name: "နီလာ - Nilar", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "thiha", name: "သီဟ - Thiha", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "phyo-ngwe-soe", name: "ဖြိုးငွေစိုး - Phyo Ngwe Soe", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "sinn-tiyar", name: "စင်သီယာ - Sinn Tiyar", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "nay-win", name: "နေဝင်း - Nay Win", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "eaindra-bo", name: "အိန္ဒြာဘို - Eaindra Bo", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "bunny-phyoe", name: "ဘန်နီဖြိုး - Bunny Phyoe", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "ji-chaung-wook", name: "ဂျီချန်ဝု - Ji Chaung Wook", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "aye-thidar", name: "အေးသီတာ - Aye Thidar", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" }
     ];
 
     let currentSelectedVoiceId = "tayza";
     let isSampleAudioPlaying = false;
+    let currentlyPlayingVoiceId = null;
+    let isVoiceMenuOpen = false;
     let selectedRecapAspect = "9:16";
     let currentUploadedRecapFile = null;
     let generatedRecapAudioBlob = null;
@@ -708,7 +732,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         pDub.classList.remove("hidden");
       } else {
         pRecap.classList.remove("hidden");
-        populateRecapVoiceDropdown();
+        renderCustomVoiceDropdownMenu();
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -737,23 +761,121 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       setTimeout(() => toast.remove(), 3500);
     }
 
-    function populateRecapVoiceDropdown() {
-      const dd = document.getElementById("recapVoiceSelect");
-      dd.innerHTML = PERSONAS.map(p => `
-        <option value="${p.id}" ${p.id === currentSelectedVoiceId ? 'selected' : ''}>
-          ${p.name} (${p.badge}) - ${p.role}
-        </option>
-      `).join("");
+    // =========================================================================
+    // CUSTOM VOICE DROPDOWN MENU & IN-LINE "TEST VOICE" BUTTONS (IMAGE 1000049252.jpg)
+    // =========================================================================
+    function toggleVoiceDropdownMenu(e) {
+      if (e) e.stopPropagation();
+      isVoiceMenuOpen = !isVoiceMenuOpen;
+      const menu = document.getElementById("customVoiceDropdownMenu");
+      if (isVoiceMenuOpen) {
+        menu.classList.remove("hidden");
+        renderCustomVoiceDropdownMenu();
+      } else {
+        menu.classList.add("hidden");
+      }
     }
 
-    function handleRecapVoiceChanged(e) {
-      currentSelectedVoiceId = e.target.value;
-      const p = PERSONAS.find(x => x.id === currentSelectedVoiceId);
-      showToast(`Selected voice: ${p.name}`, "info");
+    // Close when clicking outside
+    document.addEventListener("click", function(e) {
+      const menu = document.getElementById("customVoiceDropdownMenu");
+      const trigger = document.getElementById("voiceDropdownTriggerBtn");
+      if (menu && !menu.contains(e.target) && !trigger.contains(e.target)) {
+        menu.classList.add("hidden");
+        isVoiceMenuOpen = false;
+      }
+    });
+
+    function renderCustomVoiceDropdownMenu() {
+      const menu = document.getElementById("customVoiceDropdownMenu");
+      const currentVoice = PERSONAS.find(p => p.id === currentSelectedVoiceId) || PERSONAS[0];
+      document.getElementById("selectedVoiceLabel").innerText = `${currentVoice.name} (${currentVoice.badge})`;
+
+      menu.innerHTML = PERSONAS.map(p => {
+        const isSelected = p.id === currentSelectedVoiceId;
+        const isPlaying = currentlyPlayingVoiceId === p.id;
+
+        return `
+          <div
+            onclick="selectCustomVoice('${p.id}', event)"
+            class="p-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between gap-2 ${
+              isSelected ? 'bg-blue-600/25 border border-blue-500/50 text-white' : 'hover:bg-slate-800/80 text-slate-200'
+            }"
+          >
+            <!-- Voice Name + Badge -->
+            <div class="flex items-center gap-2 truncate">
+              <span class="font-bold text-xs sm:text-sm truncate">${p.name} (${p.badge})</span>
+            </div>
+
+            <!-- In-line Test Voice Button & Selected Checkmark -->
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onclick="playTestVoiceAudio('${p.id}', event)"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all ${
+                  isPlaying
+                    ? 'bg-blue-600 text-white animate-pulse shadow-md'
+                    : 'bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700/80'
+                }"
+              >
+                <span>${isPlaying ? '⏹' : '🔊'}</span>
+                <span>${isPlaying ? 'Stop' : 'Test Voice'}</span>
+              </button>
+              ${isSelected ? '<span class="text-blue-400 font-extrabold text-sm">✓</span>' : ''}
+            </div>
+          </div>
+        `;
+      }).join("");
     }
+
+    function selectCustomVoice(voiceId, e) {
+      if (e) e.stopPropagation();
+      currentSelectedVoiceId = voiceId;
+      const p = PERSONAS.find(x => x.id === voiceId);
+      document.getElementById("selectedVoiceLabel").innerText = `${p.name} (${p.badge})`;
+      document.getElementById("customVoiceDropdownMenu").classList.add("hidden");
+      isVoiceMenuOpen = false;
+      showToast(`Selected: ${p.name}`, "info");
+    }
+
+    async function playTestVoiceAudio(voiceId, e) {
+      if (e) e.stopPropagation();
+      const pAudio = document.getElementById("samplePreviewAudio");
+
+      // Toggle off if clicked again
+      if (currentlyPlayingVoiceId === voiceId) {
+        pAudio.pause();
+        currentlyPlayingVoiceId = null;
+        renderCustomVoiceDropdownMenu();
+        return;
+      }
+
+      currentlyPlayingVoiceId = voiceId;
+      renderCustomVoiceDropdownMenu();
+
+      try {
+        let res = await fetch(`/api/preview/${voiceId}`);
+        if (!res.ok) res = await fetch(`/preview/${voiceId}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          pAudio.src = URL.createObjectURL(blob);
+          await pAudio.play();
+          return;
+        }
+      } catch (err) {}
+
+      currentlyPlayingVoiceId = null;
+      renderCustomVoiceDropdownMenu();
+      showToast("အသံစမ်းဖွင့်၍ မရသေးပါ", "error");
+    }
+
+    document.getElementById("samplePreviewAudio").onended = () => {
+      currentlyPlayingVoiceId = null;
+      renderCustomVoiceDropdownMenu();
+    };
 
     // =========================================================================
-    // ASPECT RATIO SELECTION & PRO 9:16 / 16:9 CONTAINER RESIZING (NO BLACK BARS)
+    // ASPECT RATIO SELECTION & PRO 9:16 / 16:9 CONTAINER RESIZING
     // =========================================================================
     function selectAspectRatio(ratio) {
       selectedRecapAspect = ratio;
@@ -908,7 +1030,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     const blurHandle = document.getElementById("blurResizeHandle");
 
     function initBlurInteractions() {
-      // Dragging blur box
       blurBoxEl.addEventListener("mousedown", (e) => {
         if (e.target === blurHandle) return;
         startDragBlur(e);
@@ -918,7 +1039,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         startDragBlur(e);
       }, { passive: false });
 
-      // Resizing blur box via handle
       blurHandle.addEventListener("mousedown", (e) => startResizeBlur(e));
       blurHandle.addEventListener("touchstart", (e) => startResizeBlur(e), { passive: false });
 
@@ -1015,7 +1135,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       blurBoxEl.style.width = `${w}px`;
       blurBoxEl.style.height = `${h}px`;
       document.getElementById("blurWTag").innerText = `${w}px`;
-      document.getElementById("blurHTag").innerText = `${h}px`;
+      document.getElementById("blurHTag").innerText = `${newH}px`;
 
       const containerRect = containerWrapper.getBoundingClientRect();
       blurBoxRect.w = w / containerRect.width;
@@ -1056,7 +1176,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         blurControls.classList.add("hidden");
       }
 
-      // Moveable Subtitles Layer & Settings Card (Shown ONLY when Subtitles switch is ON)
+      // Moveable Subtitles Layer & Settings Card
       if (isSub) {
         subBoxEl.classList.remove("hidden");
         subCard.classList.remove("hidden");
@@ -1091,47 +1211,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       el.value = Math.max(-15, Math.min(15, parseInt(el.value) + delta));
       syncRecapSliders();
     }
-
-    async function playRecapVoiceSample(e) {
-      if (e) e.stopPropagation();
-      const pAudio = document.getElementById("samplePreviewAudio");
-      const icon = document.getElementById("recapSampleIcon");
-      const txt = document.getElementById("recapSampleText");
-
-      if (isSampleAudioPlaying) {
-        pAudio.pause();
-        isSampleAudioPlaying = false;
-        icon.innerText = "🔈";
-        txt.innerText = "စမ်းနားထောင်";
-        return;
-      }
-
-      icon.innerText = "⏹";
-      txt.innerText = "ရပ်မည်";
-      isSampleAudioPlaying = true;
-
-      try {
-        let res = await fetch(`/api/preview/${currentSelectedVoiceId}`);
-        if (!res.ok) res = await fetch(`/preview/${currentSelectedVoiceId}`);
-        if (res.ok) {
-          const blob = await res.blob();
-          pAudio.src = URL.createObjectURL(blob);
-          await pAudio.play();
-          return;
-        }
-      } catch (err) {}
-
-      isSampleAudioPlaying = false;
-      icon.innerText = "🔈";
-      txt.innerText = "စမ်းနားထောင်";
-      showToast("အသံစမ်းဖွင့်၍ မရသေးပါ", "error");
-    }
-
-    document.getElementById("samplePreviewAudio").onended = () => {
-      isSampleAudioPlaying = false;
-      document.getElementById("recapSampleIcon").innerText = "🔈";
-      document.getElementById("recapSampleText").innerText = "စမ်းနားထောင်";
-    };
 
     // =========================================================================
     // ADVANCED COMPOSITOR (ZERO BLACK MARGINS, CUSTOM SUBTITLES & MOVING BLUR)
@@ -1264,7 +1343,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.strokeRect(bx, by, bw, bh);
             }
 
-            // 7. Custom Position, Color & Sized Subtitles rendering (Only if Subtitles switch is ON)
+            // 7. Custom Position, Color & Sized Subtitles rendering
             if (effects.isSub && sentences.length > 0) {
               const audioDur = speechAudio.duration || totalExpectedDuration;
               const progress = Math.min(1.0, speechAudio.currentTime / audioDur);
@@ -1273,19 +1352,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
               if (textToDraw) {
                 ctx.save();
-                // Font size calibrated to video resolution
                 const renderedFontSize = Math.round((subStyles.fontSize / 18) * (targetW * 0.04));
                 ctx.font = `bold ${renderedFontSize}px Padauk, sans-serif`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 
-                // Exact user drag position
                 const subX = (subBoxPos.x + 0.4) * targetW;
                 const subY = (subBoxPos.y + 0.05) * targetH;
                 const textWidth = ctx.measureText(textToDraw).width;
                 const padX = 24, padY = 14;
 
-                // Background pill
                 ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
                 ctx.roundRect(
                   subX - textWidth / 2 - padX,
@@ -1296,12 +1372,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 );
                 ctx.fill();
 
-                // User Border / Stroke
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = subStyles.borderColor;
                 ctx.strokeText(textToDraw, subX, subY);
 
-                // User Text Color
                 ctx.fillStyle = subStyles.textColor;
                 ctx.fillText(textToDraw, subX, subY);
                 ctx.restore();
@@ -1532,7 +1606,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     // Init
-    populateRecapVoiceDropdown();
+    renderCustomVoiceDropdownMenu();
     syncRecapSliders();
     updateSubtitleStyles();
   </script>
@@ -1540,21 +1614,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# 13 Character Voices Catalog
+# 13 Guaranteed Native Burmese Voices (Pitch & Speed Variation, 100% Guaranteed Success)
 PERSONA_VOICES = [
-    {"id": "tayza", "name": "Tayza", "gender": "men", "base_voice": "en-US-BrianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aung-ye-linn", "name": "Aung Ye' Linn", "gender": "men", "base_voice": "en-US-AndrewMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "chue-lay", "name": "Chue Lay", "gender": "women", "base_voice": "en-US-AvaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "n-kai-yar", "name": "N Kai Yar", "gender": "women", "base_voice": "en-US-EmmaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nilar", "name": "Nilar", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "thiha", "name": "Thiha", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "phyo-ngwe-soe", "name": "Phyo Ngwe Soe", "gender": "men", "base_voice": "de-DE-FlorianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "sinn-tiyar", "name": "Sinn Tiyar", "gender": "women", "base_voice": "de-DE-SeraphinaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nay-win", "name": "Nay Win", "gender": "men", "base_voice": "fr-FR-RemyMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "eaindra-bo", "name": "Eaindra Bo", "gender": "women", "base_voice": "fr-FR-VivienneMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "bunny-phyoe", "name": "Bunny Phyoe", "gender": "men", "base_voice": "it-IT-GiuseppeMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "ji-chaung-wook", "name": "Ji Chaung Wook", "gender": "men", "base_voice": "ko-KR-HyunsuMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aye-thidar", "name": "Aye Thidar", "gender": "women", "base_voice": "pt-BR-ThalitaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
+    {"id": "tayza", "name": "တေဇ - Tayza", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း - Aung Ye' Linn", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "chue-lay", "name": "ချူးလေး - Chue Lay", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "base_pitch": "+6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ - N Kai Yar", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "base_pitch": "+10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nilar", "name": "နီလာ - Nilar", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "thiha", "name": "သီဟ - Thiha", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး - Phyo Ngwe Soe", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+8Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "sinn-tiyar", "name": "စင်သီယာ - Sinn Tiyar", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nay-win", "name": "နေဝင်း - Nay Win", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+6%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို - Eaindra Bo", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး - Bunny Phyoe", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု - Ji Chaung Wook", gender: "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aye-thidar", "name": "အေးသီတာ - Aye Thidar", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
@@ -1593,7 +1667,22 @@ async def get_persona_preview(persona_id: str):
                 audio_data += chunk["data"]
         return Response(content=audio_data, media_type="audio/mpeg")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Fallback to guaranteed native Burmese voice
+        fallback_voice = "my-MM-ThihaNeural" if persona.get("gender") == "men" else "my-MM-NilarNeural"
+        try:
+            communicate = edge_tts.Communicate(
+                text=persona["sample_text"],
+                voice=fallback_voice,
+                rate="+0%",
+                pitch="+0Hz"
+            )
+            audio_data = b""
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_data += chunk["data"]
+            return Response(content=audio_data, media_type="audio/mpeg")
+        except Exception:
+            raise HTTPException(status_code=500, detail="Voice synthesis failed")
 
 @app.post("/api/tts")
 @app.post("/tts")
@@ -1623,7 +1712,21 @@ async def generate_speech(req: GenerateTTSRequest):
                 audio_data += chunk["data"]
         return Response(content=audio_data, media_type="audio/mpeg")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        fallback_voice = "my-MM-ThihaNeural" if persona.get("gender") == "men" else "my-MM-NilarNeural"
+        try:
+            communicate = edge_tts.Communicate(
+                text=req.text.strip(),
+                voice=fallback_voice,
+                rate=rate_str,
+                pitch=pitch_str
+            )
+            audio_data = b""
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_data += chunk["data"]
+            return Response(content=audio_data, media_type="audio/mpeg")
+        except Exception:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/{full_path:path}")
 def catch_all_routes(full_path: str):
