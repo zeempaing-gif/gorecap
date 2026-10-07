@@ -1,6 +1,4 @@
 import os
-import urllib.request
-import urllib.parse
 import asyncio
 import edge_tts
 from fastapi import FastAPI, HTTPException
@@ -52,24 +50,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .switch-checkbox:checked + .switch-label { background-color: #3b82f6; }
     .switch-checkbox:checked + .switch-label .switch-dot { transform: translateX(100%); background-color: #ffffff; }
     
-    #draggableBlurBox {
-      touch-action: none;
-      user-select: none;
-      cursor: move;
-    }
-    #draggableSubtitleBox {
-      touch-action: none;
-      user-select: none;
-      cursor: move;
-    }
-    .resize-handle {
-      touch-action: none;
-      user-select: none;
-      cursor: nwse-resize;
-    }
-    .video-cover-fill {
-      object-fit: cover !important;
-    }
+    #draggableBlurBox { touch-action: none; user-select: none; cursor: move; }
+    #draggableSubtitleBox { touch-action: none; user-select: none; cursor: move; }
+    .resize-handle { touch-action: none; user-select: none; cursor: nwse-resize; }
+    .video-cover-fill { object-fit: cover !important; }
   </style>
 </head>
 <body class="bg-[#070b16] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
@@ -157,22 +141,20 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </header>
 
-  <!-- Real Native File Inputs (Hidden) -->
+  <!-- File Inputs -->
   <input type="file" id="recapVideoFileInput" accept="video/*,.mp4,.mov,.mkv,.webm" class="hidden" />
   <input type="file" id="transVideoFileInput" accept="video/*,audio/*,.mp4,.mov,.mp3,.wav,.m4a,.webm,.mkv" class="hidden" />
 
   <!-- Hidden Offscreen Canvas for Real Video Rendering & Export -->
   <canvas id="offscreenRenderCanvas" class="hidden"></canvas>
 
-  <!-- Dedicated Audio Player Element (Unmuted for Native Mobile Playback) -->
-  <audio id="globalPreviewAudio" preload="auto" playsinline style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;"></audio>
+  <!-- Audio Player Element for Preview -->
+  <audio id="globalPreviewAudio" preload="auto" playsinline class="hidden"></audio>
 
   <!-- Main Container -->
   <main class="max-w-md w-full p-4 space-y-5 flex-1">
 
-    <!-- ========================================================================= -->
-    <!-- VIEW 1: AUTO RECAP VD                                                     -->
-    <!-- ========================================================================= -->
+    <!-- VIEW 1: AUTO RECAP VD -->
     <div id="panelRecapVd" class="space-y-4">
 
       <!-- 1. VIDEO UPLOAD CARD -->
@@ -201,7 +183,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </label>
 
-        <!-- Live Video Preview Box with Draggable Subtitle & Blur Box -->
+        <!-- Live Video Preview Box -->
         <div id="recapVideoPreviewBox" class="hidden space-y-3 bg-[#080d1a] border border-blue-500/40 rounded-2xl p-3.5">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-blue-400 flex items-center gap-1.5">
@@ -211,18 +193,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <label for="recapVideoFileInput" class="text-blue-400 hover:underline cursor-pointer text-[11px] font-bold">Change</label>
           </div>
 
-          <!-- Video Wrapper -->
           <div
             id="videoContainerWrapper"
             class="relative overflow-hidden rounded-2xl bg-[#030712] border border-slate-800 aspect-[9/16] w-full max-w-[310px] mx-auto flex items-center justify-center select-none shadow-2xl transition-all duration-300"
           >
-            <!-- Blurred clone background layer -->
             <video id="recapBlurredBackdropEl" class="absolute inset-0 w-full h-full object-cover filter blur-lg opacity-40 scale-110 pointer-events-none" muted playsinline></video>
-
-            <!-- Main video layer -->
             <video id="recapVideoPlayerEl" controls playsinline muted class="relative z-10 w-full h-full video-cover-fill transition-all duration-300"></video>
 
-            <!-- Moveable & Resizable Blur Box -->
+            <!-- Moveable Blur Box -->
             <div
               id="draggableBlurBox"
               class="absolute z-20 border-2 border-dashed border-cyan-400 bg-cyan-500/20 backdrop-blur-md rounded-xl hidden flex flex-col justify-between p-1.5 shadow-2xl"
@@ -236,7 +214,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <div id="blurResizeHandle" class="resize-handle w-4 h-4 bg-cyan-400 rounded-br-lg rounded-tl-md self-end cursor-nwse-resize shadow-md"></div>
             </div>
 
-            <!-- Moveable Subtitles Layer -->
+            <!-- Moveable Subtitles -->
             <div
               id="draggableSubtitleBox"
               class="absolute z-30 px-3 py-1.5 rounded-xl cursor-move shadow-2xl text-center transition-transform select-none hidden"
@@ -256,7 +234,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 2. OUTPUT FORMAT (ASPECT RATIO PREVIEWS 9:16 & 16:9) -->
+      <!-- 2. OUTPUT FORMAT -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md">
         <div class="flex items-center justify-between text-sm">
           <div class="flex items-center gap-2 font-bold text-slate-200">
@@ -268,35 +246,30 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5 text-center text-xs">
-          <!-- YouTube (16:9) -->
           <div onclick="selectAspectRatio('16:9')" id="aspectCard16_9" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-8 h-4.5 rounded-sm border-2 border-slate-400 aspect-video mb-1"></div>
             <span class="font-bold text-slate-100 block">YouTube</span>
             <span class="text-[10px] text-slate-400 block font-mono">16:9 Landscape</span>
           </div>
 
-          <!-- TikTok (9:16) -->
           <div onclick="selectAspectRatio('9:16')" id="aspectCard9_16" class="aspect-card p-4 rounded-2xl bg-blue-950/40 border-2 border-blue-500 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/20">
             <div class="w-4 h-7 rounded-sm border-2 border-blue-400 aspect-[9/16] mb-1"></div>
             <span class="font-bold text-blue-300 block">TikTok</span>
             <span class="text-[10px] text-blue-400/90 block font-mono">9:16 Portrait</span>
           </div>
 
-          <!-- Square (1:1) -->
           <div onclick="selectAspectRatio('1:1')" id="aspectCard1_1" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-5 h-5 rounded-sm border-2 border-slate-400 mb-1"></div>
             <span class="font-bold text-slate-100 block">Square</span>
             <span class="text-[10px] text-slate-400 block font-mono">1:1</span>
           </div>
 
-          <!-- Classic (4:3) -->
           <div onclick="selectAspectRatio('4:3')" id="aspectCard4_3" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-6 h-4.5 rounded-sm border-2 border-slate-400 aspect-[4/3] mb-1"></div>
             <span class="font-bold text-slate-100 block">Classic</span>
             <span class="text-[10px] text-slate-400 block font-mono">4:3</span>
           </div>
 
-          <!-- Portrait (3:4) -->
           <div onclick="selectAspectRatio('3:4')" id="aspectCard3_4" class="aspect-card col-span-2 p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
             <div class="w-4.5 h-6 rounded-sm border-2 border-slate-400 aspect-[3/4] mb-1"></div>
             <span class="font-bold text-slate-100 block">Portrait</span>
@@ -305,7 +278,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 3. CLEAN VOICE SELECTION (EXACT WT TALE FORGE STYLE) -->
+      <!-- 3. CLEAN VOICE SELECTION DROPDOWN -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md text-xs">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <span class="font-bold text-slate-200 text-sm flex items-center gap-2">
@@ -321,23 +294,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             onclick="openVoiceSelectorModal(event)"
             class="w-full bg-[#080d1a] border border-slate-700/80 hover:border-blue-500 rounded-2xl p-4 flex items-center justify-between text-slate-100 font-bold transition-all shadow-lg active:scale-[0.99]"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 truncate">
               <span class="text-blue-400 font-mono text-base tracking-tighter">||||</span>
-              <span id="selectedVoiceTitleTag" class="text-sm font-bold text-white">ဘန်နီဖြိုး (Male)</span>
+              <span id="selectedVoiceTitleTag" class="text-sm font-bold text-white truncate">ဘန်နီဖြိုး (Male)</span>
             </div>
             <span class="text-slate-400 text-xs ml-2">▼</span>
           </button>
         </div>
       </div>
 
-      <!-- 4. EFFECTS & BYPASS (WITH SUBTITLES TOGGLE SWITCH) -->
+      <!-- 4. EFFECTS & BYPASS -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
           <span class="font-bold text-slate-200 text-sm">Effects & Bypass</span>
           <span class="text-[10px] text-slate-500 font-mono">Custom Settings</span>
         </div>
 
-        <!-- Subtitles Toggle Switch -->
+        <!-- Subtitles Toggle -->
         <div class="flex items-center justify-between py-1">
           <div>
             <div class="font-bold text-slate-100 flex items-center gap-1.5">
@@ -371,7 +344,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Copyright Bypass (Dynamic Zoom) -->
+        <!-- Copyright Bypass (Zoom) -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200 flex items-center gap-1">
@@ -388,7 +361,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Moveable & Resizable Blur Shape Box -->
+        <!-- Blur -->
         <div class="space-y-2 py-1 border-t border-slate-800/60">
           <div class="flex items-center justify-between">
             <div>
@@ -403,7 +376,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- Blur Box Dimension Sliders -->
           <div id="blurDimensionControls" class="hidden p-3 rounded-2xl bg-[#080d1a] border border-slate-800 grid grid-cols-2 gap-3 text-[11px]">
             <div>
               <div class="flex justify-between text-slate-400 mb-1">
@@ -442,13 +414,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
             <span>✨</span>
-            <span>Subtitle Customizer (စာတန်း အရောင်နှင့် အရွယ်အစား)</span>
+            <span>Subtitle Customizer</span>
           </div>
           <span class="text-[10px] text-emerald-400 font-bold">Active</span>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <!-- Text Color Picker -->
           <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
             <label class="text-[11px] font-bold text-slate-300 block">စာသားအရောင် (Text Color)</label>
             <div class="flex items-center gap-2">
@@ -457,7 +428,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- Border / Stroke Color Picker -->
           <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
             <label class="text-[11px] font-bold text-slate-300 block">ဘောင်အရောင် (Border / Stroke)</label>
             <div class="flex items-center gap-2">
@@ -467,7 +437,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Subtitle Size Slider -->
         <div class="space-y-1.5 p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800">
           <div class="flex justify-between items-center">
             <span class="font-bold text-slate-300">စာသားအရွယ်အစား (Font Size)</span>
@@ -475,13 +444,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
           <input type="range" id="subSizeRange" min="12" max="32" step="1" value="18" oninput="updateSubtitleStyles()" class="w-full accent-amber-500 cursor-pointer" />
         </div>
-
-        <p class="text-[10px] text-slate-400 text-center font-mono">
-          💡 အပေါ်ရှိ ဗီဒီယိုပေါ်တွင် စာတန်း Box လေးကို လက်ဖြင့် ဖိဆွဲပြီး ကြိုက်သည့်နေရာသို့ ရွှေ့ထားနိုင်ပါသည်။
-        </p>
       </div>
 
-      <!-- 6. VOICE SETTINGS CARD WITH 1.20X PACING SYNC -->
+      <!-- 6. VOICE SETTINGS CARD -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 font-bold text-slate-200 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
@@ -620,9 +585,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </footer>
 
-  <!-- ========================================================================= -->
-  <!-- DEDICATED CLEAN POP-UP MODAL (NO TRUNCATION, CLEAR TYPOGRAPHY)            -->
-  <!-- ========================================================================= -->
+  <!-- POP-UP MODAL (Z-INDEX 999: NO CLIPPING, PROPER SPACING) -->
   <div id="voiceSelectorModalBackdrop" onclick="closeVoiceSelectorModal(event)" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[999] hidden flex items-center justify-center p-4 transition-opacity">
     <div onclick="event.stopPropagation()" class="bg-[#0c1426] border border-slate-700/90 rounded-3xl max-w-md w-full p-5 space-y-3.5 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
@@ -636,7 +599,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <button type="button" onclick="closeVoiceSelectorModal(event)" class="text-slate-400 hover:text-white p-1 text-base font-bold">✕</button>
       </div>
 
-      <!-- Spacious List of All 13 Voices -->
       <div id="voiceModalItemsContainer" class="overflow-y-auto space-y-2 pr-1 custom-scroll flex-1">
         <!-- Rendered via JS -->
       </div>
@@ -668,7 +630,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   </div>
 
   <script>
-    // 13 Voices Catalog with Burmese names and English labels
+    // 13 Voices Catalog with Bunny Phyoe
     const PERSONAS = [
       { id: "bunny-phyoe", name: "ဘန်နီဖြိုး", enName: "Bunny Phyoe", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ ဘန်နီဖြိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
       { id: "tayza", name: "တေဇ", enName: "Tayza", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ တေဇပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
@@ -693,13 +655,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let exportedRenderedVideoBlob = null;
     let videoDurationSeconds = 0;
 
-    // Draggable Blur Box State (Normalized 0.0 - 1.0)
+    // Draggable Blur Box State
     let blurBoxRect = { x: 0.22, y: 0.72, w: 0.55, h: 0.15 };
     let isDraggingBlur = false, isResizingBlur = false;
     let blurDragStartX = 0, blurDragStartY = 0;
     let blurInitialWidth = 160, blurInitialHeight = 50;
 
-    // Draggable Subtitle Box State (Normalized 0.0 - 1.0)
+    // Draggable Subtitle Box State
     let subBoxPos = { x: 0.10, y: 0.82 };
     let isDraggingSub = false;
     let subDragStartX = 0, subDragStartY = 0;
@@ -776,7 +738,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     // =========================================================================
-    // MODAL VOICE SELECTION (NO TRUNCATION, CLEAR TYPOGRAPHY)
+    // MODAL VOICE SELECTION
     // =========================================================================
     function openVoiceSelectorModal(e) {
       if (e) e.stopPropagation();
@@ -788,7 +750,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       if (e) e.stopPropagation();
       document.getElementById("voiceSelectorModalBackdrop").classList.add("hidden");
       const audioEl = document.getElementById("globalPreviewAudio");
-      if (audioEl) audioEl.pause();
+      if (audioEl) {
+        audioEl.pause();
+        audioEl.currentTime = 0;
+      }
       activePlayingTestVoiceId = null;
     }
 
@@ -812,10 +777,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               isSelected ? 'bg-blue-600/25 border-2 border-blue-500 text-white shadow-lg shadow-blue-500/10' : 'bg-[#080d1a] border border-slate-800/90 hover:border-slate-700 text-slate-200'
             }"
           >
-            <!-- Full Name without ellipsis truncation -->
+            <!-- Full Name -->
             <div class="flex items-center gap-2 flex-1 min-w-0">
               <span class="font-extrabold text-xs sm:text-sm text-white whitespace-nowrap">${p.name}</span>
-              <span class="text-[11px] text-slate-400 font-mono truncate">(${p.enName})</span>
+              <span class="text-[11px] text-slate-400 font-mono">(${p.enName})</span>
               <span class="text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
                 p.gender === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800' : 'bg-pink-950 text-pink-300 border border-pink-800'
               }">${p.badge}</span>
@@ -849,9 +814,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       showToast(`Selected: ${p.name}`, "info");
     }
 
-    // =========================================================================
-    // ZERO-FAIL NATIVE AUDIO STREAM ENGINE (DIRECT SYNCHRONOUS PLAYBACK)
-    // =========================================================================
+    // Direct Native Audio Stream
     function playModalTestVoice(voiceId, e) {
       if (e) e.stopPropagation();
       const p = PERSONAS.find(x => x.id === voiceId);
@@ -859,7 +822,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       const audioEl = document.getElementById("globalPreviewAudio");
 
-      // Stop current voice if clicking same one
+      // Toggle off if currently playing
       if (activePlayingTestVoiceId === voiceId) {
         audioEl.pause();
         audioEl.currentTime = 0;
@@ -871,18 +834,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       activePlayingTestVoiceId = voiceId;
       renderVoiceModalList();
 
-      // Trigger directly within click event to unlock mobile browser audio gesture
+      // Trigger directly within user click gesture
       audioEl.pause();
-      audioEl.src = `/api/preview/${voiceId}`;
+      audioEl.src = `/api/preview/${voiceId}?t=${Date.now()}`;
       audioEl.currentTime = 0;
 
       const playPromise = audioEl.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Fallback immediately to direct audio stream with gendered tone
+        playPromise.catch((err) => {
+          console.warn("Retrying with fallback speech source...", err);
           const encoded = encodeURIComponent(p.sample);
           audioEl.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=my&q=${encoded}`;
-          audioEl.playbackRate = p.gender === "men" ? 0.90 : 1.08;
+          audioEl.playbackRate = p.gender === "men" ? 0.92 : 1.05;
           audioEl.play().catch(() => {
             activePlayingTestVoiceId = null;
             renderVoiceModalList();
@@ -1581,7 +1544,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       a.download = `Recap_Go_${selectedRecapAspect.replace(":", "x")}_${Date.now()}.mp4`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       showToast("Downloaded Rendered Video (.mp4 / .webm)", "success");
     }
 
@@ -1631,19 +1593,19 @@ PREVIEW_AUDIO_CACHE = {}
 
 # 13 Real Distinct Multilingual and Native Burmese Voice Personas
 PERSONA_VOICES = [
-    {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-3%", "base_pitch": "-8Hz", "sample_text": "မင်္ဂလာပါ ဘန်နီဖြိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "tayza", "name": "တေဇ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-3Hz", "sample_text": "မင်္ဂလာပါ တေဇပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "မင်္ဂလာပါ အောင်ရဲလင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "chue-lay", "name": "ချူးလေး", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "base_pitch": "+6Hz", "sample_text": "မင်္ဂလာပါ ချူးလေးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "base_pitch": "+10Hz", "sample_text": "မင်္ဂလာပါ အန်ခိုင်းရာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nilar", "name": "နီလာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ နီလာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "thiha", "name": "သီဟ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ သီဟပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+7Hz", "sample_text": "မင်္ဂလာပါ ဖြိုးငွေစိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "sinn-tiyar", "name": "စင်သီယာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-4Hz", "sample_text": "မင်္ဂလာပါ စင်သီယာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nay-win", "name": "နေဝင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ နေဝင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-5Hz", "sample_text": "မင်္ဂလာပါ အိန္ဒြာဘိုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "မင်္ဂလာပါ ဂျီချန်ဝုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aye-thidar", "name": "အေးသီတာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ အေးသီတာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
+    {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-3%", "sample_text": "မင်္ဂလာပါ ဘန်နီဖြိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "tayza", "name": "တေဇ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "sample_text": "မင်္ဂလာပါ တေဇပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "sample_text": "မင်္ဂလာပါ အောင်ရဲလင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "chue-lay", "name": "ချူးလေး", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "sample_text": "မင်္ဂလာပါ ချူးလေးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "sample_text": "မင်္ဂလာပါ အန်ခိုင်းရာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nilar", "name": "နီလာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "sample_text": "မင်္ဂလာပါ နီလာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "thiha", "name": "သီဟ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "sample_text": "မင်္ဂလာပါ သီဟပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "sample_text": "မင်္ဂလာပါ ဖြိုးငွေစိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "sinn-tiyar", "name": "စင်သီယာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "sample_text": "မင်္ဂလာပါ စင်သီယာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nay-win", "name": "နေဝင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "sample_text": "မင်္ဂလာပါ နေဝင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "sample_text": "မင်္ဂလာပါ အိန္ဒြာဘိုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "sample_text": "မင်္ဂလာပါ ဂျီချန်ဝုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aye-thidar", "name": "အေးသီတာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "sample_text": "မင်္ဂလာပါ အေးသီတာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
@@ -1692,11 +1654,12 @@ async def get_persona_preview(persona_id: str):
 
     persona = PERSONA_DICT.get(persona_id, PERSONA_VOICES[0])
     
-    # 1. Native Edge-TTS Voice synthesis without prosody pitch constraints (fast and reliable)
+    # 1. Native Edge-TTS Voice synthesis
     try:
         communicate = edge_tts.Communicate(
             text=persona["sample_text"],
-            voice=persona["base_voice"]
+            voice=persona["base_voice"],
+            rate=persona.get("base_rate", "+0%")
         )
         audio_data = b""
         async for chunk in communicate.stream():
@@ -1732,7 +1695,7 @@ async def generate_speech(req: GenerateTTSRequest):
         raise HTTPException(status_code=400, detail="စာသား ထည့်သွင်းပေးရန် လိုအပ်ပါသည်။")
     
     persona = PERSONA_DICT.get(req.persona_id, PERSONA_VOICES[0])
-    base_r = int(persona["base_rate"].replace("%", "").replace("+", ""))
+    base_r = int(persona.get("base_rate", "+0%").replace("%", "").replace("+", ""))
     total_rate = base_r + req.user_rate_offset
     rate_str = f"{'+' if total_rate >= 0 else ''}{total_rate}%"
 
