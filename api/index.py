@@ -1,4 +1,7 @@
 import os
+import urllib.request
+import urllib.parse
+import asyncio
 import edge_tts
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +22,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="my" class="dark">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Recap Go 🍀 • AI Video Transcriber & Speech Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -71,7 +75,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 <body class="bg-[#070b16] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
   <!-- Toast Notification Container -->
-  <div id="toastContainer" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toastContainer" class="fixed top-4 right-4 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Mobile Sidebar Drawer Overlay -->
   <div id="sidebarOverlay" onclick="toggleSidebarMenu(false)" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden transition-opacity"></div>
@@ -159,6 +163,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
   <!-- Hidden Offscreen Canvas for Real Video Rendering & Export -->
   <canvas id="offscreenRenderCanvas" class="hidden"></canvas>
+
+  <!-- Dedicated Audio Player Element (Unmuted for Native Mobile Playback) -->
+  <audio id="globalPreviewAudio" preload="auto" playsinline style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;"></audio>
 
   <!-- Main Container -->
   <main class="max-w-md w-full p-4 space-y-5 flex-1">
@@ -298,7 +305,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 3. CLEAN VOICE SELECTION DROPDOWN (EXACT WT TALE FORGE STYLE) -->
+      <!-- 3. CLEAN VOICE SELECTION (EXACT WT TALE FORGE STYLE) -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md text-xs">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <span class="font-bold text-slate-200 text-sm flex items-center gap-2">
@@ -314,9 +321,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             onclick="openVoiceSelectorModal(event)"
             class="w-full bg-[#080d1a] border border-slate-700/80 hover:border-blue-500 rounded-2xl p-4 flex items-center justify-between text-slate-100 font-bold transition-all shadow-lg active:scale-[0.99]"
           >
-            <div class="flex items-center gap-3 truncate">
+            <div class="flex items-center gap-3">
               <span class="text-blue-400 font-mono text-base tracking-tighter">||||</span>
-              <span id="selectedVoiceTitleTag" class="text-sm font-bold text-white truncate">ဘန်နီဖြိုး (Male)</span>
+              <span id="selectedVoiceTitleTag" class="text-sm font-bold text-white">ဘန်နီဖြိုး (Male)</span>
             </div>
             <span class="text-slate-400 text-xs ml-2">▼</span>
           </button>
@@ -613,13 +620,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </footer>
 
-  <!-- Dedicated Audio Player Element for Zero-Fail Preview -->
-  <audio id="globalPreviewAudio" preload="auto" class="hidden"></audio>
-
   <!-- ========================================================================= -->
-  <!-- DEDICATED CLEAN POP-UP MODAL (Z-INDEX 9999: NEVER CLIPPED BY ANY CARD!) -->
+  <!-- DEDICATED CLEAN POP-UP MODAL (NO TRUNCATION, CLEAR TYPOGRAPHY)            -->
   <!-- ========================================================================= -->
-  <div id="voiceSelectorModalBackdrop" onclick="closeVoiceSelectorModal(event)" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] hidden flex items-center justify-center p-4 transition-opacity">
+  <div id="voiceSelectorModalBackdrop" onclick="closeVoiceSelectorModal(event)" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[999] hidden flex items-center justify-center p-4 transition-opacity">
     <div onclick="event.stopPropagation()" class="bg-[#0c1426] border border-slate-700/90 rounded-3xl max-w-md w-full p-5 space-y-3.5 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
         <div class="flex items-center gap-2">
@@ -664,21 +668,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   </div>
 
   <script>
-    // 13 Voices Catalog with Bunny Phyoe right at the top
+    // 13 Voices Catalog with Burmese names and English labels
     const PERSONAS = [
-      { id: "bunny-phyoe", name: "ဘန်နီဖြိုး", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ ဘန်နီဖြိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "tayza", name: "တေဇ", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "aung-ye-linn", name: "အောင်ရဲလင်း", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "chue-lay", name: "ချူးလေး", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "n-kai-yar", name: "အန်ခိုင်းရာ", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "nilar", name: "နီလာ", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "thiha", name: "သီဟ", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "phyo-ngwe-soe", name: "ဖြိုးငွေစိုး", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "sinn-tiyar", name: "စင်သီယာ", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "nay-win", name: "နေဝင်း", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "eaindra-bo", name: "အိန္ဒြာဘို", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
-      { id: "ji-chaung-wook", name: "ဂျီချန်ဝု", gender: "men", badge: "Male", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
-      { id: "aye-thidar", name: "အေးသီတာ", gender: "women", badge: "Female", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" }
+      { id: "bunny-phyoe", name: "ဘန်နီဖြိုး", enName: "Bunny Phyoe", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ ဘန်နီဖြိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "tayza", name: "တေဇ", enName: "Tayza", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ တေဇပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "aung-ye-linn", name: "အောင်ရဲလင်း", enName: "Aung Ye' Linn", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ အောင်ရဲလင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "chue-lay", name: "ချူးလေး", enName: "Chue Lay", gender: "women", badge: "Female", sample: "မင်္ဂလာပါ ချူးလေးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "n-kai-yar", name: "အန်ခိုင်းရာ", enName: "N Kai Yar", gender: "women", badge: "Female", sample: "မင်္ဂလာပါ အန်ခိုင်းရာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "nilar", name: "နီလာ", enName: "Nilar", gender: "women", badge: "Female", sample: "မင်္ဂလာပါ နီလာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "thiha", name: "သီဟ", enName: "Thiha", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ သီဟပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "phyo-ngwe-soe", name: "ဖြိုးငွေစိုး", enName: "Phyo Ngwe Soe", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ ဖြိုးငွေစိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "sinn-tiyar", name: "စင်သီယာ", enName: "Sinn Tiyar", gender: "women", badge: "Female", sample: "မင်္ဂလာပါ စင်သီယာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "nay-win", name: "နေဝင်း", enName: "Nay Win", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ နေဝင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "eaindra-bo", name: "အိန္ဒြာဘို", enName: "Eaindra Bo", gender: "women", badge: "Female", sample: "မင်္ဂလာပါ အိန္ဒြာဘိုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" },
+      { id: "ji-chaung-wook", name: "ဂျီချန်ဝု", enName: "Ji Chaung Wook", gender: "men", badge: "Male", sample: "မင်္ဂလာပါ ဂျီချန်ဝုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
+      { id: "aye-thidar", name: "အေးသီတာ", enName: "Aye Thidar", gender: "women", badge: "Female", sample: "မင်္ဂလာပါ အေးသီတာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်" }
     ];
 
     let currentSelectedVoiceId = "bunny-phyoe";
@@ -772,7 +776,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     // =========================================================================
-    // MODAL VOICE SELECTION (PREVENTS BEING HIDDEN BEHIND CARDS)
+    // MODAL VOICE SELECTION (NO TRUNCATION, CLEAR TYPOGRAPHY)
     // =========================================================================
     function openVoiceSelectorModal(e) {
       if (e) e.stopPropagation();
@@ -808,20 +812,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               isSelected ? 'bg-blue-600/25 border-2 border-blue-500 text-white shadow-lg shadow-blue-500/10' : 'bg-[#080d1a] border border-slate-800/90 hover:border-slate-700 text-slate-200'
             }"
           >
-            <!-- Voice Title with (Male)/(Female) -->
-            <div class="flex items-center gap-2 truncate flex-1 min-w-0">
-              <span class="font-extrabold text-xs sm:text-sm text-white truncate">${p.name}</span>
-              <span class="text-[9px] px-1.5 py-0.2 rounded font-bold ${
+            <!-- Full Name without ellipsis truncation -->
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span class="font-extrabold text-xs sm:text-sm text-white whitespace-nowrap">${p.name}</span>
+              <span class="text-[11px] text-slate-400 font-mono truncate">(${p.enName})</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
                 p.gender === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800' : 'bg-pink-950 text-pink-300 border border-pink-800'
               }">${p.badge}</span>
-              ${isSelected ? '<span class="text-blue-400 font-bold text-[10px] ml-1">✓ ရွေးထားသည်</span>' : ''}
+              ${isSelected ? '<span class="text-blue-400 font-bold text-xs shrink-0">✓</span>' : ''}
             </div>
 
             <!-- In-Line Test Voice Button -->
             <button
               type="button"
               onclick="playModalTestVoice('${p.id}', event)"
-              class="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shrink-0 ${
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shrink-0 ${
                 isPlaying
                   ? 'bg-blue-600 text-white shadow-md animate-pulse'
                   : 'text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-700/80'
@@ -844,16 +849,20 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       showToast(`Selected: ${p.name}`, "info");
     }
 
-    // 100% Reliable Audio Preview Player
-    async function playModalTestVoice(voiceId, e) {
+    // =========================================================================
+    // ZERO-FAIL NATIVE AUDIO STREAM ENGINE (DIRECT SYNCHRONOUS PLAYBACK)
+    // =========================================================================
+    function playModalTestVoice(voiceId, e) {
       if (e) e.stopPropagation();
       const p = PERSONAS.find(x => x.id === voiceId);
       if (!p) return;
 
       const audioEl = document.getElementById("globalPreviewAudio");
 
+      // Stop current voice if clicking same one
       if (activePlayingTestVoiceId === voiceId) {
         audioEl.pause();
+        audioEl.currentTime = 0;
         activePlayingTestVoiceId = null;
         renderVoiceModalList();
         return;
@@ -862,28 +871,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       activePlayingTestVoiceId = voiceId;
       renderVoiceModalList();
 
-      try {
-        let res = await fetch(`/api/preview/${voiceId}`);
-        if (!res.ok) res = await fetch(`/preview/${voiceId}`);
+      // Trigger directly within click event to unlock mobile browser audio gesture
+      audioEl.pause();
+      audioEl.src = `/api/preview/${voiceId}`;
+      audioEl.currentTime = 0;
 
-        if (res.ok) {
-          const blob = await res.blob();
-          audioEl.src = URL.createObjectURL(blob);
-          await audioEl.play();
-          return;
-        }
-      } catch (err) {}
-
-      // Instant Fallback if network drops
-      try {
-        const encoded = encodeURIComponent(p.sample);
-        audioEl.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=my&q=${encoded}`;
-        audioEl.playbackRate = p.gender === "men" ? 0.90 : 1.08;
-        await audioEl.play();
-      } catch (e2) {
-        activePlayingTestVoiceId = null;
-        renderVoiceModalList();
-        showToast("အသံစမ်းဖွင့်၍ မရသေးပါ", "error");
+      const playPromise = audioEl.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Fallback immediately to direct audio stream with gendered tone
+          const encoded = encodeURIComponent(p.sample);
+          audioEl.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=my&q=${encoded}`;
+          audioEl.playbackRate = p.gender === "men" ? 0.90 : 1.08;
+          audioEl.play().catch(() => {
+            activePlayingTestVoiceId = null;
+            renderVoiceModalList();
+          });
+        });
       }
     }
 
@@ -1623,24 +1627,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# STREAMING_CHUNK:Configuring Edge-TTS personas catalog with verified native voices...
 PREVIEW_AUDIO_CACHE = {}
 
 # 13 Real Distinct Multilingual and Native Burmese Voice Personas
 PERSONA_VOICES = [
     {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-3%", "base_pitch": "-8Hz", "sample_text": "မင်္ဂလာပါ ဘန်နီဖြိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "tayza", "name": "တေဇ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "chue-lay", "name": "ချူးလေး", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "base_pitch": "+6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "base_pitch": "+10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nilar", "name": "နီလာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "thiha", "name": "သီဟ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+7Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "sinn-tiyar", "name": "စင်သီယာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nay-win", "name": "နေဝင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-5Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aye-thidar", "name": "အေးသီတာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
+    {"id": "tayza", "name": "တေဇ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-3Hz", "sample_text": "မင်္ဂလာပါ တေဇပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "မင်္ဂလာပါ အောင်ရဲလင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "chue-lay", "name": "ချူးလေး", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "base_pitch": "+6Hz", "sample_text": "မင်္ဂလာပါ ချူးလေးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "base_pitch": "+10Hz", "sample_text": "မင်္ဂလာပါ အန်ခိုင်းရာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nilar", "name": "နီလာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ နီလာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "thiha", "name": "သီဟ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "မင်္ဂလာပါ သီဟပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+7Hz", "sample_text": "မင်္ဂလာပါ ဖြိုးငွေစိုးပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "sinn-tiyar", "name": "စင်သီယာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-4Hz", "sample_text": "မင်္ဂလာပါ စင်သီယာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nay-win", "name": "နေဝင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ နေဝင်းပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-5Hz", "sample_text": "မင်္ဂလာပါ အိန္ဒြာဘိုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "မင်္ဂလာပါ ဂျီချန်ဝုပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aye-thidar", "name": "အေးသီတာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "မင်္ဂလာပါ အေးသီတာပါ ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
@@ -1650,7 +1653,6 @@ class GenerateTTSRequest(BaseModel):
     user_rate_offset: int = 0
     user_pitch_offset: int = 0
 
-# STREAMING_CHUNK:Declaring zero-fail fallback audio synthesizer...
 def fetch_google_tts_burmese(text: str) -> bytes:
     try:
         url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(text)}&tl=my&client=tw-ob"
@@ -1661,12 +1663,11 @@ def fetch_google_tts_burmese(text: str) -> bytes:
                 "Referer": "https://translate.google.com/"
             }
         )
-        with urllib.request.urlopen(req, timeout=6) as resp:
+        with urllib.request.urlopen(req, timeout=4) as resp:
             return resp.read()
     except Exception:
         return b""
 
-# STREAMING_CHUNK:Declaring route handlers for web pages and Edge-TTS synthesis...
 @app.get("/")
 def read_root():
     return HTMLResponse(content=HTML_CONTENT)
@@ -1691,20 +1692,18 @@ async def get_persona_preview(persona_id: str):
 
     persona = PERSONA_DICT.get(persona_id, PERSONA_VOICES[0])
     
-    # 1. Native Edge-TTS Voice synthesis with accurate pitch & rate
+    # 1. Native Edge-TTS Voice synthesis without prosody pitch constraints (fast and reliable)
     try:
         communicate = edge_tts.Communicate(
             text=persona["sample_text"],
-            voice=persona["base_voice"],
-            rate=persona["base_rate"],
-            pitch=persona["base_pitch"]
+            voice=persona["base_voice"]
         )
         audio_data = b""
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 audio_data += chunk["data"]
         
-        if audio_data and len(audio_data) > 500:
+        if audio_data and len(audio_data) > 300:
             PREVIEW_AUDIO_CACHE[persona_id] = audio_data
             return Response(
                 content=audio_data,
@@ -1716,7 +1715,7 @@ async def get_persona_preview(persona_id: str):
 
     # 2. Instant Zero-Fail Google Burmese TTS Fallback
     fallback_audio = fetch_google_tts_burmese(persona["sample_text"])
-    if fallback_audio and len(fallback_audio) > 200:
+    if fallback_audio and len(fallback_audio) > 100:
         PREVIEW_AUDIO_CACHE[persona_id] = fallback_audio
         return Response(
             content=fallback_audio,
@@ -1736,17 +1735,12 @@ async def generate_speech(req: GenerateTTSRequest):
     base_r = int(persona["base_rate"].replace("%", "").replace("+", ""))
     total_rate = base_r + req.user_rate_offset
     rate_str = f"{'+' if total_rate >= 0 else ''}{total_rate}%"
-    
-    base_p = int(persona["base_pitch"].replace("Hz", "").replace("+", ""))
-    total_pitch = base_p + req.user_pitch_offset
-    pitch_str = f"{'+' if total_pitch >= 0 else ''}{total_pitch}Hz"
 
     try:
         communicate = edge_tts.Communicate(
             text=req.text.strip(),
             voice=persona["base_voice"],
-            rate=rate_str,
-            pitch=pitch_str
+            rate=rate_str
         )
         audio_data = b""
         async for chunk in communicate.stream():
@@ -1763,7 +1757,6 @@ async def generate_speech(req: GenerateTTSRequest):
     
     raise HTTPException(status_code=500, detail="Voice synthesis failed")
 
-# STREAMING_CHUNK:Handling catch-all fallback routes...
 @app.get("/{full_path:path}")
 def catch_all_routes(full_path: str):
     return HTMLResponse(content=HTML_CONTENT)
