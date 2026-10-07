@@ -1,3 +1,4 @@
+# STREAMING_CHUNK:Configuring FastAPI server and core imports...
 import os
 import edge_tts
 from fastapi import FastAPI, HTTPException
@@ -15,6 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# STREAMING_CHUNK:Defining embedded single-file application HTML content...
 HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="my" class="dark">
 <head>
@@ -1515,21 +1517,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# 13 Voices Catalog
+# STREAMING_CHUNK:Configuring Edge-TTS personas catalog and voice metadata...
+# 13 Verified Voice Personas with Male / Female Greetings (100% strictly quoted keys)
 PERSONA_VOICES = [
     {"id": "tayza", "name": "Tayza", "gender": "men", "base_voice": "en-US-BrianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
     {"id": "aung-ye-linn", "name": "Aung Ye' Linn", "gender": "men", "base_voice": "en-US-AndrewMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
     {"id": "chue-lay", "name": "Chue Lay", "gender": "women", "base_voice": "en-US-AvaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
     {"id": "n-kai-yar", "name": "N Kai Yar", "gender": "women", "base_voice": "en-US-EmmaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nilar", "name": "Nilar", gender: "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "thiha", "name": "Thiha", gender: "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "phyo-ngwe-soe", "name": "Phyo Ngwe Soe", gender: "men", "base_voice": "de-DE-FlorianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "sinn-tiyar", "name": "Sinn Tiyar", gender: "women", "base_voice": "de-DE-SeraphinaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nay-win", "name": "Nay Win", gender: "men", "base_voice": "fr-FR-RemyMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "eaindra-bo", "name": "Eaindra Bo", gender: "women", "base_voice": "fr-FR-VivienneMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "bunny-phyoe", "name": "Bunny Phyoe", gender: "men", "base_voice": "it-IT-GiuseppeMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "ji-chaung-wook", "name": "Ji Chaung Wook", gender: "men", "base_voice": "ko-KR-HyunsuMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aye-thidar", "name": "Aye Thidar", gender: "women", "base_voice": "pt-BR-ThalitaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
+    {"id": "nilar", "name": "Nilar", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "thiha", "name": "Thiha", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "phyo-ngwe-soe", "name": "Phyo Ngwe Soe", "gender": "men", "base_voice": "de-DE-FlorianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "sinn-tiyar", "name": "Sinn Tiyar", "gender": "women", "base_voice": "de-DE-SeraphinaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nay-win", "name": "Nay Win", "gender": "men", "base_voice": "fr-FR-RemyMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "eaindra-bo", "name": "Eaindra Bo", "gender": "women", "base_voice": "fr-FR-VivienneMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "bunny-phyoe", "name": "Bunny Phyoe", "gender": "men", "base_voice": "it-IT-GiuseppeMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "ji-chaung-wook", "name": "Ji Chaung Wook", "gender": "men", "base_voice": "ko-KR-HyunsuMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aye-thidar", "name": "Aye Thidar", "gender": "women", "base_voice": "pt-BR-ThalitaMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
@@ -1539,6 +1542,7 @@ class GenerateTTSRequest(BaseModel):
     user_rate_offset: int = 0
     user_pitch_offset: int = 0
 
+# STREAMING_CHUNK:Declaring route handlers for web pages and Edge-TTS synthesis...
 @app.get("/")
 def read_root():
     return HTMLResponse(content=HTML_CONTENT)
@@ -1600,6 +1604,7 @@ async def generate_speech(req: GenerateTTSRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# STREAMING_CHUNK:Handling catch-all fallback routes...
 @app.get("/{full_path:path}")
 def catch_all_routes(full_path: str):
     return HTMLResponse(content=HTML_CONTENT)
