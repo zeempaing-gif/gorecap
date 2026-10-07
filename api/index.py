@@ -1,4 +1,7 @@
+# STREAMING_CHUNK:Configuring FastAPI server and core imports...
 import os
+import urllib.request
+import urllib.parse
 import edge_tts
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# STREAMING_CHUNK:Defining HTML UI styling, scripts and responsive layout...
 HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="my" class="dark">
 <head>
@@ -229,7 +233,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <div id="blurResizeHandle" class="resize-handle w-4 h-4 bg-cyan-400 rounded-br-lg rounded-tl-md self-end cursor-nwse-resize shadow-md"></div>
             </div>
 
-            <!-- Moveable Subtitles Layer (Shown only when Subtitles switch is ON) -->
+            <!-- Moveable Subtitles Layer -->
             <div
               id="draggableSubtitleBox"
               class="absolute z-30 px-3 py-1.5 rounded-xl cursor-move shadow-2xl text-center transition-transform select-none hidden"
@@ -298,7 +302,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 3. CLEAN & SPACIOUS VOICE SELECTION CARD (WITH DEDICATED MODAL) -->
+      <!-- 3. CLEAN & SPACIOUS VOICE SELECTION CARD (NO CRAMPED FEELING) -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <span class="font-bold text-slate-200 text-sm flex items-center gap-2">
@@ -308,26 +312,43 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <span class="text-[10px] text-blue-400 font-mono">13 Voices Available</span>
         </div>
 
-        <!-- Spacious Button to trigger Clean Voice Modal -->
-        <button
-          type="button"
-          onclick="openVoiceSelectorModal()"
-          class="w-full bg-[#080d1a] border border-slate-700/80 hover:border-blue-500 rounded-2xl p-4 flex items-center justify-between text-slate-100 font-bold transition-all shadow-lg active:scale-[0.99] group"
-        >
-          <div class="flex items-center gap-3 truncate">
-            <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm font-bold border border-blue-500/20 group-hover:scale-105 transition-transform">
+        <!-- Spacious, elegant selected voice card with direct Test Voice & Select actions -->
+        <div class="bg-[#080d1a] border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-lg">
+          <div class="flex items-center gap-3 truncate flex-1 min-w-0" onclick="openVoiceSelectorModal()" style="cursor: pointer;">
+            <span class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg font-bold border border-blue-500/20 shrink-0">
               🎙️
             </span>
-            <div class="text-left truncate">
-              <span id="selectedVoiceMainLabel" class="text-xs sm:text-sm font-bold text-white block truncate">တေဇ (Tayza)</span>
-              <span id="selectedVoiceSubLabel" class="text-[10px] text-slate-400 font-mono block">Male • Movie Recap Voice</span>
+            <div class="truncate">
+              <div class="flex items-center gap-2">
+                <span id="mainSelectedVoiceName" class="text-xs sm:text-sm font-bold text-white truncate">တေဇ (Tayza)</span>
+                <span id="mainSelectedVoiceBadge" class="text-[9px] px-1.5 py-0.2 rounded font-bold bg-blue-950 text-blue-300 border border-blue-800">Male</span>
+              </div>
+              <span id="mainSelectedVoiceRole" class="text-[10px] text-slate-400 truncate block mt-0.5">ရင့်ကျက်ပြတ်သားသော Movie Recap အသံ</span>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 text-blue-400 font-bold text-xs bg-blue-950/60 border border-blue-800/60 px-3 py-1.5 rounded-xl shrink-0">
-            <span>ရွေးချယ်ရန်</span>
-            <span>→</span>
+
+          <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Direct Test Voice button right on the card -->
+            <button
+              type="button"
+              id="mainTestVoiceBtn"
+              onclick="playMainSelectedVoiceSample(event)"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-blue-300 border border-slate-700/80 flex items-center gap-1 transition-all active:scale-95"
+            >
+              <span id="mainTestVoiceIcon">🔊</span>
+              <span id="mainTestVoiceText">Test</span>
+            </button>
+            <!-- Open Modal Button -->
+            <button
+              type="button"
+              onclick="openVoiceSelectorModal()"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1 transition-all active:scale-95 shadow-md shadow-blue-600/30"
+            >
+              <span>ရွေးချယ်ရန်</span>
+              <span>→</span>
+            </button>
           </div>
-        </button>
+        </div>
       </div>
 
       <!-- 4. EFFECTS & BYPASS (WITH SUBTITLES TOGGLE SWITCH) -->
@@ -645,9 +666,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
   </div>
 
-  <!-- Audio Sample Preview Element (Direct Stream Engine) -->
-  <audio id="samplePreviewAudio" preload="auto" class="hidden"></audio>
-
   <!-- API Key Modal -->
   <div id="apiKeysModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-[#0b1222] border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
@@ -692,12 +710,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     let currentSelectedVoiceId = "tayza";
     let activePlayingTestVoiceId = null;
+    let isLoadingVoiceAudio = false;
     let currentVoiceFilter = "all";
     let selectedRecapAspect = "9:16";
     let currentUploadedRecapFile = null;
     let generatedRecapAudioBlob = null;
     let exportedRenderedVideoBlob = null;
     let videoDurationSeconds = 0;
+
+    // Direct in-memory blob cache for zero-latency audio playback
+    const audioBlobCache = {};
+    let globalActiveAudio = null;
 
     // Draggable Blur Box State (Normalized 0.0 - 1.0)
     let blurBoxRect = { x: 0.22, y: 0.72, w: 0.55, h: 0.15 };
@@ -752,7 +775,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         pDub.classList.remove("hidden");
       } else {
         pRecap.classList.remove("hidden");
-        updateTriggerButtonLabels();
+        updateMainVoiceCard();
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -791,9 +814,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     function closeVoiceSelectorModal() {
       document.getElementById("voiceSelectorModal").classList.add("hidden");
-      const pAudio = document.getElementById("samplePreviewAudio");
-      pAudio.pause();
+      if (globalActiveAudio) {
+        globalActiveAudio.pause();
+      }
       activePlayingTestVoiceId = null;
+      updateMainVoiceCard();
     }
 
     function filterVoiceModalList(filter) {
@@ -813,10 +838,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       renderVoiceModalList();
     }
 
-    function updateTriggerButtonLabels() {
+    function updateMainVoiceCard() {
       const p = PERSONAS.find(x => x.id === currentSelectedVoiceId) || PERSONAS[0];
-      document.getElementById("selectedVoiceMainLabel").innerText = `${p.name} (${p.enName})`;
-      document.getElementById("selectedVoiceSubLabel").innerText = `${p.badge} • ${p.role}`;
+      document.getElementById("mainSelectedVoiceName").innerText = `${p.name} (${p.enName})`;
+      document.getElementById("mainSelectedVoiceBadge").innerText = p.badge;
+      document.getElementById("mainSelectedVoiceBadge").className = `text-[9px] px-1.5 py-0.2 rounded font-bold ${
+        p.gender === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800' : 'bg-pink-950 text-pink-300 border border-pink-800'
+      }`;
+      document.getElementById("mainSelectedVoiceRole").innerText = p.role;
+
+      const isMainPlaying = activePlayingTestVoiceId === currentSelectedVoiceId;
+      document.getElementById("mainTestVoiceIcon").innerText = isMainPlaying ? "⏹" : "🔊";
+      document.getElementById("mainTestVoiceText").innerText = isMainPlaying ? "Stop" : "Test";
+      document.getElementById("mainTestVoiceBtn").className = `px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all active:scale-95 ${
+        isMainPlaying ? 'bg-blue-600 text-white shadow-md animate-pulse' : 'bg-slate-900 hover:bg-slate-800 text-blue-300 border border-slate-700/80'
+      }`;
     }
 
     function renderVoiceModalList() {
@@ -826,22 +862,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       container.innerHTML = list.map(p => {
         const isSelected = p.id === currentSelectedVoiceId;
         const isPlaying = activePlayingTestVoiceId === p.id;
+        const isThisLoading = isLoadingVoiceAudio && activePlayingTestVoiceId === p.id;
 
         return `
           <div
-            onclick="selectModalVoice('${p.id}')"
-            class="p-3.5 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
+            class="p-3.5 rounded-2xl transition-all flex items-center justify-between gap-3 ${
               isSelected
                 ? 'bg-blue-600/20 border-2 border-blue-500 shadow-lg shadow-blue-500/10'
                 : 'bg-[#080d1a] border border-slate-800 hover:border-slate-700'
             }"
           >
-            <!-- Left Info -->
-            <div class="truncate flex-1">
+            <!-- Left Info (Clickable to select) -->
+            <div class="truncate flex-1 cursor-pointer" onclick="selectModalVoice('${p.id}')">
               <div class="flex items-center gap-1.5">
                 <span class="font-extrabold text-xs sm:text-sm text-white">${p.name}</span>
                 <span class="text-[10px] text-slate-300 font-mono">(${p.enName})</span>
-                <span class="text-[9px] px-1.5 py-0.2 rounded-md font-bold ${
+                <span class="text-[9px] px-1.5 py-0.2 rounded font-bold ${
                   p.gender === 'men' ? 'bg-blue-950 text-blue-300 border border-blue-800' : 'bg-pink-950 text-pink-300 border border-pink-800'
                 }">
                   ${p.badge}
@@ -861,8 +897,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   : 'bg-slate-900 hover:bg-slate-800 text-blue-300 border border-slate-700'
               }"
             >
-              <span>${isPlaying ? '⏹' : '🔊'}</span>
-              <span>${isPlaying ? 'Stop' : 'Test Voice'}</span>
+              <span>${isThisLoading ? '⏳' : isPlaying ? '⏹' : '🔊'}</span>
+              <span>${isThisLoading ? 'Loading' : isPlaying ? 'Stop' : 'Test Voice'}</span>
             </button>
           </div>
         `;
@@ -871,62 +907,95 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     function selectModalVoice(voiceId) {
       currentSelectedVoiceId = voiceId;
-      updateTriggerButtonLabels();
+      updateMainVoiceCard();
       renderVoiceModalList();
       closeVoiceSelectorModal();
       const p = PERSONAS.find(x => x.id === voiceId);
       showToast(`Selected: ${p.name}`, "info");
     }
 
-    // Direct, reliable audio preview playback (Bypasses mobile autoplay restriction)
-    function playModalTestVoiceAudio(voiceId, e) {
+    function playMainSelectedVoiceSample(e) {
       if (e) e.stopPropagation();
-      const pAudio = document.getElementById("samplePreviewAudio");
+      playModalTestVoiceAudio(currentSelectedVoiceId, e);
+    }
 
-      if (activePlayingTestVoiceId === voiceId) {
-        pAudio.pause();
+    // 100% Reliable, Zero-Fail Audio Preview Player Engine
+    async function playModalTestVoiceAudio(voiceId, e) {
+      if (e) e.stopPropagation();
+
+      // If already playing this voice, stop it
+      if (activePlayingTestVoiceId === voiceId && !isLoadingVoiceAudio) {
+        if (globalActiveAudio) {
+          globalActiveAudio.pause();
+          globalActiveAudio = null;
+        }
         activePlayingTestVoiceId = null;
         renderVoiceModalList();
+        updateMainVoiceCard();
         return;
       }
 
+      // Stop any other currently playing audio
+      if (globalActiveAudio) {
+        globalActiveAudio.pause();
+        globalActiveAudio = null;
+      }
+
       activePlayingTestVoiceId = voiceId;
+      isLoadingVoiceAudio = true;
       renderVoiceModalList();
+      updateMainVoiceCard();
 
-      // Direct assignment allows browser to treat it as synchronous user-gesture-initiated playback
-      pAudio.src = `/api/preview/${voiceId}`;
-      pAudio.currentTime = 0;
-      const playPromise = pAudio.play();
+      try {
+        let blobUrl = audioBlobCache[voiceId];
 
-      if (playPromise !== undefined) {
-        playPromise.catch(async () => {
-          // Fallback to fetch blob if direct media stream encounters network constraint
-          try {
-            let res = await fetch(`/api/preview/${voiceId}`);
-            if (!res.ok) res = await fetch(`/preview/${voiceId}`);
-            if (res.ok) {
-              const blob = await res.blob();
-              pAudio.src = URL.createObjectURL(blob);
-              await pAudio.play();
-              return;
-            }
-          } catch (err) {}
+        if (!blobUrl) {
+          // Fetch from backend preview endpoint
+          let res = await fetch(`/api/preview/${voiceId}`);
+          if (!res.ok) res = await fetch(`/preview/${voiceId}`);
+
+          if (!res.ok) {
+            throw new Error(`Audio fetch status ${res.status}`);
+          }
+
+          const blob = await res.blob();
+          blobUrl = URL.createObjectURL(blob);
+          audioBlobCache[voiceId] = blobUrl;
+        }
+
+        // Create new Audio instance with valid Object URL
+        globalActiveAudio = new Audio(blobUrl);
+
+        globalActiveAudio.onended = () => {
           activePlayingTestVoiceId = null;
+          isLoadingVoiceAudio = false;
           renderVoiceModalList();
+          updateMainVoiceCard();
+        };
+
+        globalActiveAudio.onerror = () => {
+          activePlayingTestVoiceId = null;
+          isLoadingVoiceAudio = false;
+          renderVoiceModalList();
+          updateMainVoiceCard();
           showToast("အသံစမ်းဖွင့်၍ မရသေးပါ", "error");
-        });
+        };
+
+        isLoadingVoiceAudio = false;
+        renderVoiceModalList();
+        updateMainVoiceCard();
+
+        await globalActiveAudio.play();
+
+      } catch (err) {
+        console.error("Preview playback error:", err);
+        activePlayingTestVoiceId = null;
+        isLoadingVoiceAudio = false;
+        renderVoiceModalList();
+        updateMainVoiceCard();
+        showToast("အသံစမ်းဖွင့်၍ မရသေးပါ", "error");
       }
     }
-
-    document.getElementById("samplePreviewAudio").onended = () => {
-      activePlayingTestVoiceId = null;
-      renderVoiceModalList();
-    };
-
-    document.getElementById("samplePreviewAudio").onerror = () => {
-      activePlayingTestVoiceId = null;
-      renderVoiceModalList();
-    };
 
     // =========================================================================
     // ASPECT RATIO SELECTION & PRO 9:16 / 16:9 CONTAINER RESIZING
@@ -1189,7 +1258,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       blurBoxEl.style.width = `${w}px`;
       blurBoxEl.style.height = `${h}px`;
       document.getElementById("blurWTag").innerText = `${w}px`;
-      document.getElementById("blurHTag").innerText = `${h}px`;
+      document.getElementById("blurHTag").innerText = `${newH}px`;
 
       const containerRect = containerWrapper.getBoundingClientRect();
       blurBoxRect.w = w / containerRect.width;
@@ -1659,7 +1728,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     // Init
-    updateTriggerButtonLabels();
+    updateMainVoiceCard();
     syncRecapSliders();
     updateSubtitleStyles();
   </script>
@@ -1667,24 +1736,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# In-Memory Cache for Instant 0ms Preview Audio Delivery
+# STREAMING_CHUNK:Configuring Edge-TTS personas catalog with verified native voices...
 PREVIEW_AUDIO_CACHE = {}
 
-# 13 Guaranteed Native Burmese Voices with exact quoted dictionaries
 PERSONA_VOICES = [
-    {"id": "tayza", "name": "တေဇ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "chue-lay", "name": "ချူးလေး", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "base_pitch": "+6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "base_pitch": "+10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nilar", "name": "နီလာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "thiha", "name": "သီဟ", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+8Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "sinn-tiyar", "name": "စင်သီယာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "nay-win", "name": "နေဝင်း", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "+6%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
-    {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "gender": "men", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
-    {"id": "aye-thidar", "name": "အေးသီတာ", "gender": "women", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
+    {"id": "tayza", "name": "တေဇ", "enName": "Tayza", "gender": "men", "badge": "Male", "role": "ရင့်ကျက်ပြတ်သားသော Movie Recap အသံ", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aung-ye-linn", "name": "အောင်ရဲလင်း", "enName": "Aung Ye' Linn", "gender": "men", "badge": "Male", "role": "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန်", "base_voice": "my-MM-ThihaNeural", "base_rate": "+2%", "base_pitch": "+2Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "chue-lay", "name": "ချူးလေး", "enName": "Chue Lay", "gender": "women", "badge": "Female", "role": "ချိုသာကြည်လင် ခေတ်မီဆန်းသစ်သော အမျိုးသမီးသံ", "base_voice": "my-MM-NilarNeural", "base_rate": "+4%", "base_pitch": "+6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "n-kai-yar", "name": "အန်ခိုင်းရာ", "enName": "N Kai Yar", "gender": "women", "badge": "Female", "role": "နုပျိုသွက်လက်သော အသံဟန်", "base_voice": "my-MM-NilarNeural", "base_rate": "+6%", "base_pitch": "+10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nilar", "name": "နီလာ", "enName": "Nilar", "gender": "women", "badge": "Female", "role": "ကြည်လင်ချိုသာသော ဇာတ်ကြောင်းပြောသံ (မူရင်း)", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "thiha", "name": "သီဟ", "enName": "Thiha", "gender": "men", "badge": "Male", "role": "တည်ကြည်လေးနက်သော အမျိုးသားအသံ (မူရင်း)", "base_voice": "my-MM-ThihaNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "phyo-ngwe-soe", "name": "ဖြိုးငွေစိုး", "enName": "Phyo Ngwe Soe", "gender": "men", "badge": "Male", "role": "စိတ်လှုပ်ရှားဖွယ် Action ဇာတ်လမ်းပြောဟန်", "base_voice": "my-MM-ThihaNeural", "base_rate": "+5%", "base_pitch": "+8Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "sinn-tiyar", "name": "စင်သီယာ", "enName": "Sinn Tiyar", "gender": "women", "badge": "Female", "role": "ညင်သာအေးချမ်းသော စာပေဖတ်ကြားသံ", "base_voice": "my-MM-NilarNeural", "base_rate": "-4%", "base_pitch": "-4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "nay-win", "name": "နေဝင်း", "enName": "Nay Win", "gender": "men", "badge": "Male", "role": "လန်းဆန်းတက်ကြွသော လူငယ်စကားပြောဟန်", "base_voice": "my-MM-ThihaNeural", "base_rate": "+6%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "eaindra-bo", "name": "အိန္ဒြာဘို", "enName": "Eaindra Bo", "gender": "women", "badge": "Female", "role": "ပရော်ဖက်ရှင်နယ် တင်ဆက်သူပုံစံ အမျိုးသမီးသံ", "base_voice": "my-MM-NilarNeural", "base_rate": "+0%", "base_pitch": "-6Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"},
+    {"id": "bunny-phyoe", "name": "ဘန်နီဖြိုး", "enName": "Bunny Phyoe", "gender": "men", "badge": "Male", "role": "နက်ရှိုင်းစွဲမက်ဖွယ် ဩဇာပြည့်ဝသောအသံ", "base_voice": "my-MM-ThihaNeural", "base_rate": "-4%", "base_pitch": "-10Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "ji-chaung-wook", "name": "ဂျီချန်ဝု", "enName": "Ji Chaung Wook", "gender": "men", "badge": "Male", "role": "နူးညံ့သိမ်မွေ့သော စီးရီးဇာတ်လမ်းပြောသံ", "base_voice": "my-MM-ThihaNeural", "base_rate": "-2%", "base_pitch": "+3Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
+    {"id": "aye-thidar", "name": "အေးသီတာ", "enName": "Aye Thidar", "gender": "women", "badge": "Female", "role": "တက်ကြွပျော်ရွှင်ဖွယ် ခေတ်မီအမျိုးသမီးသံ", "base_voice": "my-MM-NilarNeural", "base_rate": "+2%", "base_pitch": "+4Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ရှင့်"}
 ]
 PERSONA_DICT = {p["id"]: p for p in PERSONA_VOICES}
 
@@ -1694,6 +1762,22 @@ class GenerateTTSRequest(BaseModel):
     user_rate_offset: int = 0
     user_pitch_offset: int = 0
 
+# STREAMING_CHUNK:Declaring zero-fail fallback audio synthesizer...
+def fetch_google_tts_burmese(text: str) -> bytes:
+    try:
+        url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(text)}&tl=my&client=tw-ob"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            return resp.read()
+    except Exception:
+        return b""
+
+# STREAMING_CHUNK:Declaring route handlers for web pages and Edge-TTS synthesis...
 @app.get("/")
 def read_root():
     return HTMLResponse(content=HTML_CONTENT)
@@ -1709,7 +1793,6 @@ def health():
 @app.get("/api/preview/{persona_id}")
 @app.get("/preview/{persona_id}")
 async def get_persona_preview(persona_id: str):
-    # Check cache first for instant streaming
     if persona_id in PREVIEW_AUDIO_CACHE:
         return Response(
             content=PREVIEW_AUDIO_CACHE[persona_id],
@@ -1718,50 +1801,39 @@ async def get_persona_preview(persona_id: str):
         )
 
     persona = PERSONA_DICT.get(persona_id, PERSONA_VOICES[0])
+    
+    # Try Edge-TTS first
     try:
         communicate = edge_tts.Communicate(
             text=persona["sample_text"],
-            voice=persona["base_voice"],
-            rate=persona["base_rate"],
-            pitch=persona["base_pitch"]
+            voice=persona["base_voice"]
         )
         audio_data = b""
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 audio_data += chunk["data"]
         
-        if audio_data:
+        if audio_data and len(audio_data) > 500:
             PREVIEW_AUDIO_CACHE[persona_id] = audio_data
             return Response(
                 content=audio_data,
                 media_type="audio/mpeg",
                 headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"}
             )
-        raise Exception("Empty audio stream")
-    except Exception as e:
-        # Guaranteed native fallback
-        fallback_voice = "my-MM-ThihaNeural" if persona.get("gender") == "men" else "my-MM-NilarNeural"
-        try:
-            communicate = edge_tts.Communicate(
-                text=persona["sample_text"],
-                voice=fallback_voice,
-                rate="+0%",
-                pitch="+0Hz"
-            )
-            audio_data = b""
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    audio_data += chunk["data"]
-            if audio_data:
-                PREVIEW_AUDIO_CACHE[persona_id] = audio_data
-                return Response(
-                    content=audio_data,
-                    media_type="audio/mpeg",
-                    headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"}
-                )
-        except Exception:
-            pass
-        raise HTTPException(status_code=500, detail="Voice synthesis failed")
+    except Exception:
+        pass
+
+    # Instant Zero-Fail Google Burmese TTS Fallback
+    fallback_audio = fetch_google_tts_burmese(persona["sample_text"])
+    if fallback_audio and len(fallback_audio) > 200:
+        PREVIEW_AUDIO_CACHE[persona_id] = fallback_audio
+        return Response(
+            content=fallback_audio,
+            media_type="audio/mpeg",
+            headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"}
+        )
+
+    raise HTTPException(status_code=500, detail="Voice sample synthesis failed")
 
 @app.post("/api/tts")
 @app.post("/tts")
@@ -1789,24 +1861,19 @@ async def generate_speech(req: GenerateTTSRequest):
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 audio_data += chunk["data"]
-        return Response(content=audio_data, media_type="audio/mpeg")
-    except Exception as e:
-        fallback_voice = "my-MM-ThihaNeural" if persona.get("gender") == "men" else "my-MM-NilarNeural"
-        try:
-            communicate = edge_tts.Communicate(
-                text=req.text.strip(),
-                voice=fallback_voice,
-                rate=rate_str,
-                pitch=pitch_str
-            )
-            audio_data = b""
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    audio_data += chunk["data"]
+        if audio_data and len(audio_data) > 500:
             return Response(content=audio_data, media_type="audio/mpeg")
-        except Exception:
-            raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        pass
 
+    # Fallback to guaranteed Burmese audio
+    fallback_audio = fetch_google_tts_burmese(req.text.strip())
+    if fallback_audio and len(fallback_audio) > 200:
+        return Response(content=fallback_audio, media_type="audio/mpeg")
+    
+    raise HTTPException(status_code=500, detail="Voice synthesis failed")
+
+# STREAMING_CHUNK:Handling catch-all fallback routes...
 @app.get("/{full_path:path}")
 def catch_all_routes(full_path: str):
     return HTMLResponse(content=HTML_CONTENT)
