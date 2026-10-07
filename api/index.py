@@ -23,7 +23,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <title>Recap Go 🍀 • AI Video Transcriber & Speech Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Padauk:wght@400;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
@@ -47,6 +47,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .glow-btn:hover { box-shadow: 0 0 35px rgba(37, 99, 235, 0.6); }
     .switch-checkbox:checked + .switch-label { background-color: #3b82f6; }
     .switch-checkbox:checked + .switch-label .switch-dot { transform: translateX(100%); background-color: #ffffff; }
+    #draggableBlurBox {
+      touch-action: none;
+      user-select: none;
+      cursor: move;
+    }
   </style>
 </head>
 <body class="bg-[#070b16] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
@@ -145,7 +150,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <main class="max-w-md w-full p-4 space-y-5 flex-1">
 
     <!-- ========================================================================= -->
-    <!-- VIEW 1: AUTO RECAP VD (REAL VIDEO RENDER & EXPORT INTEGRATED)             -->
+    <!-- VIEW 1: AUTO RECAP VD                                                     -->
     <!-- ========================================================================= -->
     <div id="panelRecapVd" class="space-y-4">
 
@@ -166,7 +171,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               🎬
             </div>
             <p class="text-xs font-bold text-slate-100" id="recapPromptText">Drag & drop a video file</p>
-            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · max 500MB · free trial 8 min</p>
+            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · max 500MB</p>
             <div class="pt-2">
               <span class="inline-block px-5 py-2 rounded-xl bg-[#0e1628] hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700/80 shadow-md transition-all">
                 Browse
@@ -175,7 +180,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </label>
 
-        <!-- Video Preview Box -->
+        <!-- Video Preview Container with Draggable Blur Box -->
         <div id="recapVideoPreviewBox" class="hidden space-y-3 bg-[#080d1a] border border-blue-500/40 rounded-2xl p-3.5">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-blue-400 flex items-center gap-1.5">
@@ -184,15 +189,28 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </span>
             <label for="recapVideoFileInput" class="text-blue-400 hover:underline cursor-pointer text-[11px] font-bold">Change</label>
           </div>
-          <div class="relative overflow-hidden rounded-xl bg-black border border-slate-800 aspect-video flex items-center justify-center">
-            <video id="recapVideoPlayerEl" controls playsinline muted class="w-full h-full object-contain transition-transform duration-300"></video>
-            <!-- Subtitle preview badge -->
-            <div id="recapLiveSubOverlay" class="absolute bottom-3 inset-x-3 text-center pointer-events-none hidden">
+
+          <div id="videoContainerWrapper" class="relative overflow-hidden rounded-xl bg-black border border-slate-800 aspect-video flex items-center justify-center select-none">
+            <video id="recapVideoPlayerEl" controls playsinline muted class="w-full h-full object-contain transition-all duration-300"></video>
+
+            <!-- Moveable Draggable Blur Box Overlay -->
+            <div
+              id="draggableBlurBox"
+              class="absolute z-20 border-2 border-dashed border-cyan-400 bg-cyan-500/20 backdrop-blur-md rounded-lg hidden flex flex-col justify-between p-1 shadow-2xl"
+              style="width: 140px; height: 45px; left: 30%; top: 70%;"
+            >
+              <div class="text-[9px] font-bold text-cyan-200 px-1 bg-black/60 rounded self-start">Blur Zone ✥</div>
+              <div class="text-[8px] text-slate-300 text-right pr-1">ဖုံးရန် ဆွဲရွှေ့ပါ</div>
+            </div>
+
+            <!-- Live subtitle preview badge -->
+            <div id="recapLiveSubOverlay" class="absolute bottom-2 inset-x-2 text-center pointer-events-none hidden z-10">
               <span class="inline-block bg-black/85 text-amber-300 px-3 py-1 rounded-lg text-xs font-bold shadow-xl border border-black/50" id="recapSubSampleText">
                 မြန်မာ Movie Recap စာသား
               </span>
             </div>
           </div>
+
           <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
             <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 truncate" id="recapMediaNameTag">video.mp4</div>
             <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 text-blue-400 font-bold" id="recapMediaSizeTag">0 MB</div>
@@ -292,13 +310,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 4. EFFECTS (DEFAULT OFF) -->
+      <!-- 4. EFFECTS WITH ADVANCED COLOR GRADING, BLUR BOX & BYPASS ZOOM -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
           <span class="font-bold text-slate-200 text-sm">Effects</span>
           <span class="text-[10px] text-slate-500 font-mono">Default OFF · tap to enable</span>
         </div>
 
+        <!-- Mirror Effect -->
         <div class="flex items-center justify-between py-1">
           <div>
             <div class="font-bold text-slate-200">Mirror Effect</div>
@@ -312,10 +331,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Color Grading (Bright 15+, Sat 15+, Warmth 15+, Contrast 15+, Tint 5+) -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
-            <div class="font-bold text-slate-200">Color Grading</div>
-            <div class="text-[10px] text-slate-400">Copyright Bypass အရောင် ချိန်ညှိရန်</div>
+            <div class="font-bold text-slate-200 flex items-center gap-1.5">
+              <span>Color Grading</span>
+              <span class="text-[9px] px-1.5 py-0.2 bg-blue-950 text-blue-300 rounded font-mono">Pro 15+</span>
+            </div>
+            <div class="text-[10px] text-slate-400">မူရင်းထက် ပိုမိုကြည်လင်ထင်ရှားစေရန် ကာလာတင်မည်</div>
           </div>
           <div class="relative inline-block w-11 h-6 align-middle select-none">
             <input type="checkbox" id="effectColorGradingSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
@@ -325,10 +348,28 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Copyright Bypass (Dynamic Zoom) -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
-            <div class="font-bold text-slate-200">Blur</div>
-            <div class="text-[10px] text-slate-400">ဗီဒီယိုထဲက မလိုချင်တဲ့ အပိုင်းကို မို့ကွယ်ရန်</div>
+            <div class="font-bold text-slate-200 flex items-center gap-1">
+              <span>Copyright Bypass (Zoom)</span>
+              <span class="text-[9px] text-amber-400">⚡</span>
+            </div>
+            <div class="text-[10px] text-slate-400">Copyright လွတ်အောင် Zoom ကစားပေးမည်</div>
+          </div>
+          <div class="relative inline-block w-11 h-6 align-middle select-none">
+            <input type="checkbox" id="effectBypassZoomSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+            <label for="effectBypassZoomSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Blur (Moveable Box) -->
+        <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
+          <div>
+            <div class="font-bold text-slate-200">Blur (Moveable Box)</div>
+            <div class="text-[10px] text-slate-400">ဖုံးချင်တဲ့ နေရာသို့ Box လေးဆွဲရွှေ့ပြီး ဝါးထားမည်</div>
           </div>
           <div class="relative inline-block w-11 h-6 align-middle select-none">
             <input type="checkbox" id="effectBlurSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
@@ -338,6 +379,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Photo Logo -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200">Photo Logo</div>
@@ -351,6 +393,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Add Subtitles -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
             <div class="font-bold text-slate-200">Add Subtitles <span class="text-[10px] text-emerald-400 font-normal">(Included in free trial)</span></div>
@@ -365,7 +408,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 5. VOICE SETTINGS CARD -->
+      <!-- 5. VOICE SETTINGS CARD WITH PACING SYNC -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
         <div class="border-b border-slate-800 pb-2 font-bold text-slate-200 text-sm flex items-center gap-2">
           <span class="text-blue-400">⚙</span>
@@ -398,14 +441,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Voice Speed Slider (1.00x - 1.20x auto-syncs with video pacing) -->
         <div class="space-y-2 pt-1 border-t border-slate-800/80">
           <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-300 font-bold">Voice Speed အသံမြန်နှုန်း</span>
+            <span class="text-slate-300 font-bold">Voice Speed (အသံနှင့် ဗီဒီယို တစ်ပြိုင်နက် ချိန်ညှိမှု)</span>
             <span id="recapSpeedValTag" class="font-mono text-blue-400 font-bold">1.00x</span>
           </div>
           <div class="flex items-center gap-3">
             <button type="button" onclick="adjustRecapSpeed(-2)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">−</button>
-            <input id="recapSpeedRange" type="range" min="-20" max="20" step="2" value="0" class="w-full accent-blue-500 cursor-pointer" oninput="syncRecapSliders()" />
+            <input id="recapSpeedRange" type="range" min="-20" max="25" step="2" value="0" class="w-full accent-blue-500 cursor-pointer" oninput="syncRecapSliders()" />
             <button type="button" onclick="adjustRecapSpeed(2)" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-bold text-sm flex items-center justify-center transition-all">+</button>
           </div>
         </div>
@@ -445,7 +489,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <span class="text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full">Merged Video</span>
         </div>
 
-        <!-- Rendered Video Player Preview -->
         <div class="relative overflow-hidden rounded-2xl bg-black border border-slate-800 flex items-center justify-center max-h-80">
           <video id="finalRenderedVideoEl" controls playsinline class="w-full h-full object-contain"></video>
         </div>
@@ -455,7 +498,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <textarea id="recapFinalScriptArea" rows="4" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-200 text-xs custom-scroll" readonly></textarea>
         </div>
 
-        <!-- Real Direct Video Download Button -->
         <div class="space-y-2 pt-1">
           <button
             id="downloadVideoFileBtn"
@@ -614,9 +656,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   </div>
 
   <script>
-    // =========================================================================
-    // EXACT 13 CHARACTER VOICES CATALOG WITH GENDER GREETINGS
-    // =========================================================================
+    // 13 Character Voices Catalog with Gender Greetings
     const PERSONAS = [
       { id: "tayza", name: "Tayza", gender: "men", badge: "Male", role: "ရင့်ကျက်ပြတ်သားသော Movie Recap အသံ (Brian)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
       { id: "aung-ye-linn", name: "Aung Ye' Linn", gender: "men", badge: "Male", role: "နွေးထွေးတည်ငြိမ်သော ဇာတ်ကြောင်းပြောဟန် (Andrew)", sample: "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ" },
@@ -637,9 +677,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let isSampleAudioPlaying = false;
     let selectedRecapAspect = "9:16";
     let currentUploadedRecapFile = null;
-    let currentTranscribeMedia = null;
     let generatedRecapAudioBlob = null;
     let exportedRenderedVideoBlob = null;
+    let videoDurationSeconds = 0;
+
+    // Draggable Blur Box State (Normalized 0.0 - 1.0)
+    let blurBoxRect = { x: 0.2, y: 0.72, w: 0.6, h: 0.16 };
+    let isDraggingBlurBox = false;
+    let dragStartX = 0, dragStartY = 0;
 
     // Load initial keys
     const gKey = localStorage.getItem("gemini_api_key") || "";
@@ -705,9 +750,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       setTimeout(() => toast.remove(), 3500);
     }
 
-    // =========================================================================
-    // AUTO RECAP VD LOGIC & PRESENTATION
-    // =========================================================================
+    // Auto Recap VD Dropdown
     function populateRecapVoiceDropdown() {
       const dd = document.getElementById("recapVoiceSelect");
       dd.innerHTML = PERSONAS.map(p => `
@@ -759,24 +802,100 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       const vEl = document.getElementById("recapVideoPlayerEl");
       vEl.src = URL.createObjectURL(file);
+
+      vEl.onloadedmetadata = () => {
+        videoDurationSeconds = Math.round(vEl.duration) || 180;
+        console.log("Loaded source video duration:", videoDurationSeconds);
+      };
+
       toggleEffectPreview();
       showToast(`Video loaded: ${file.name} (${sizeMB} MB)`, "success");
     });
+
+    // Setup Draggable Blur Box Interactions
+    const blurBoxEl = document.getElementById("draggableBlurBox");
+    const containerWrapper = document.getElementById("videoContainerWrapper");
+
+    function initBlurBoxDrag() {
+      blurBoxEl.addEventListener("mousedown", onDragStart);
+      blurBoxEl.addEventListener("touchstart", onDragStart, { passive: false });
+      window.addEventListener("mousemove", onDragMove);
+      window.addEventListener("touchmove", onDragMove, { passive: false });
+      window.addEventListener("mouseup", onDragEnd);
+      window.addEventListener("touchend", onDragEnd);
+    }
+
+    function onDragStart(e) {
+      isDraggingBlurBox = true;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const rect = blurBoxEl.getBoundingClientRect();
+      dragStartX = clientX - rect.left;
+      dragStartY = clientY - rect.top;
+      e.preventDefault();
+    }
+
+    function onDragMove(e) {
+      if (!isDraggingBlurBox) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const containerRect = containerWrapper.getBoundingClientRect();
+
+      let left = clientX - containerRect.left - dragStartX;
+      let top = clientY - containerRect.top - dragStartY;
+
+      const maxLeft = containerRect.width - blurBoxEl.offsetWidth;
+      const maxTop = containerRect.height - blurBoxEl.offsetHeight;
+
+      left = Math.max(0, Math.min(left, maxLeft));
+      top = Math.max(0, Math.min(top, maxTop));
+
+      blurBoxEl.style.left = `${left}px`;
+      blurBoxEl.style.top = `${top}px`;
+
+      // Update normalized coordinates for canvas export rendering
+      blurBoxRect.x = left / containerRect.width;
+      blurBoxRect.y = top / containerRect.height;
+      blurBoxRect.w = blurBoxEl.offsetWidth / containerRect.width;
+      blurBoxRect.h = blurBoxEl.offsetHeight / containerRect.height;
+
+      if (e.cancelable) e.preventDefault();
+    }
+
+    function onDragEnd() {
+      isDraggingBlurBox = false;
+    }
+
+    initBlurBoxDrag();
 
     function toggleEffectPreview() {
       const vEl = document.getElementById("recapVideoPlayerEl");
       const isMirror = document.getElementById("effectMirrorSwitch")?.checked;
       const isColor = document.getElementById("effectColorGradingSwitch")?.checked;
+      const isZoom = document.getElementById("effectBypassZoomSwitch")?.checked;
       const isBlur = document.getElementById("effectBlurSwitch")?.checked;
       const isSub = document.getElementById("effectSubtitleSwitch")?.checked;
       const subOverlay = document.getElementById("recapLiveSubOverlay");
 
-      vEl.style.transform = isMirror ? "scaleX(-1)" : "scaleX(1)";
+      // Transforms
+      let transformStr = "";
+      if (isMirror) transformStr += "scaleX(-1) ";
+      if (isZoom) transformStr += "scale(1.12) ";
+      vEl.style.transform = transformStr || "none";
 
+      // Color Grading requested: Bright 15+, Sat 15+, Warmth 15+, Contrast 15+, Tint 5+
       let filterStr = "";
-      if (isColor) filterStr += "contrast(1.15) saturate(1.2) ";
-      if (isBlur) filterStr += "blur(1px) ";
-      vEl.style.filter = filterStr;
+      if (isColor) {
+        filterStr += "brightness(1.15) contrast(1.15) saturate(1.15) sepia(0.15) hue-rotate(-5deg) ";
+      }
+      vEl.style.filter = filterStr || "none";
+
+      // Moveable Blur Box visibility
+      if (isBlur) {
+        blurBoxEl.classList.remove("hidden");
+      } else {
+        blurBoxEl.classList.add("hidden");
+      }
 
       if (subOverlay) {
         if (isSub) subOverlay.classList.remove("hidden"); else subOverlay.classList.add("hidden");
@@ -789,11 +908,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const mult = (1 + s / 100).toFixed(2);
       document.getElementById("recapSpeedValTag").innerText = `${mult}x`;
       document.getElementById("recapPitchValTag").innerText = p === 0 ? "Normal" : (p > 0 ? `+${p}Hz` : `${p}Hz`);
+
+      // Realtime video playback speed synchronization
+      const vEl = document.getElementById("recapVideoPlayerEl");
+      if (vEl) {
+        vEl.playbackRate = Math.max(0.7, Math.min(1.8, parseFloat(mult)));
+      }
     }
 
     function adjustRecapSpeed(delta) {
       const el = document.getElementById("recapSpeedRange");
-      el.value = Math.max(-20, Math.min(20, parseInt(el.value) + delta));
+      el.value = Math.max(-20, Math.min(25, parseInt(el.value) + delta));
       syncRecapSliders();
     }
 
@@ -845,16 +970,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     };
 
     // =========================================================================
-    // REAL CLIENT-SIDE VIDEO COMPOSITOR & EXPORT ENGINE (NO SCREEN RECORDING NEEDED!)
+    // ADVANCED COMPOSITOR: DURATION PACING, COLOR GRADING, BLUR BOX & ZOOM
     // =========================================================================
-    async function renderAndExportComposedVideo(videoFile, audioBlob, scriptText, targetAspect, effects) {
+    async function renderAndExportComposedVideo(videoFile, audioBlob, scriptText, targetAspect, effects, targetDuration, playbackSpeed) {
       return new Promise(async (resolve, reject) => {
         try {
           const canvas = document.getElementById("offscreenRenderCanvas");
           const ctx = canvas.getContext("2d");
 
-          // Determine canvas resolution based on aspect ratio
-          let targetW = 720, targetH = 1280; // 9:16 default
+          let targetW = 720, targetH = 1280;
           if (targetAspect === "16:9") { targetW = 1280; targetH = 720; }
           else if (targetAspect === "1:1") { targetW = 720; targetH = 720; }
           else if (targetAspect === "4:3") { targetW = 960; targetH = 720; }
@@ -863,34 +987,29 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           canvas.width = targetW;
           canvas.height = targetH;
 
-          // Create hidden video element for decoding frames
           const sourceVideo = document.createElement("video");
           sourceVideo.src = URL.createObjectURL(videoFile);
           sourceVideo.muted = true;
           sourceVideo.playsInline = true;
           await new Promise((r) => { sourceVideo.onloadedmetadata = r; });
 
-          // Create audio element for the generated TTS speech
+          // Synchronize video speed with voice speed!
+          sourceVideo.playbackRate = playbackSpeed || 1.0;
+
           const speechAudio = new Audio(URL.createObjectURL(audioBlob));
 
-          // Set up Web Audio API to mix the audio track into the recording stream
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           const audioCtx = new AudioContextClass();
           const sourceNode = audioCtx.createMediaElementSource(speechAudio);
           const audioDestNode = audioCtx.createMediaStreamDestination();
           sourceNode.connect(audioDestNode);
-          sourceNode.connect(audioCtx.destination); // Optional monitor
 
-          // Capture Canvas stream at 30 FPS
           const canvasStream = canvas.captureStream(30);
-
-          // Combine canvas video track + synthesized audio track
           const mixedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...audioDestNode.stream.getAudioTracks()
           ]);
 
-          // Pick optimal video recording format
           let mime = 'video/webm;codecs=vp9,opus';
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
@@ -907,18 +1026,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             resolve(finalBlob);
           };
 
-          // Render loop frame-by-frame
           let animationFrameId = null;
           const sentences = scriptText.split(/(?<=[။!?\n])/).filter(s => s.trim().length > 0);
+          let startTimeStamp = performance.now();
 
-          function renderFrame() {
-            if (speechAudio.ended || sourceVideo.ended) {
+          // Duration pacing: Ensure video runs for the intended length (at least speech duration or video length)
+          const totalExpectedDuration = Math.max(12, Math.min(targetDuration || 180, 480));
+
+          function renderFrame(now) {
+            const elapsed = (now - startTimeStamp) / 1000;
+
+            // Stop condition: when speech finishes and video has matched duration
+            if (elapsed >= totalExpectedDuration || (speechAudio.ended && sourceVideo.currentTime >= (sourceVideo.duration * 0.95))) {
               cancelAnimationFrame(animationFrameId);
               mediaRecorder.stop();
               return;
             }
 
-            // Clear background
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, targetW, targetH);
 
@@ -930,13 +1054,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.scale(-1, 1);
             }
 
-            // 2. Color Grading / Blur Filter
-            let filterStr = "";
-            if (effects.isColor) filterStr += "contrast(1.18) saturate(1.22) ";
-            if (effects.isBlur) filterStr += "blur(1px) ";
-            ctx.filter = filterStr || "none";
+            // 2. Copyright Bypass Zoom effect (Smooth slow breathing zoom to bypass detection)
+            let zoomScale = 1.0;
+            if (effects.isZoom) {
+              zoomScale = 1.10 + 0.04 * Math.sin(elapsed * 0.4);
+              ctx.translate(targetW / 2, targetH / 2);
+              ctx.scale(zoomScale, zoomScale);
+              ctx.translate(-targetW / 2, -targetH / 2);
+            }
 
-            // 3. Draw video centered & cropped to fit aspect ratio
+            // 3. Color Grading Filter (Bright 15+, Sat 15+, Warmth 15+, Contrast 15+, Tint 5+)
+            if (effects.isColor) {
+              ctx.filter = "brightness(1.15) contrast(1.15) saturate(1.15) sepia(0.15) hue-rotate(-5deg)";
+            } else {
+              ctx.filter = "none";
+            }
+
+            // Draw video to fill & center
             const vidRatio = sourceVideo.videoWidth / sourceVideo.videoHeight;
             const targetRatio = targetW / targetH;
             let drawW, drawH, drawX, drawY;
@@ -956,11 +1090,33 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
             ctx.restore();
 
-            // 4. Draw Styled Subtitle overlay
+            // 4. Moveable Blur Zone rendering (Render blur over the exact user-moved box!)
+            if (effects.isBlur) {
+              const bx = blurBoxRect.x * targetW;
+              const by = blurBoxRect.y * targetH;
+              const bw = blurBoxRect.w * targetW;
+              const bh = blurBoxRect.h * targetH;
+
+              ctx.save();
+              ctx.beginPath();
+              ctx.rect(bx, by, bw, bh);
+              ctx.clip();
+              ctx.filter = "blur(18px)";
+              ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
+              ctx.restore();
+
+              // Subtle frosted border
+              ctx.strokeStyle = "rgba(255,255,255,0.15)";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(bx, by, bw, bh);
+            }
+
+            // 5. Transformative Movie Recap Subtitle rendering
             if (effects.isSub && sentences.length > 0) {
-              const progress = speechAudio.currentTime / (speechAudio.duration || 1);
+              const audioDur = speechAudio.duration || totalExpectedDuration;
+              const progress = Math.min(1.0, speechAudio.currentTime / audioDur);
               const curIdx = Math.min(sentences.length - 1, Math.floor(progress * sentences.length));
-              const textToDraw = sentences[curIdx].trim();
+              const textToDraw = sentences[curIdx]?.trim() || "";
 
               if (textToDraw) {
                 ctx.save();
@@ -970,20 +1126,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
                 const subY = targetH * 0.88;
                 const textWidth = ctx.measureText(textToDraw).width;
-                const padX = 20, padY = 12;
+                const padX = 22, padY = 12;
 
-                // Background pill
-                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
                 ctx.roundRect(
                   targetW / 2 - textWidth / 2 - padX,
                   subY - padY,
                   textWidth + padX * 2,
                   padY * 2,
-                  10
+                  12
                 );
                 ctx.fill();
 
-                // Subtitle text (Yellow/Amber glow)
                 ctx.fillStyle = "#fde047";
                 ctx.fillText(textToDraw, targetW / 2, subY);
                 ctx.restore();
@@ -993,7 +1147,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             animationFrameId = requestAnimationFrame(renderFrame);
           }
 
-          // Start recorder & play both
           mediaRecorder.start(250);
           sourceVideo.currentTime = 0;
           speechAudio.currentTime = 0;
@@ -1001,7 +1154,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           await sourceVideo.play();
           await speechAudio.play();
 
-          renderFrame();
+          animationFrameId = requestAnimationFrame(renderFrame);
 
         } catch (err) {
           reject(err);
@@ -1009,7 +1162,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       });
     }
 
-    // Auto Recap VD Execute Workflow
+    // Auto Recap VD Full Workflow
     async function executeAutoRecapVdWorkflow() {
       if (!currentUploadedRecapFile) {
         showToast("Please upload a video file first", "error");
@@ -1036,17 +1189,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       btn.disabled = true;
       spinner.classList.remove("hidden");
       icon.classList.add("hidden");
-      label.innerText = "1/3: Generating Movie Recap Script...";
+      label.innerText = "1/3: ဇာတ်လမ်းဇာတ်ကွက် ပြည့်စုံအောင် ရေးသားနေပါသည်...";
 
       try {
+        // Calculate appropriate words count based on source duration (e.g. 180s video = 250-400 words)
+        const durSecs = videoDurationSeconds || 180;
+        const targetWords = Math.max(160, Math.min(500, Math.round(durSecs * 2.2)));
+
         const prompt = `
 သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
-ဗီဒီယိုပါ ဇာတ်လမ်းကို အခြေခံ၍ လူတိုင်းနားလည်လွယ်ပြီး ဆွဲဆောင်မှုရှိသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။
+ဗီဒီယို ကြာချိန် ခန့်မှန်းခြေ ${durSecs} စက္ကန့်စာနှင့် ကိုက်ညီစေရန်အတွက် ဇာတ်လမ်းအစ၊ အလယ်၊ ဇာတ်ကွက်အလှည့်အပြောင်းနှင့် ဇာတ်သိမ်းအထိ အစအဆုံး ပြည့်စုံသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။ (အနည်းဆုံး မြန်မာစကားလုံး ${targetWords} လုံးခန့် ပါဝင်အောင် ရေးပေးပါ)။
 
 စည်းမျဉ်းများ:
 ၁။ Maid/Servant -> "အိမ်ဖော်မလေး/အိမ်အကူကောင်မလေး", Dog -> "ခွေးလေး", Father -> "အဖေကြီး", Son -> "သားဖြစ်သူ", Daughter-in-law -> "ချွေးမ" စသည့် သဘာဝနာမ်စားများကိုသာ သုံးပါ။
 ၂။ "ကျွန်တော်", "ကျွန်မ", "ခင်ဗျာ", "ရှင်" မသုံးရ။ ကျား/မ မရွေး ဖတ်နိုင်သော Voiceover လေသံ ဖြစ်ရမည်။
-၃။ "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "နောက်ဆုံးမှာတော့..." စသည့် သဘာဝစကားပြော စကားဆက်များ သုံးပါ။
+၃။ "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...", "နောက်ဆုံးမှာတော့..." စသည့် သဘာဝစကားပြော စကားဆက်များ သုံးပါ။
 ၄။ အပိုစာသား လုံးဝမပါရ (ZERO ENGLISH)။ "*Intro:*", "*Middle:*" ခေါင်းစဉ်များ၊ "No English? Yes" စသည့် စာတန်းများ လုံးဝမထည့်ရ။
 
 အထက်ပါ စည်းမျဉ်းအတိုင်း သန့်ရှင်းသော မြန်မာ Movie Recap Script စစ်စစ်ကိုသာ ထုတ်ပေးပါ:
@@ -1062,9 +1219,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               model: "llama-3.3-70b-versatile",
               messages: [
                 { role: "system", content: prompt },
-                { role: "user", content: "Write a high-tension Burmese movie recap narration based on the video plot." }
+                { role: "user", content: `Write a complete ${durSecs}-second storytelling recap in Burmese covering the entire drama plot.` }
               ],
-              temperature: 0.25
+              temperature: 0.3
             })
           });
           if (res.ok) {
@@ -1078,7 +1235,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: `${prompt}\n\nWrite pure Burmese movie recap script.` }] }]
+              contents: [{ parts: [{ text: `${prompt}\n\nWrite pure Burmese movie recap script for full length.` }] }]
             })
           });
           if (res.ok) {
@@ -1088,13 +1245,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         }
 
         if (!finalScript) {
-          finalScript = "သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။";
+          finalScript = "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့ အိမ်ဖော်မလေးဟာ အိမ်ရှင်တွေ မသိအောင် တစ်စုံတစ်ခုကို လျှို့ဝှက် လုပ်ဆောင်နေခဲ့တာ ဖြစ်ပါတယ်။ အဲဒီအချိန်မှာပဲ သားဖြစ်သူ ပြန်ရောက်လာပြီး မထင်မှတ်ထားတဲ့ အမှန်တရားတစ်ခုကို သိရှိသွားခဲ့ပါတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း အလှည့်အပြောင်းတွေ ဖြစ်ပျက်သွားခဲ့ပြီး နောက်ဆုံးမှာတော့ အားလုံးအတွက် မေ့မရနိုင်တဲ့ အဖြစ်ဆိုးတစ်ခု ဖြစ်သွားခဲ့ပါတယ်။";
         }
 
         scriptArea.value = finalScript;
 
         // Step 2: Voiceover generation via Edge-TTS
-        label.innerText = "2/3: Synthesizing AI Burmese Voiceover...";
+        label.innerText = "2/3: AI မြန်မာအသံဖိုင် ဖန်တီးနေပါသည်...";
+
+        const speedOffset = parseInt(document.getElementById("recapSpeedRange").value);
+        const pitchOffset = parseInt(document.getElementById("recapPitchRange").value);
+        const speedMultiplier = (1 + speedOffset / 100);
 
         let ttsRes = await fetch("/api/tts", {
           method: "POST",
@@ -1102,8 +1263,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           body: JSON.stringify({
             text: finalScript,
             persona_id: currentSelectedVoiceId,
-            user_rate_offset: parseInt(document.getElementById("recapSpeedRange").value),
-            user_pitch_offset: parseInt(document.getElementById("recapPitchRange").value)
+            user_rate_offset: speedOffset,
+            user_pitch_offset: pitchOffset
           })
         });
 
@@ -1114,8 +1275,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             body: JSON.stringify({
               text: finalScript,
               persona_id: currentSelectedVoiceId,
-              user_rate_offset: parseInt(document.getElementById("recapSpeedRange").value),
-              user_pitch_offset: parseInt(document.getElementById("recapPitchRange").value)
+              user_rate_offset: speedOffset,
+              user_pitch_offset: pitchOffset
             })
           });
         }
@@ -1126,33 +1287,35 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           throw new Error("Voiceover synthesis failed");
         }
 
-        // Step 3: Real Video Rendering (Combining Video + Audio + Subtitle + Effects)
-        label.innerText = "3/3: Rendering Final Merged Video (Canvas Recorder)...";
-        showToast("Merging Video, AI Voiceover, Subtitles & Effects...", "info");
+        // Step 3: Real Video Compositor (Color grading + Moveable Blur + Bypass Zoom + Speed sync)
+        label.innerText = "3/3: ဗီဒီယိုနှင့် အသံ ပေါင်းစပ် ထုတ်လုပ်နေပါသည်...";
+        showToast("Color Grading, Blur, Zoom နှင့် အသံ ပေါင်းစပ်နေပါသည်...", "info");
 
         const effects = {
           isMirror: document.getElementById("effectMirrorSwitch")?.checked,
           isColor: document.getElementById("effectColorGradingSwitch")?.checked,
+          isZoom: document.getElementById("effectBypassZoomSwitch")?.checked,
           isBlur: document.getElementById("effectBlurSwitch")?.checked,
           isSub: document.getElementById("effectSubtitleSwitch")?.checked
         };
 
+        // Render full composed video
         exportedRenderedVideoBlob = await renderAndExportComposedVideo(
           currentUploadedRecapFile,
           generatedRecapAudioBlob,
           finalScript,
           selectedRecapAspect,
-          effects
+          effects,
+          durSecs,
+          speedMultiplier
         );
 
-        // Display final rendered video in player
-        const finalUrl = URL.createObjectURL(exportedRenderedVideoBlob);
-        finalVideoEl.src = finalUrl;
+        finalVideoEl.src = URL.createObjectURL(exportedRenderedVideoBlob);
         resultCard.classList.remove("hidden");
         resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         await finalVideoEl.play();
 
-        showToast("Final Rendered Video is ready to download!", "success");
+        showToast("ဗီဒီယို ဖန်တီးမှု အပြည့်အဝ ပြီးစီးပါပြီ!", "success");
 
       } catch (err) {
         showToast(err.message, "error");
@@ -1164,7 +1327,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    // Direct Video File Download Function
     function downloadExportedVideoFile() {
       if (!exportedRenderedVideoBlob) return showToast("No exported video file ready", "error");
       const a = document.createElement("a");
@@ -1183,7 +1345,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       a.download = `Recap_Go_Voiceover_${Date.now()}.mp3`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       showToast("Downloaded Voiceover Audio MP3", "success");
     }
 
@@ -1210,45 +1371,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       return filtered.join('\n').trim();
     }
 
-    // =========================================================================
-    // TRANSCRIBER & TTS EXTRA UTILITIES
-    // =========================================================================
-    document.getElementById("transVideoFileInput").addEventListener("change", function(e) {
-      const file = this.files && this.files[0];
-      if (!file) return;
-      currentTranscribeMedia = file;
-      document.getElementById("transMediaName").innerText = file.name;
-      document.getElementById("transMediaSize").innerText = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-      document.getElementById("transDropzoneLabelBox").classList.add("hidden");
-      document.getElementById("transVideoPreviewBox").classList.remove("hidden");
-      document.getElementById("transVideoEl").src = URL.createObjectURL(file);
-      showToast(`Uploaded: ${file.name}`, "success");
-    });
-
-    async function executeTranscribeProcess() {
-      showToast("Please use the Auto Recap VD workflow for end-to-end video synthesis", "info");
-      switchStudioView("recapvd");
-    }
-
-    function copyTranscribedText() {
-      const t = document.getElementById("transcriptOutputArea").value.trim();
-      if (!t) return showToast("No text to copy", "error");
-      navigator.clipboard.writeText(t).then(() => showToast("Copied to clipboard", "success"));
-    }
-
-    function clearTtsText() {
-      document.getElementById("ttsInputTextArea").value = "";
-    }
-
-    async function handleGenerateVoiceover() {
-      showToast("Generating voiceover from script...", "info");
-    }
-
-    function downloadCurrentGeneratedMp3() {
-      showToast("MP3 Download ready", "success");
-    }
-
-    // Initialize
+    // Init
     populateRecapVoiceDropdown();
     syncRecapSliders();
   </script>
@@ -1256,7 +1379,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# The Exact 13 Voices with Assigned Character Names and Gender Greetings
+# 13 Voices Catalog Preserved
 PERSONA_VOICES = [
     {"id": "tayza", "name": "Tayza", "gender": "men", "base_voice": "en-US-BrianMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
     {"id": "aung-ye-linn", "name": "Aung Ye' Linn", "gender": "men", "base_voice": "en-US-AndrewMultilingualNeural", "base_rate": "+0%", "base_pitch": "+0Hz", "sample_text": "ရီကတ်ဂိုးအပ်မှ ကြိုဆိုပါတယ် ခင်ဗျ"},
@@ -1340,3 +1463,7 @@ async def generate_speech(req: GenerateTTSRequest):
         return Response(content=audio_data, media_type="audio/mpeg")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/{full_path:path}")
+def catch_all_routes(full_path: str):
+    return HTMLResponse(content=HTML_CONTENT)
