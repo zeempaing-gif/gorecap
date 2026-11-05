@@ -1494,11 +1494,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           const canvas = document.getElementById("offscreenRenderCanvas");
           const ctx = canvas.getContext("2d");
 
-          let targetW = 720, targetH = 1280;
-          if (targetAspect === "16:9") { targetW = 1280; targetH = 720; }
-          else if (targetAspect === "1:1") { targetW = 720; targetH = 720; }
-          else if (targetAspect === "4:3") { targetW = 960; targetH = 720; }
-          else if (targetAspect === "3:4") { targetW = 720; targetH = 960; }
+          // Mobile-safe render dimensions: keep the pixel count low to avoid
+          // Android Chrome tab crashes while encoding multi-minute videos.
+          let targetW = 480, targetH = 854;
+          if (targetAspect === "16:9") { targetW = 854; targetH = 480; }
+          else if (targetAspect === "1:1") { targetW = 480; targetH = 480; }
+          else if (targetAspect === "4:3") { targetW = 640; targetH = 480; }
+          else if (targetAspect === "3:4") { targetW = 480; targetH = 640; }
 
           canvas.width = targetW;
           canvas.height = targetH;
@@ -1529,7 +1531,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           const audioDestNode = audioCtx.createMediaStreamDestination();
           sourceNode.connect(audioDestNode);
 
-          const canvasStream = canvas.captureStream(30);
+          const renderFps = 20;
+          const canvasStream = canvas.captureStream(renderFps);
           const mixedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...audioDestNode.stream.getAudioTracks()
@@ -1540,25 +1543,55 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
           if (!MediaRecorder.isTypeSupported(mime)) throw new Error("ဒီ Browser မှာ Video Export Format ကို မထောက်ပံ့ပါ။ Chrome/Edge နောက်ဆုံးဗားရှင်းကို သုံးပါ။");
 
-          const mediaRecorder = new MediaRecorder(mixedStream, { mimeType: mime });
+          // Lower bitrate limits memory pressure on phones without changing duration.
+          const mediaRecorder = new MediaRecorder(mixedStream, {
+            mimeType: mime,
+            videoBitsPerSecond: 1200000,
+            audioBitsPerSecond: 96000
+          });
           const recordedChunks = [];
 
           mediaRecorder.ondataavailable = (e) => {
             if (e.data && e.data.size > 0) recordedChunks.push(e.data);
           };
 
+          const sourceVideoUrl = sourceVideo.src;
+          const speechAudioUrl = speechAudio.src;
+          let animationFrameId = null;
+          const cleanupRender = () => {
+            try { sourceVideo.pause(); speechAudio.pause(); } catch (_) {}
+            mixedStream.getTracks().forEach(track => track.stop());
+            canvasStream.getTracks().forEach(track => track.stop());
+            sourceVideo.removeAttribute("src"); sourceVideo.load();
+            speechAudio.removeAttribute("src"); speechAudio.load();
+            URL.revokeObjectURL(sourceVideoUrl);
+            URL.revokeObjectURL(speechAudioUrl);
+            if (audioCtx.state !== "closed") audioCtx.close().catch(() => {});
+          };
           mediaRecorder.onstop = () => {
             const finalBlob = new Blob(recordedChunks, { type: mime });
+            cleanupRender();
             resolve(finalBlob);
           };
+          mediaRecorder.onerror = (event) => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            cleanupRender();
+            reject(event.error || new Error("Video encoding မအောင်မြင်ပါ"));
+          };
 
-          let animationFrameId = null;
+          let lastRenderedAt = 0;
           const sentences = scriptText.split(/(?<=[။!?\n])/).filter(s => s.trim().length > 0);
           let startTimeStamp = performance.now();
           const totalExpectedDuration = Math.max(1, Math.min(targetDuration || 180, 480));
 
           function renderFrame(now) {
             const elapsed = (now - startTimeStamp) / 1000;
+            // Draw at a capped frame rate instead of repainting at 60Hz.
+            if (now - lastRenderedAt < 1000 / renderFps) {
+              animationFrameId = requestAnimationFrame(renderFrame);
+              return;
+            }
+            lastRenderedAt = now;
 
             if (elapsed >= totalExpectedDuration || (speechAudio.ended && sourceVideo.currentTime >= (sourceVideo.duration * 0.95))) {
               cancelAnimationFrame(animationFrameId);
@@ -1567,7 +1600,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             }
 
             ctx.save();
-            ctx.filter = "blur(14px) opacity(0.85)";
+            ctx.filter = "blur(6px) opacity(0.85)";
             ctx.drawImage(sourceVideo, 0, 0, targetW, targetH);
             ctx.restore();
 
@@ -1663,7 +1696,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             animationFrameId = requestAnimationFrame(renderFrame);
           }
 
-          mediaRecorder.start(250);
+          mediaRecorder.start(1000);
           sourceVideo.currentTime = 0;
           speechAudio.currentTime = 0;
 
