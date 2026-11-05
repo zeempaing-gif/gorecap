@@ -3,7 +3,7 @@ import asyncio
 import urllib.parse
 import urllib.request
 import edge_tts
-from fastapi import FastAPI, HTTPException, UploadFile, File, Header
+from fastapi import FastAPI, HTTPException, UploadFile, File, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, HTMLResponse
 from pydantic import BaseModel
@@ -2438,6 +2438,162 @@ async def transcribe_audio(
             raise HTTPException(status_code=502, detail=f"Groq Whisper connection failed: {str(error)[:300]}")
 
     return await asyncio.to_thread(call_groq)
+
+
+
+
+# Telegram Bot integration (webhook-based; shares this FastAPI app and Vercel deployment).
+TELEGRAM_WEB_APP_URL = os.getenv("TELEGRAM_WEB_APP_URL", "https://gorecap.vercel.app/")
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+TELEGRAM_SETUP_SECRET = os.getenv("TELEGRAM_SETUP_SECRET", "")
+
+
+def _telegram_api(method: str, payload: dict):
+    import json
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured")
+    url = f"https://api.telegram.org/bot{token}/{method}"
+    body = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(
+        url, data=body,
+        headers={"Content-Type": "application/json", "User-Agent": "GoRecapStudio/1.0"},
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=12) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Telegram API {method} failed ({error.code}): {detail[:400]}")
+    if not result.get("ok"):
+        raise RuntimeError(f"Telegram API {method} rejected request: {result.get('description', 'unknown error')}")
+    return result.get("result")
+
+
+def _telegram_send_message(chat_id: int, text: str):
+    return _telegram_api("sendMessage", {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [[{
+                "text": "🎬 Open GoRecap Studio",
+                "web_app": {"url": TELEGRAM_WEB_APP_URL}
+            }]]
+        }
+    })
+
+
+@app.get("/api/telegram/health")
+async def telegram_health():
+    return {
+        "status": "ok",
+        "bot_configured": bool(os.getenv("TELEGRAM_BOT_TOKEN")),
+        "webhook_secret_configured": bool(TELEGRAM_WEBHOOK_SECRET),
+        "web_app_url_configured": bool(TELEGRAM_WEB_APP_URL)
+    }
+
+
+@app.post("/api/telegram/setup")
+async def telegram_setup(request: Request):
+    # One-time setup endpoint. Keep TELEGRAM_SETUP_SECRET private in Vercel.
+    if not TELEGRAM_SETUP_SECRET:
+        raise HTTPException(status_code=503, detail="TELEGRAM_SETUP_SECRET is not configured in Vercel")
+    supplied = request.headers.get("x-setup-secret", "")
+    import hmac
+    if not hmac.compare_digest(supplied, TELEGRAM_SETUP_SECRET):
+        raise HTTPException(status_code=403, detail="Invalid setup secret")
+    if not TELEGRAM_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="TELEGRAM_WEBHOOK_SECRET is not configured in Vercel")
+    webhook_url = str(request.base_url).rstrip("/") + "/api/telegram/webhook"
+    try:
+        webhook_result = await asyncio.to_thread(_telegram_api, "setWebhook", {
+            "url": webhook_url,
+            "secret_token": TELEGRAM_WEBHOOK_SECRET,
+            "allowed_updates": ["message", "callback_query"]
+        })
+        commands = [
+            {"command": "start", "description": "Open GoRecap Studio"},
+            {"command": "help", "description": "How to use the bot"},
+            {"command": "recap", "description": "Open AI movie recap"},
+            {"command": "settings", "description": "Recap settings"},
+            {"command": "language", "description": "Select language"},
+            {"command": "voice", "description": "Select AI voice"},
+            {"command": "plans", "description": "View pricing plans"},
+            {"command": "support", "description": "Contact support"}
+        ]
+        await asyncio.to_thread(_telegram_api, "setMyCommands", {"commands": commands})
+        await asyncio.to_thread(_telegram_api, "setChatMenuButton", {
+            "menu_button": {
+                "type": "web_app",
+                "text": "GoRecap Studio",
+                "web_app": {"url": TELEGRAM_WEB_APP_URL}
+            }
+        })
+        return {"ok": True, "webhook": webhook_url, "webhook_result": webhook_result}
+    except Exception as error:
+        raise HTTPException(status_code=502, detail=str(error)[:500])
+
+
+@app.post("/api/telegram/webhook")
+async def telegram_webhook(request: Request):
+    if not os.getenv("TELEGRAM_BOT_TOKEN"):
+        raise HTTPException(status_code=503, detail="Telegram bot is not configured")
+    if not TELEGRAM_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Telegram webhook secret is not configured")
+    supplied = request.headers.get("x-telegram-bot-api-secret-token", "")
+    import hmac
+    if not hmac.compare_digest(supplied, TELEGRAM_WEBHOOK_SECRET):
+        raise HTTPException(status_code=403, detail="Invalid Telegram webhook secret")
+
+    update = await request.json()
+    message = update.get("message") or {}
+    chat = message.get("chat") or {}
+    chat_id = chat.get("id")
+    text = (message.get("text") or "").strip()
+    if not chat_id or not text.startswith("/"):
+        return {"ok": True}
+
+    command = text.split()[0].split("@")[0].lower()
+    first_name = ((message.get("from") or {}).get("first_name") or "there").strip()
+    if command == "/start":
+        reply = (
+            f"မင်္ဂလာပါ {first_name}! 🎬\n\n"
+            "GoRecap Studio မှ ကြိုဆိုပါတယ်။\n"
+            "AI နဲ့ Movie Recap၊ မြန်မာဘာသာပြန်၊ Voice Over နဲ့ Video Editing ကို တစ်နေရာတည်းမှာ အသုံးပြုနိုင်ပါတယ်။\n\n"
+            "အောက်က ခလုတ်ကိုနှိပ်ပြီး Studio ကိုဖွင့်လိုက်ပါ။"
+        )
+    elif command == "/help":
+        reply = (
+            "🎬 <b>GoRecap Studio အသုံးပြုနည်း</b>\n\n"
+            "/start — Studio စတင်ရန်\n/recap — AI Movie Recap ဖွင့်ရန်\n"
+            "/settings — Recap Settings\n/language — ဘာသာစကားရွေးရန်\n"
+            "/voice — AI အသံရွေးရန်\n/plans — ဈေးနှုန်းအစီအစဉ်များ\n"
+            "/support — အကူအညီရယူရန်"
+        )
+    elif command in ("/recap", "/settings", "/language", "/voice"):
+        labels = {
+            "/recap": "AI Movie Recap ကို စတင်ဖို့ Studio ကိုဖွင့်ပါ။",
+            "/settings": "Recap Settings တွေကို Studio ထဲမှာ ပြင်ဆင်နိုင်ပါတယ်။",
+            "/language": "ဘာသာစကားရွေးချယ်ဖို့ Studio ကိုဖွင့်ပါ။",
+            "/voice": "AI Voice ရွေးချယ်ဖို့ Studio ကိုဖွင့်ပါ။"
+        }
+        reply = "🎬 " + labels[command]
+    elif command == "/plans":
+        reply = "💎 GoRecap Studio Plans နဲ့ ဈေးနှုန်းအသေးစိတ်ကို မကြာမီ ဒီနေရာမှာ ဖော်ပြပေးပါမယ်။"
+    elif command == "/support":
+        reply = "🛟 Support လိုအပ်ပါက GoRecap Studio Admin ကို ဆက်သွယ်ပေးပါ။"
+    else:
+        reply = "မင်္ဂလာပါ! GoRecap Studio ကိုဖွင့်ရန် /start ကိုနှိပ်ပါ။"
+
+    try:
+        await asyncio.to_thread(_telegram_send_message, chat_id, reply)
+    except Exception as error:
+        # Return non-2xx so Telegram retries delivery; details stay out of public response.
+        raise HTTPException(status_code=502, detail=f"Unable to send Telegram reply: {str(error)[:200]}")
+    return {"ok": True}
+
 
 
 @app.get("/{full_path:path}")
