@@ -1547,7 +1547,7 @@ ${sourceTranscript.slice(0, 60000)}
               model: "llama-3.3-70b-versatile",
               messages: [
                 { role: "system", content: prompt },
-                { role: "user", content: `Write a complete ${durSecs}-second storytelling recap in Burmese based only on this transcript:\\n\\n${sourceTranscript.slice(0, 60000)}` }
+                { role: "user", content: `Write a complete ${durSecs}-second storytelling recap in Burmese using only the transcript included in the system instructions. Do not invent plot details.` }
               ],
               temperature: 0.3
             })
@@ -1656,7 +1656,8 @@ ${sourceTranscript.slice(0, 60000)}
       if (!exportedRenderedVideoBlob) return showToast("No exported video file ready", "error");
       const a = document.createElement("a");
       a.href = URL.createObjectURL(exportedRenderedVideoBlob);
-      a.download = `Recap_Go_${selectedRecapAspect.replace(":", "x")}_${Date.now()}.mp4`;
+      const extension = exportedRenderedVideoBlob.type.includes("mp4") ? "mp4" : "webm";
+      a.download = `Recap_Go_${selectedRecapAspect.replace(":", "x")}_${Date.now()}.${extension}`;
       document.body.appendChild(a);
       a.click();
       showToast("Downloaded Rendered Video (.mp4 / .webm)", "success");
@@ -1811,14 +1812,17 @@ async def generate_speech(req: GenerateTTSRequest):
     
     persona = PERSONA_DICT.get(req.persona_id, PERSONA_VOICES[0])
     base_r = int(persona.get("base_rate", "+0%").replace("%", "").replace("+", ""))
-    total_rate = base_r + req.user_rate_offset
+    total_rate = max(-50, min(50, base_r + req.user_rate_offset))
+    pitch_offset = max(-15, min(15, req.user_pitch_offset))
     rate_str = f"{'+' if total_rate >= 0 else ''}{total_rate}%"
+    pitch_str = f"{pitch_offset:+d}Hz"
 
     try:
         communicate = edge_tts.Communicate(
             text=req.text.strip(),
             voice=persona["base_voice"],
-            rate=rate_str
+            rate=rate_str,
+            pitch=pitch_str
         )
         audio_data = b""
         async for chunk in communicate.stream():
