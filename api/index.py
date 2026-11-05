@@ -1843,7 +1843,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       try {
         setWorkflowStep("1/6 — Video ထဲက အသံကို ခွဲထုတ်နေပါတယ်...", "Video အကြီးကြီးကို မတင်ဘဲ Browser ထဲမှာ Audio သီးသန့် ထုတ်ယူနေပါတယ်။");
         const extractedAudio = await extractAudioForWhisper(currentUploadedRecapFile, (percent) => {
-          workflowHint.innerText = `Audio ကို မြန်နှုန်း 4 ဆနဲ့ ခွဲထုတ်နေပါတယ်... ${percent}%`;
+          workflowHint.innerText = `Audio ကို မြန်နှုန်း 8x နဲ့ ခွဲထုတ်နေပါတယ်... ${percent}%`;
         });
         setWorkflowStep("1/6 — Audio ကို စာသားပြောင်းနေပါတယ်...", "အသံဖိုင်သေးသေးကို Groq Whisper ဆီပို့ပြီး Transcript ထုတ်နေပါတယ်။");
         const transcribeForm = new FormData();
@@ -1958,10 +1958,24 @@ ${sourceTranscript.slice(0, 100000)}
         makeRecapThumbnailPrompt(finalScript);
 
         try {
-          setWorkflowStep("3/6 — TikTok ခေါင်းစဉ်နဲ့ Hashtags ဖန်တီးနေပါတယ်...", "Gemini 3.8 Flash က ခေါင်းစဉ် ၃ ခုနဲ့ Hashtags ၅ ခု ထုတ်ပေးနေပါတယ်။");
+          setWorkflowStep("3/6 — TikTok ခေါင်းစဉ်နဲ့ Hashtags ဖန်တီးနေပါတယ်...", "ခေါင်းစဉ် ၃ ခုနဲ့ Hashtags ၅ ခု ထုတ်ပေးနေပါတယ်။");
           const metaPrompt = `Based only on the following Burmese movie recap, return valid JSON only with this exact shape: {"titles":["title 1","title 2","title 3"],"hashtags":["#tag1","#tag2","#tag3","#tag4","#tag5"]}. Titles must be catchy natural Burmese TikTok titles. Exactly 3 titles and exactly 5 relevant TikTok hashtags. No markdown fences or extra text. Recap:\n${finalScript.slice(0, 18000)}`;
-          const meta = await callGemini(metaPrompt, 1200, geminiKey);
-          const cleanedMeta = (meta.text || "").replace(/```json|```/g, "").trim();
+          let metaText = "";
+          if (geminiKey) {
+            try { const meta = await callGemini(metaPrompt, 1200, geminiKey); metaText = meta.text || ""; }
+            catch (geminiMetaError) { console.warn("Gemini metadata failed; trying Groq", geminiMetaError); }
+          }
+          if (!metaText && groqKey) {
+            const metaResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{role:"user",content:metaPrompt}], max_completion_tokens: 1200, temperature: 0.2 })
+            });
+            const metaData = await metaResponse.json().catch(() => ({}));
+            if (metaResponse.ok) metaText = metaData.choices?.[0]?.message?.content || "";
+            else throw new Error(metaData.error?.message || `Groq metadata failed (${metaResponse.status})`);
+          }
+          const cleanedMeta = metaText.replace(/```json|```/g, "").trim();
           const jsonMatch = cleanedMeta.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const social = JSON.parse(jsonMatch[0]);
