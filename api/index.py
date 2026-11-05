@@ -1626,25 +1626,47 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
                 const subX = (subBoxPos.x + 0.4) * targetW;
                 const subY = (subBoxPos.y + 0.05) * targetH;
-                const textWidth = ctx.measureText(textToDraw).width;
-                const padX = 24, padY = 14;
+                const maxTextWidth = targetW * 0.88;
+                const lineHeight = Math.round(renderedFontSize * 1.28);
+                const segments = (typeof Intl.Segmenter === "function")
+                  ? Array.from(new Intl.Segmenter("my", {granularity:"grapheme"}).segment(textToDraw), item => item.segment)
+                  : Array.from(textToDraw);
+                const subtitleLines = [""];
+                for (const part of segments) {
+                  const candidate = subtitleLines[subtitleLines.length - 1] + part;
+                  if (ctx.measureText(candidate).width <= maxTextWidth || !subtitleLines[subtitleLines.length - 1]) {
+                    subtitleLines[subtitleLines.length - 1] = candidate;
+                  } else if (subtitleLines.length < 2) {
+                    subtitleLines.push(part.trimStart());
+                  } else {
+                    let last = subtitleLines[1];
+                    while (last && ctx.measureText(last + "…").width > maxTextWidth) last = Array.from(last).slice(0, -1).join("");
+                    subtitleLines[1] = last + "…";
+                    break;
+                  }
+                }
+                const textWidth = Math.min(maxTextWidth, Math.max(...subtitleLines.map(line => ctx.measureText(line).width)));
+                const padX = 24, padY = 12;
+                const blockHeight = lineHeight * subtitleLines.length;
 
                 ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
                 ctx.roundRect(
                   subX - textWidth / 2 - padX,
-                  subY - padY,
+                  subY - blockHeight / 2 - padY,
                   textWidth + padX * 2,
-                  padY * 2,
+                  blockHeight + padY * 2,
                   12
                 );
                 ctx.fill();
 
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = subStyles.borderColor;
-                ctx.strokeText(textToDraw, subX, subY);
-
                 ctx.fillStyle = subStyles.textColor;
-                ctx.fillText(textToDraw, subX, subY);
+                subtitleLines.forEach((line, index) => {
+                  const lineY = subY + (index - (subtitleLines.length - 1) / 2) * lineHeight;
+                  ctx.strokeText(line, subX, lineY);
+                  ctx.fillText(line, subX, lineY);
+                });
                 ctx.restore();
               }
             }
