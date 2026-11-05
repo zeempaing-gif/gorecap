@@ -24,7 +24,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Recap Go 🍀 • AI Video Transcriber & Speech Studio</title>
+  <title>GoRecap Studio • AI Movie Recap</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -56,7 +56,42 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     #draggableSubtitleBox { touch-action: none; user-select: none; cursor: move; }
     .resize-handle { touch-action: none; user-select: none; cursor: nwse-resize; }
     .video-cover-fill { object-fit: cover !important; }
-  </style>
+
+    /* GoRecap light lavender refresh — visual-only layer, existing tools stay intact */
+    body { background:#f7f5ff !important; color:#28243a !important; }
+    header { background:rgba(255,255,255,.94) !important; border-color:#ebe7f5 !important; box-shadow:0 5px 24px rgba(54,35,100,.06) !important; }
+    header h1, header .text-white { color:#28243a !important; }
+    header p { color:#827b96 !important; }
+    main { max-width:860px !important; }
+    main [class*="bg-[#0f172b]"] { background:#fff !important; border:1px solid #ebe7f5 !important; border-radius:22px !important; box-shadow:0 8px 28px rgba(58,39,105,.055) !important; }
+    main [class*="bg-[#080d1a]"] { background:#faf9ff !important; border-color:#e8e2f3 !important; }
+    main [class*="border-slate-800"], main [class*="border-slate-700"] { border-color:#e9e4f1 !important; }
+    main .text-slate-100, main .text-slate-200, main .text-slate-300 { color:#302b42 !important; }
+    main .text-slate-400, main .text-slate-500 { color:#827b96 !important; }
+    main textarea, main input:not([type="checkbox"]):not([type="file"]), main select {
+      background:#fbfaff !important; color:#28243a !important; border:1px solid #e3dcef !important;
+      border-radius:13px !important; padding:12px !important; outline:none !important;
+    }
+    main textarea:focus, main input:focus, main select:focus { border-color:#9b7be8 !important; box-shadow:0 0 0 3px rgba(139,104,220,.12) !important; }
+    main button { border-radius:14px; font-weight:700; transition:all .18s ease; }
+    main button[class*="bg-blue-600"], main button[class*="bg-cyan-600"], main button[class*="bg-emerald-600"] {
+      background:#7651d5 !important; color:#fff !important; border:1px solid #7651d5 !important;
+      box-shadow:0 5px 14px rgba(118,81,213,.16);
+    }
+    main button[class*="bg-blue-600"]:hover, main button[class*="bg-cyan-600"]:hover, main button[class*="bg-emerald-600"]:hover { background:#6340c0 !important; }
+    .rg-nav { display:grid; }
+    .rg-tab { min-width:0; display:flex; align-items:center; justify-content:center; gap:7px; padding:11px 8px; border:1px solid #e9e3f2; border-radius:14px; background:#fff; color:#6f6684; font-size:12px; font-weight:700; box-shadow:0 2px 8px rgba(50,35,90,.035); }
+    .rg-tab.is-active { background:#f0eaff; border-color:#cdbcf6; color:#6844c7; box-shadow:inset 0 0 0 1px rgba(118,81,213,.06); }
+    .rg-tab span:first-child { font-size:15px; }
+    .aspect-card { background:#faf9ff !important; border-color:#e9e3f2 !important; }
+    .aspect-card[id*="9_16"] { background:#f0eaff !important; border-color:#bba4f1 !important; }
+    #toastContainer { color:#fff !important; }
+    @media (max-width:480px) {
+      .rg-tab { flex-direction:column; gap:3px; padding:9px 3px; font-size:10px; }
+      .rg-tab span:first-child { font-size:16px; }
+      main { padding-left:13px !important; padding-right:13px !important; }
+    }
+\n  </style>
 </head>
 <body class="bg-[#070b16] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
@@ -106,7 +141,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
   <!-- Clean Top Navigation Bar -->
   <header class="w-full border-b border-slate-800/80 bg-[#090f1e]/95 backdrop-blur-xl sticky top-0 z-40 shadow-xl">
-    <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xl shadow-lg shadow-blue-600/30 font-bold text-white">
           🍀
@@ -122,24 +157,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- Action Utilities -->
-      <div class="flex items-center gap-1.5">
-        <button onclick="switchStudioView('recapvd')" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-400 text-xs font-bold" title="Auto Recap VD">
-          🍿
-        </button>
-        <button onclick="switchStudioView('transcriber')" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 text-xs font-bold" title="AI Transcriber">
-          📹
-        </button>
-        <button onclick="switchStudioView('tts')" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-blue-400 text-xs font-bold" title="TTS Voice Over">
-          🎙️
-        </button>
-        <button onclick="openKeysModal()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-400 text-xs font-bold" title="API Keys">
-          🔑
-        </button>
-        <button onclick="toggleSidebarMenu(true)" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 hover:text-white" title="Menu">
-          ☰
-        </button>
-      </div>
+      <button onclick="openKeysModal()" class="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm" title="API Keys Settings">⚙️ Settings</button>
+    </div>
+    <nav class="rg-nav max-w-4xl mx-auto px-4 pb-3 grid grid-cols-4 gap-2">
+      <button id="navRecap" onclick="switchStudioView('recapvd')" class="rg-tab is-active"><span>🍿</span><span>Movie Recap</span></button>
+      <button id="navTranscriber" onclick="switchStudioView('transcriber')" class="rg-tab"><span>📝</span><span>Transcribe</span></button>
+      <button id="navTts" onclick="switchStudioView('tts')" class="rg-tab"><span>🎙️</span><span>Voice Over</span></button>
+      <button id="navDubbing" onclick="switchStudioView('dubbing')" class="rg-tab"><span>🎧</span><span>Dubbing</span></button>
+    </nav>
     </div>
   </header>
 
@@ -154,7 +179,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <audio id="globalPreviewAudio" preload="auto" playsinline class="hidden"></audio>
 
   <!-- Main Container -->
-  <main class="max-w-md w-full p-4 space-y-5 flex-1">
+  <main class="max-w-3xl w-full px-4 py-6 space-y-5 flex-1">
 
     <!-- VIEW 1: AUTO RECAP VD -->
     <div id="panelRecapVd" class="space-y-4">
@@ -751,6 +776,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const pDub = document.getElementById("panelDubbing");
 
       [pRecap, pTrans, pTts, pDub].forEach(p => p.classList.add("hidden"));
+      document.querySelectorAll(".rg-tab").forEach(tab => tab.classList.remove("is-active"));
+      const activeTab = document.getElementById(
+        tool === "transcriber" ? "navTranscriber" :
+        tool === "tts" ? "navTts" :
+        tool === "dubbing" ? "navDubbing" : "navRecap"
+      );
+      if (activeTab) activeTab.classList.add("is-active");
 
       if (tool === "transcriber") {
         pTrans.classList.remove("hidden");
