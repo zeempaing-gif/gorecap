@@ -309,6 +309,97 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
+
+
+      <!-- 5. BLUR EDITOR: placed directly below Output Format -->
+      <section id="blurEditorCard" class="bg-[#0f172b]/95 border border-cyan-500/40 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div>
+            <div class="font-bold text-cyan-300 text-sm flex items-center gap-2"><span>🫧</span><span>Blur Editor</span></div>
+            <p class="text-[10px] text-slate-400 mt-1">Preview ပေါ်က Blur Box ကို လက်နဲ့ဆွဲရွှေ့၊ ထောင့်ကနေ အရွယ်အစားပြောင်းပါ</p>
+          </div>
+          <label class="flex items-center gap-2 shrink-0">
+            <span class="text-[10px] text-slate-400">ဖွင့်မည်</span>
+            <input type="checkbox" id="effectBlurSwitch" onchange="toggleEffectPreview()" class="accent-cyan-500 w-5 h-5"/>
+          </label>
+        </div>
+                <div class="space-y-2 py-1 border-t border-slate-800/60">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-bold text-slate-200">Blur (Shape / Box)</div>
+              <div class="text-[10px] text-slate-400">လိုသလို အကြီးသေးဆွဲဆန့်ပြီး စာတန်း/ရေစာ ဖုံးကွယ်မည်</div>
+            </div>
+            <div class="relative inline-block w-11 h-6 align-middle select-none">
+              <input type="checkbox" id="effectBlurSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
+              <label for="effectBlurSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
+                <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="blurDimensionControls" class="hidden p-3 rounded-2xl bg-[#080d1a] border border-slate-800 grid grid-cols-2 gap-3 text-[11px]">
+            <div>
+              <div class="flex justify-between text-slate-400 mb-1">
+                <span>Box အကျယ် (Width)</span>
+                <span id="blurWTag" class="text-cyan-400 font-mono font-bold">160px</span>
+              </div>
+              <input type="range" id="blurWidthSlider" min="50" max="300" step="5" value="160" oninput="adjustBlurDimensionsFromSlider()" class="w-full accent-cyan-400" />
+            </div>
+            <div>
+              <div class="flex justify-between text-slate-400 mb-1">
+                <span>Box အမြင့် (Height)</span>
+                <span id="blurHTag" class="text-cyan-400 font-mono font-bold">50px</span>
+              </div>
+              <input type="range" id="blurHeightSlider" min="25" max="150" step="5" value="50" oninput="adjustBlurDimensionsFromSlider()" class="w-full accent-cyan-400" />
+            </div>
+          </div>
+        </div>
+
+
+        <p class="text-[10px] text-cyan-300/80">ဗီဒီယို Preview ထဲရှိ အပြာရောင်အကွက်ကို တိုက်ရိုက်ရွှေ့/ချဲ့နိုင်ပါတယ်။</p>
+      </section>
+
+      <!-- 5. SUBTITLES FULL STYLING CARD -->
+      <div id="subtitleStylingCard" class="bg-[#0f172b]/95 border border-amber-500/40 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs transition-all">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
+            <span>✨</span>
+            <span>Subtitle Customizer</span>
+          </div>
+          <label class="flex items-center gap-2 text-[10px] text-slate-300">
+            <span>စာတန်းဖွင့်မည်</span>
+            <input type="checkbox" id="effectSubtitleSwitch" onchange="toggleEffectPreview()" class="accent-amber-500 w-5 h-5"/>
+          </label>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-300 block">စာသားအရောင် (Text Color)</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="subTextColorInput" value="#fde047" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
+              <span id="subTextColorCode" class="font-mono text-[10px] text-slate-400">#fde047</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-300 block">ဘောင်အရောင် (Border / Stroke)</label>
+            <div class="flex items-center gap-2">
+              <input type="color" id="subBorderColorInput" value="#000000" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
+              <span id="subBorderColorCode" class="font-mono text-[10px] text-slate-400">#000000</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-300">စာသားအရွယ်အစား (Font Size)</span>
+            <span id="subSizeLabel" class="font-mono text-amber-400 font-bold">18px</span>
+          </div>
+          <input type="range" id="subSizeRange" min="12" max="32" step="1" value="18" oninput="updateSubtitleStyles()" class="w-full accent-amber-500 cursor-pointer" />
+        </div>
+      </div>
+
+
       <!-- 3. CLEAN VOICE SELECTION DROPDOWN -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md text-xs">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
@@ -339,23 +430,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
           <span class="font-bold text-slate-200 text-sm">Effects & Bypass</span>
           <span class="text-[10px] text-slate-500 font-mono">Custom Settings</span>
-        </div>
-
-        <!-- Subtitles Toggle -->
-        <div class="flex items-center justify-between py-1">
-          <div>
-            <div class="font-bold text-slate-100 flex items-center gap-1.5">
-              <span>💬 Add Subtitles (စာတန်းထိုးစနစ်)</span>
-              <span class="text-[9px] px-1.5 py-0.2 bg-amber-950 text-amber-300 border border-amber-800 rounded font-mono">Interactive</span>
-            </div>
-            <div class="text-[10px] text-slate-400">ဖွင့်ထားပါက ဗီဒီယိုပေါ်တွင် နေရာရွှေ့နိုင်ပြီး အရောင်/အရွယ်အစား ရွေးချယ်နိုင်မည်</div>
-          </div>
-          <div class="relative inline-block w-11 h-6 align-middle select-none">
-            <input type="checkbox" id="effectSubtitleSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
-            <label for="effectSubtitleSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
-              <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
-            </label>
-          </div>
         </div>
 
         <!-- Color Grading -->
@@ -392,39 +466,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Blur -->
-        <div class="space-y-2 py-1 border-t border-slate-800/60">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-bold text-slate-200">Blur (Shape / Box)</div>
-              <div class="text-[10px] text-slate-400">လိုသလို အကြီးသေးဆွဲဆန့်ပြီး စာတန်း/ရေစာ ဖုံးကွယ်မည်</div>
-            </div>
-            <div class="relative inline-block w-11 h-6 align-middle select-none">
-              <input type="checkbox" id="effectBlurSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
-              <label for="effectBlurSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
-                <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
-              </label>
-            </div>
-          </div>
-
-          <div id="blurDimensionControls" class="hidden p-3 rounded-2xl bg-[#080d1a] border border-slate-800 grid grid-cols-2 gap-3 text-[11px]">
-            <div>
-              <div class="flex justify-between text-slate-400 mb-1">
-                <span>Box အကျယ် (Width)</span>
-                <span id="blurWTag" class="text-cyan-400 font-mono font-bold">160px</span>
-              </div>
-              <input type="range" id="blurWidthSlider" min="50" max="300" step="5" value="160" oninput="adjustBlurDimensionsFromSlider()" class="w-full accent-cyan-400" />
-            </div>
-            <div>
-              <div class="flex justify-between text-slate-400 mb-1">
-                <span>Box အမြင့် (Height)</span>
-                <span id="blurHTag" class="text-cyan-400 font-mono font-bold">50px</span>
-              </div>
-              <input type="range" id="blurHeightSlider" min="25" max="150" step="5" value="50" oninput="adjustBlurDimensionsFromSlider()" class="w-full accent-cyan-400" />
-            </div>
-          </div>
-        </div>
-
         <!-- Mirror Effect -->
         <div class="flex items-center justify-between py-1 border-t border-slate-800/60">
           <div>
@@ -437,43 +478,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
             </label>
           </div>
-        </div>
-      </div>
-
-      <!-- 5. SUBTITLES FULL STYLING CARD -->
-      <div id="subtitleStylingCard" class="hidden bg-[#0f172b]/95 border border-amber-500/40 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs transition-all">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-          <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
-            <span>✨</span>
-            <span>Subtitle Customizer</span>
-          </div>
-          <span class="text-[10px] text-emerald-400 font-bold">Active</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
-            <label class="text-[11px] font-bold text-slate-300 block">စာသားအရောင် (Text Color)</label>
-            <div class="flex items-center gap-2">
-              <input type="color" id="subTextColorInput" value="#fde047" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
-              <span id="subTextColorCode" class="font-mono text-[10px] text-slate-400">#fde047</span>
-            </div>
-          </div>
-
-          <div class="p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-1.5">
-            <label class="text-[11px] font-bold text-slate-300 block">ဘောင်အရောင် (Border / Stroke)</label>
-            <div class="flex items-center gap-2">
-              <input type="color" id="subBorderColorInput" value="#000000" onchange="updateSubtitleStyles()" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
-              <span id="subBorderColorCode" class="font-mono text-[10px] text-slate-400">#000000</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-1.5 p-2.5 rounded-2xl bg-[#080d1a] border border-slate-800">
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-slate-300">စာသားအရွယ်အစား (Font Size)</span>
-            <span id="subSizeLabel" class="font-mono text-amber-400 font-bold">18px</span>
-          </div>
-          <input type="range" id="subSizeRange" min="12" max="32" step="1" value="18" oninput="updateSubtitleStyles()" class="w-full accent-amber-500 cursor-pointer" />
         </div>
       </div>
 
@@ -1234,7 +1238,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const isBlur = document.getElementById("effectBlurSwitch")?.checked;
       const isSub = document.getElementById("effectSubtitleSwitch")?.checked;
       const blurControls = document.getElementById("blurDimensionControls");
-      const subCard = document.getElementById("subtitleStylingCard");
 
       let transformStr = "";
       if (isMirror) transformStr += "scaleX(-1) ";
@@ -1257,11 +1260,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       if (isSub) {
         subBoxEl.classList.remove("hidden");
-        subCard.classList.remove("hidden");
         updateSubtitleStyles();
       } else {
         subBoxEl.classList.add("hidden");
-        subCard.classList.add("hidden");
       }
     }
 
