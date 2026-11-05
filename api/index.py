@@ -586,12 +586,38 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     <!-- VIEW 4: AUTO DUBBING MODE -->
     <div id="panelDubbing" class="hidden space-y-4">
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl text-xs">
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl text-xs">
         <h3 class="font-bold text-sm text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-3">
-          <span>🎧</span><span>Auto Dubbing Mode</span>
+          <span>🎧</span><span>Auto Dubbing • Myanmar Voice</span>
         </h3>
-        <p class="text-slate-300 leading-relaxed">Translate original speech with timestamps and replace audio with synchronized voiceover.</p>
-        <button onclick="switchStudioView('recapvd')" class="w-full py-3.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold">Open Auto Recap VD</button>
+        <p class="text-slate-300 leading-relaxed">ဗီဒီယိုတင်ပါ → မူရင်းအသံကို စာသားထုတ်ပါ → မြန်မာလို ဘာသာပြန်ပါ → AI အသံထည့်ပြီး MP4/WebM Export လုပ်ပါ။ Groq API Key လိုအပ်ပါတယ်။</p>
+        <label class="block text-slate-300 font-bold">၁။ မူရင်းဗီဒီယို
+          <input id="dubbingVideoInput" type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" class="mt-2 w-full text-xs text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-cyan-600 file:px-3 file:py-2 file:font-bold file:text-white"/>
+        </label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="text-slate-400">မူရင်းဘာသာစကား
+            <select id="dubbingSourceLanguage" class="mt-1 w-full bg-[#080d1a] border border-slate-700 rounded-xl p-2 text-xs text-white">
+              <option value="auto">Auto Detect</option><option value="English">English</option><option value="Chinese">Chinese</option><option value="Japanese">Japanese</option><option value="Korean">Korean</option><option value="Thai">Thai</option><option value="Burmese">Burmese</option>
+            </select>
+          </label>
+          <label class="text-slate-400">မြန်မာအသံ
+            <select id="dubbingVoice" class="mt-1 w-full bg-[#080d1a] border border-slate-700 rounded-xl p-2 text-xs text-white"></select>
+          </label>
+        </div>
+        <label class="block text-slate-300 font-bold">၂။ ထုတ်ယူထားသော မူရင်းစာသား (ပြင်လို့ရသည်)
+          <textarea id="dubbingTranscript" rows="4" placeholder="Whisper က ထုတ်ပေးမယ့် မူရင်းစာသား..." class="mt-1 w-full bg-[#080d1a] border border-slate-700 rounded-xl p-3 text-xs leading-relaxed text-white"></textarea>
+        </label>
+        <label class="block text-slate-300 font-bold">၃။ မြန်မာဘာသာပြန်စာသား (ပြင်လို့ရသည်)
+          <textarea id="dubbingMyanmarScript" rows="5" placeholder="AI ဘာသာပြန်ပေးမယ့် မြန်မာစာသား..." class="mt-1 w-full bg-[#080d1a] border border-slate-700 rounded-xl p-3 text-xs leading-relaxed text-white"></textarea>
+        </label>
+        <label class="flex items-center gap-2 text-slate-300"><input id="dubbingAddSubtitles" type="checkbox" checked class="accent-cyan-500"/> ဗီဒီယိုပေါ် မြန်မာစာတန်းထိုးမည်</label>
+        <button id="dubbingStartBtn" onclick="startAutoDubbing()" class="w-full py-3.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold">🎧 Auto Dubbing စတင်မည်</button>
+        <p id="dubbingStatus" class="text-center text-cyan-300 min-h-5">ဗီဒီယိုဖိုင်ရွေးပြီး စတင်နိုင်ပါပြီ။</p>
+        <div id="dubbingResult" class="hidden space-y-3 border-t border-slate-800 pt-3">
+          <video id="dubbingOutputVideo" controls playsinline class="w-full rounded-xl bg-black"></video>
+          <button onclick="downloadExportedVideoFile()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold">⬇️ Dubbed Video ဒေါင်းလုဒ်</button>
+        </div>
+        <p class="text-[10px] text-slate-500">မှတ်ချက်: Browser မှာ Video ကို Render လုပ်တာဖြစ်လို့ Tab ကိုဖွင့်ထားပါ။ ဖိုင်ကြီးရင် ဖုန်း/Browser စွမ်းဆောင်ရည်ပေါ်မူတည်ပြီး ကြာနိုင်ပါတယ်။ မူရင်းအသံကို အစားထိုးပြီး မြန်မာ Voiceover တစ်ပုဒ်တည်း ထည့်ပေးပါတယ်။</p>
       </div>
     </div>
 
@@ -1257,6 +1283,116 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
+    async function startAutoDubbing() {
+      const videoFile = document.getElementById("dubbingVideoInput").files?.[0];
+      const groqKey = (localStorage.getItem("groq_api_key") || "").trim();
+      if (!videoFile) return showToast("Dubbing လုပ်မယ့် ဗီဒီယိုဖိုင် ရွေးပါ", "error");
+      if (!groqKey) { showToast("Groq API Key ထည့်ပေးပါ", "error"); openKeysModal(); return; }
+      if (videoFile.size > 25 * 1024 * 1024) return showToast("Whisper ဖိုင်ကန့်သတ်ချက် 25MB ထက်ကျော်နေပါတယ်", "error");
+
+      const btn = document.getElementById("dubbingStartBtn");
+      const status = document.getElementById("dubbingStatus");
+      const setStatus = (message) => { status.textContent = message; btn.textContent = message; };
+      btn.disabled = true;
+      let transcript = document.getElementById("dubbingTranscript").value.trim();
+      let myanmarScript = document.getElementById("dubbingMyanmarScript").value.trim();
+      try {
+        if (!transcript) {
+          setStatus("၁/၄ — မူရင်းအသံကို စာသားထုတ်နေပါတယ်...");
+          const form = new FormData();
+          form.append("file", videoFile, videoFile.name);
+          form.append("model", "whisper-large-v3-turbo");
+          form.append("response_format", "verbose_json");
+          const lang = document.getElementById("dubbingSourceLanguage").value;
+          if (lang !== "auto") {
+            const langCodes = {English:"en",Chinese:"zh",Japanese:"ja",Korean:"ko",Thai:"th",Burmese:"my"};
+            form.append("language", langCodes[lang] || "en");
+          }
+          const transcribeResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+            method:"POST", headers:{Authorization:`Bearer ${groqKey}`}, body:form
+          });
+          const transcribeData = await transcribeResponse.json().catch(()=>({}));
+          if (!transcribeResponse.ok) throw new Error(transcribeData.error?.message || `Whisper Error ${transcribeResponse.status}`);
+          transcript = (transcribeData.text || "").trim();
+          if (!transcript) throw new Error("မူရင်းအသံထဲက စကားပြောစာသား မတွေ့ပါ");
+          document.getElementById("dubbingTranscript").value = transcript;
+        }
+
+        if (!myanmarScript) {
+          setStatus("၂/၄ — မြန်မာလို ဘာသာပြန်နေပါတယ်...");
+          const language = document.getElementById("dubbingSourceLanguage").value;
+          const translateResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method:"POST",
+            headers:{Authorization:`Bearer ${groqKey}`,"Content-Type":"application/json"},
+            body:JSON.stringify({
+              model:"llama-3.3-70b-versatile",
+              temperature:0.2,
+              messages:[
+                {role:"system",content:"You are an expert audiovisual dubbing translator. Translate the supplied dialogue into natural, conversational spoken Burmese (Myanmar). Preserve meaning, names, tone and order. Do not summarize, add explanations, speaker labels, timestamps or sound effects. Return only the Burmese dialogue. Keep the translation concise enough to fit the original scene."},
+                {role:"user",content:`Source language: ${language}. Translate this transcript into Burmese for voice dubbing:\n\n${transcript.slice(0,24000)}`}
+              ]
+            })
+          });
+          const translateData = await translateResponse.json().catch(()=>({}));
+          if (!translateResponse.ok) throw new Error(translateData.error?.message || `Translation Error ${translateResponse.status}`);
+          myanmarScript = (translateData.choices?.[0]?.message?.content || "").trim();
+          if (!myanmarScript) throw new Error("မြန်မာဘာသာပြန်စာသား မရရှိပါ");
+          document.getElementById("dubbingMyanmarScript").value = myanmarScript;
+        }
+
+        setStatus("၃/၄ — မြန်မာအသံဖိုင် ဖန်တီးနေပါတယ်...");
+        const ttsResponse = await fetch("/api/tts", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            text:myanmarScript,
+            persona_id:document.getElementById("dubbingVoice").value || "nilar",
+            user_rate_offset:0,
+            user_pitch_offset:0
+          })
+        });
+        if (!ttsResponse.ok) {
+          const errorData = await ttsResponse.json().catch(()=>({}));
+          throw new Error(errorData.detail || "Myanmar TTS မအောင်မြင်ပါ");
+        }
+        const audioBlob = await ttsResponse.blob();
+        if (!audioBlob.size) throw new Error("TTS အသံဖိုင် ဗလာဖြစ်နေပါတယ်");
+
+        setStatus("၄/၄ — ဗီဒီယိုနဲ့ မြန်မာအသံ ပေါင်းစပ် Export လုပ်နေပါတယ်...");
+        const videoMeta = document.createElement("video");
+        videoMeta.preload = "metadata";
+        videoMeta.src = URL.createObjectURL(videoFile);
+        await new Promise((resolve,reject)=>{
+          videoMeta.onloadedmetadata=resolve;
+          videoMeta.onerror=()=>reject(new Error("ဒီ Video Format ကို Browser က မဖတ်နိုင်ပါ"));
+        });
+        if (!Number.isFinite(videoMeta.duration) || videoMeta.duration <= 0) throw new Error("ဗီဒီယိုကြာချိန် မဖတ်နိုင်ပါ");
+        const effects = {
+          isMirror:false, isColor:false, isZoom:false, isBlur:false,
+          isSub:document.getElementById("dubbingAddSubtitles").checked
+        };
+        const aspect = videoMeta.videoWidth >= videoMeta.videoHeight ? "16:9" : "9:16";
+        exportedRenderedVideoBlob = await renderAndExportComposedVideo(
+          videoFile, audioBlob, myanmarScript, aspect, effects, videoMeta.duration, 1
+        );
+        if (!exportedRenderedVideoBlob || exportedRenderedVideoBlob.size < 1000) throw new Error("Video Export ဖိုင် မပြည့်စုံပါ");
+        const output = document.getElementById("dubbingOutputVideo");
+        if (output.dataset.objectUrl) URL.revokeObjectURL(output.dataset.objectUrl);
+        const outputUrl = URL.createObjectURL(exportedRenderedVideoBlob);
+        output.dataset.objectUrl = outputUrl;
+        output.src = outputUrl;
+        document.getElementById("dubbingResult").classList.remove("hidden");
+        status.textContent = "ပြီးပါပြီ — Dubbed Video အသင့်ဖြစ်ပါပြီ။";
+        btn.textContent = "🎧 ထပ်မံ Dubbing လုပ်မည်";
+        showToast("Auto Dubbing နဲ့ Video Export ပြီးပါပြီ", "success");
+      } catch (error) {
+        status.textContent = error.message || "Auto Dubbing မအောင်မြင်ပါ";
+        btn.textContent = "ပြန်လည်ကြိုးစားမည်";
+        showToast(status.textContent, "error");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
     function sendTranscriptToRecap() {
       const transcript = document.getElementById("transcriberResultText").value.trim();
       if (!transcript) return showToast("ပို့မယ့် Transcript မရှိသေးပါ", "error");
@@ -1330,9 +1466,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           sourceVideo.playbackRate = playbackSpeed || 1.20;
 
           const speechAudio = new Audio(URL.createObjectURL(audioBlob));
+          await new Promise((resolve, reject) => {
+            speechAudio.onloadedmetadata = resolve;
+            speechAudio.onerror = () => reject(new Error("Voiceover audio metadata ကို ဖတ်မရပါ"));
+          });
+          // Fit a long Burmese voice track into the source video's duration without slowing it down.
+          if (Number.isFinite(speechAudio.duration) && speechAudio.duration > sourceVideo.duration) {
+            speechAudio.playbackRate = Math.min(2, Math.max(1, speechAudio.duration / sourceVideo.duration));
+          }
 
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) throw new Error("ဒီ Browser မှာ Audio Export ကို မထောက်ပံ့ပါ");
           const audioCtx = new AudioContextClass();
+          if (audioCtx.state === "suspended") await audioCtx.resume();
           const sourceNode = audioCtx.createMediaElementSource(speechAudio);
           const audioDestNode = audioCtx.createMediaStreamDestination();
           sourceNode.connect(audioDestNode);
@@ -1346,6 +1492,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           let mime = 'video/webm;codecs=vp9,opus';
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
+          if (!MediaRecorder.isTypeSupported(mime)) throw new Error("ဒီ Browser မှာ Video Export Format ကို မထောက်ပံ့ပါ။ Chrome/Edge နောက်ဆုံးဗားရှင်းကို သုံးပါ။");
 
           const mediaRecorder = new MediaRecorder(mixedStream, { mimeType: mime });
           const recordedChunks = [];
@@ -1362,7 +1509,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           let animationFrameId = null;
           const sentences = scriptText.split(/(?<=[။!?\n])/).filter(s => s.trim().length > 0);
           let startTimeStamp = performance.now();
-          const totalExpectedDuration = Math.max(12, Math.min(targetDuration || 180, 480));
+          const totalExpectedDuration = Math.max(1, Math.min(targetDuration || 180, 480));
 
           function renderFrame(now) {
             const elapsed = (now - startTimeStamp) / 1000;
@@ -1694,6 +1841,12 @@ ${sourceTranscript.slice(0, 60000)}
         filtered.push(line);
       }
       return filtered.join('\n').trim();
+    }
+
+    const dubbingVoiceSelect = document.getElementById("dubbingVoice");
+    if (dubbingVoiceSelect) {
+      dubbingVoiceSelect.innerHTML = PERSONAS.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+      dubbingVoiceSelect.value = "nilar";
     }
 
     // Init
