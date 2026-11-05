@@ -57,41 +57,35 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .resize-handle { touch-action: none; user-select: none; cursor: nwse-resize; }
     .video-cover-fill { object-fit: cover !important; }
 
-    /* GoRecap light lavender refresh — visual-only layer, existing tools stay intact */
-    body { background:#f7f5ff !important; color:#28243a !important; }
-    header { background:rgba(255,255,255,.94) !important; border-color:#ebe7f5 !important; box-shadow:0 5px 24px rgba(54,35,100,.06) !important; }
-    header h1, header .text-white { color:#28243a !important; }
-    header p { color:#827b96 !important; }
-    main { max-width:860px !important; }
-    main [class*="bg-[#0f172b]"] { background:#fff !important; border:1px solid #ebe7f5 !important; border-radius:22px !important; box-shadow:0 8px 28px rgba(58,39,105,.055) !important; }
-    main [class*="bg-[#080d1a]"] { background:#faf9ff !important; border-color:#e8e2f3 !important; }
-    main [class*="border-slate-800"], main [class*="border-slate-700"] { border-color:#e9e4f1 !important; }
-    main .text-slate-100, main .text-slate-200, main .text-slate-300 { color:#302b42 !important; }
-    main .text-slate-400, main .text-slate-500 { color:#827b96 !important; }
-    main textarea, main input:not([type="checkbox"]):not([type="file"]), main select {
-      background:#fbfaff !important; color:#28243a !important; border:1px solid #e3dcef !important;
-      border-radius:13px !important; padding:12px !important; outline:none !important;
-    }
-    main textarea:focus, main input:focus, main select:focus { border-color:#9b7be8 !important; box-shadow:0 0 0 3px rgba(139,104,220,.12) !important; }
+    /* GoRecap Studio theme system */
+    :root { color-scheme: dark; --app-bg:#070b16; --surface:#0e1628; --surface-2:#111d32; --line:#24324a; --ink:#e8eef9; --muted:#93a4bd; --accent:#8b5cf6; --accent-2:#6366f1; }
+    html[data-theme="light"] { color-scheme:light; --app-bg:#f5f6fb; --surface:#ffffff; --surface-2:#f0f2f9; --line:#e1e5ef; --ink:#20263a; --muted:#69748b; --accent:#7651d5; --accent-2:#5b5bd6; }
+    body { background:var(--app-bg) !important; color:var(--ink) !important; font-family:'Padauk','Plus Jakarta Sans',sans-serif; }
+    header { background:color-mix(in srgb,var(--app-bg) 88%,transparent) !important; border-color:var(--line) !important; box-shadow:0 8px 32px rgba(0,0,0,.12) !important; }
+    header h1, header .text-white { color:var(--ink) !important; }
+    header p { color:var(--muted) !important; }
+    main { max-width:1100px !important; }
+    main [class*="bg-[#0f172b]"] { background:var(--surface) !important; border:1px solid var(--line) !important; border-radius:22px !important; box-shadow:0 12px 34px rgba(0,0,0,.10) !important; }
+    main [class*="bg-[#080d1a]"] { background:var(--surface-2) !important; border-color:var(--line) !important; }
+    main [class*="border-slate-800"], main [class*="border-slate-700"] { border-color:var(--line) !important; }
+    main .text-slate-100, main .text-slate-200, main .text-slate-300 { color:var(--ink) !important; }
+    main .text-slate-400, main .text-slate-500 { color:var(--muted) !important; }
+    main textarea, main input:not([type="checkbox"]):not([type="file"]), main select { background:var(--surface-2) !important; color:var(--ink) !important; border:1px solid var(--line) !important; border-radius:13px !important; padding:12px !important; outline:none !important; }
+    main textarea:focus, main input:focus, main select:focus { border-color:var(--accent) !important; box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent) !important; }
     main button { border-radius:14px; font-weight:700; transition:all .18s ease; }
-    main button[class*="bg-blue-600"], main button[class*="bg-cyan-600"], main button[class*="bg-emerald-600"] {
-      background:#7651d5 !important; color:#fff !important; border:1px solid #7651d5 !important;
-      box-shadow:0 5px 14px rgba(118,81,213,.16);
-    }
-    main button[class*="bg-blue-600"]:hover, main button[class*="bg-cyan-600"]:hover, main button[class*="bg-emerald-600"]:hover { background:#6340c0 !important; }
+    main button[class*="bg-blue-600"], main button[class*="bg-cyan-600"], main button[class*="bg-emerald-600"] { background:linear-gradient(135deg,var(--accent),var(--accent-2)) !important; color:#fff !important; border:1px solid transparent !important; box-shadow:0 7px 20px color-mix(in srgb,var(--accent) 22%,transparent); }
+    main button[class*="bg-blue-600"]:hover, main button[class*="bg-cyan-600"]:hover, main button[class*="bg-emerald-600"]:hover { filter:brightness(1.08); transform:translateY(-1px); }
     .rg-nav { display:grid; }
-    .rg-tab { min-width:0; display:flex; align-items:center; justify-content:center; gap:7px; padding:11px 8px; border:1px solid #e9e3f2; border-radius:14px; background:#fff; color:#6f6684; font-size:12px; font-weight:700; box-shadow:0 2px 8px rgba(50,35,90,.035); }
-    .rg-tab.is-active { background:#f0eaff; border-color:#cdbcf6; color:#6844c7; box-shadow:inset 0 0 0 1px rgba(118,81,213,.06); }
+    .rg-tab { min-width:0; display:flex; align-items:center; justify-content:center; gap:7px; padding:11px 8px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--muted); font-size:12px; font-weight:700; box-shadow:0 3px 12px rgba(0,0,0,.06); transition:all .18s ease; }
+    .rg-tab:hover { border-color:var(--accent); color:var(--ink); transform:translateY(-1px); }
+    .rg-tab.is-active { background:color-mix(in srgb,var(--accent) 15%,var(--surface)); border-color:color-mix(in srgb,var(--accent) 55%,var(--line)); color:var(--ink); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 12%,transparent); }
     .rg-tab span:first-child { font-size:15px; }
-    .aspect-card { background:#faf9ff !important; border-color:#e9e3f2 !important; }
-    .aspect-card[id*="9_16"] { background:#f0eaff !important; border-color:#bba4f1 !important; }
+    .aspect-card { background:var(--surface-2) !important; border-color:var(--line) !important; }
+    .aspect-card[id*="9_16"] { background:color-mix(in srgb,var(--accent) 16%,var(--surface)) !important; border-color:var(--accent) !important; }
     #toastContainer { color:#fff !important; }
-    @media (max-width:480px) {
-      .rg-tab { flex-direction:column; gap:3px; padding:9px 3px; font-size:10px; }
-      .rg-tab span:first-child { font-size:16px; }
-      main { padding-left:13px !important; padding-right:13px !important; }
-    }
-\n  </style>
+    #themeToggle { border:1px solid var(--line); background:var(--surface); color:var(--ink); }
+    @media (max-width:480px) { .rg-tab { flex-direction:column; gap:3px; padding:9px 3px; font-size:10px; } .rg-tab span:first-child { font-size:16px; } main { padding-left:13px !important; padding-right:13px !important; } }
+  </style>
 </head>
 <body class="bg-[#070b16] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
@@ -157,7 +151,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <button onclick="openKeysModal()" class="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm" title="API Keys Settings">⚙️ Settings</button>
+      <div class="flex items-center gap-2"><button id="themeToggle" onclick="toggleTheme()" class="px-3 py-2 rounded-xl text-xs font-bold" title="Toggle theme">☀️ Light</button><button onclick="openKeysModal()" class="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm" title="API Keys Settings">⚙️ Settings</button></div>
     </div>
     <nav class="rg-nav max-w-4xl mx-auto px-4 pb-3 grid grid-cols-4 gap-2">
       <button id="navRecap" onclick="switchStudioView('recapvd')" class="rg-tab is-active"><span>🍿</span><span>Movie Recap</span></button>
@@ -1283,29 +1277,34 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const groqKey = (localStorage.getItem("groq_api_key") || "").trim();
       if (!file) return showToast("ဗီဒီယို သို့မဟုတ် အသံဖိုင် အရင်ရွေးပါ", "error");
       if (!groqKey) { showToast("Groq API Key ထည့်ပေးပါ", "error"); openKeysModal(); return; }
-      if (file.size > 25 * 1024 * 1024) return showToast("Groq Whisper ဖိုင်ကန့်သတ်ချက် 25MB ထက်ကျော်နေပါတယ်", "error");
       const btn = document.getElementById("transcribeSourceBtn");
       const result = document.getElementById("transcriberResultText");
       btn.disabled = true;
-      btn.innerText = "အသံကို စာသားပြောင်းနေပါတယ်...";
       try {
+        let audioBlob = file;
+        let audioName = file.name;
+        if (file.type.startsWith("video/")) {
+          btn.innerText = "⚡ Audio ကို မြန်နှုန်း 8x နဲ့ ထုတ်ယူနေပါတယ်...";
+          audioBlob = await extractAudioForWhisper(file, percent => { btn.innerText = `⚡ Audio Extraction ${percent}%`; });
+          audioName = "gorecap-transcriber.webm";
+        }
+        if (audioBlob.size > 4 * 1024 * 1024) throw new Error("Audio ဖိုင် 4MB ကျော်နေပါတယ်။ Video ကို ပိုတိုအောင် ဖြတ်ပါ၊ သို့မဟုတ် Audio ကို အပိုင်းခွဲပါ။");
+        btn.innerText = "Whisper Server ကို ဆက်သွယ်နေပါတယ်...";
         const form = new FormData();
-        form.append("file", file, file.name);
-        form.append("model", "whisper-large-v3-turbo");
-        form.append("response_format", "json");
-        const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        form.append("file", audioBlob, audioName);
+        const response = await fetch("/api/transcribe", {
           method: "POST",
           headers: { "Authorization": `Bearer ${groqKey}` },
           body: form
         });
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error?.message || data.message || `Whisper API error (${response.status})`);
+        if (!response.ok) throw new Error(data.detail || data.error?.message || `Whisper Error ${response.status}`);
         const transcript = (data.text || "").trim();
         if (!transcript) throw new Error("အသံထဲက စကားပြောစာသား မတွေ့ပါ");
         result.value = transcript;
         showToast("Transcription ပြီးပါပြီ", "success");
       } catch (err) {
-        showToast(err.message || "Transcription မအောင်မြင်ပါ", "error");
+        showToast(err.message || "Whisper မအောင်မြင်ပါ", "error");
       } finally {
         btn.disabled = false;
         btn.innerText = "🎙️ စာသားထုတ်ယူမည် (Transcribe)";
@@ -1328,20 +1327,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       try {
         if (!transcript) {
           setStatus("၁/၄ — မူရင်းအသံကို စာသားထုတ်နေပါတယ်...");
+          setStatus("၁/၄ — Video ထဲက Audio ကို 8x မြန်နှုန်းနဲ့ ထုတ်ယူနေပါတယ်...");
+          const audioBlob = await extractAudioForWhisper(videoFile, percent => setStatus(`Audio Extraction ${percent}%`));
+          if (audioBlob.size > 4 * 1024 * 1024) throw new Error("Audio 4MB ကျော်နေပါတယ်။ ပိုတိုတဲ့ Video အပိုင်းနဲ့ ပြန်စမ်းပါ။");
           const form = new FormData();
-          form.append("file", videoFile, videoFile.name);
-          form.append("model", "whisper-large-v3-turbo");
-          form.append("response_format", "verbose_json");
-          const lang = document.getElementById("dubbingSourceLanguage").value;
-          if (lang !== "auto") {
-            const langCodes = {English:"en",Chinese:"zh",Japanese:"ja",Korean:"ko",Thai:"th",Burmese:"my"};
-            form.append("language", langCodes[lang] || "en");
-          }
-          const transcribeResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+          form.append("file", audioBlob, "gorecap-dubbing.webm");
+          const transcribeResponse = await fetch("/api/transcribe", {
             method:"POST", headers:{Authorization:`Bearer ${groqKey}`}, body:form
           });
           const transcribeData = await transcribeResponse.json().catch(()=>({}));
-          if (!transcribeResponse.ok) throw new Error(transcribeData.error?.message || `Whisper Error ${transcribeResponse.status}`);
+          if (!transcribeResponse.ok) throw new Error(transcribeData.detail || transcribeData.error?.message || `Whisper Error ${transcribeResponse.status}`);
           transcript = (transcribeData.text || "").trim();
           if (!transcript) throw new Error("မူရင်းအသံထဲက စကားပြောစာသား မတွေ့ပါ");
           document.getElementById("dubbingTranscript").value = transcript;
@@ -1686,7 +1681,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         video.preload = "auto";
         video.playsInline = true;
-        video.playbackRate = 4;
+        video.playbackRate = 8;
         if ("preservesPitch" in video) video.preservesPitch = true;
         video.src = objectUrl;
         video.onerror = () => fail("Video ဖိုင်ကို ဖတ်မရပါ။ MP4 သို့မဟုတ် WebM ဖိုင်နဲ့ ပြန်စမ်းပါ။");
@@ -1709,7 +1704,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             : (MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "");
           recorder = new MediaRecorder(destination.stream, {
             ...(mimeType ? { mimeType } : {}),
-            audioBitsPerSecond: 48000
+            audioBitsPerSecond: 32000
           });
           recorder.ondataavailable = (event) => {
             if (event.data && event.data.size) chunks.push(event.data);
@@ -2041,6 +2036,20 @@ ${sourceTranscript.slice(0, 60000)}
       dubbingVoiceSelect.innerHTML = PERSONAS.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
       dubbingVoiceSelect.value = "nilar";
     }
+
+    function applyTheme(theme) {
+      const selected = theme === "light" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", selected);
+      document.documentElement.classList.toggle("dark", selected === "dark");
+      const toggle = document.getElementById("themeToggle");
+      if (toggle) toggle.textContent = selected === "dark" ? "☀️ Light" : "🌙 Dark";
+      try { localStorage.setItem("gorecap_theme", selected); } catch (_) {}
+    }
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(current === "dark" ? "light" : "dark");
+    }
+    try { applyTheme(localStorage.getItem("gorecap_theme") || "dark"); } catch (_) { applyTheme("dark"); }
 
     // Init
     updateVoiceTriggerLabel();
