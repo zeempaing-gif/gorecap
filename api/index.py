@@ -1470,7 +1470,28 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     // =========================================================================
     async function renderAndExportComposedVideo(videoFile, audioBlob, scriptText, targetAspect, effects, targetDuration, playbackSpeed) {
       return new Promise(async (resolve, reject) => {
+        let screenWakeLock = null;
+        let visibilityHandler = null;
+        let wakeLockReleaseHandler = null;
         try {
+          // Keep the phone display awake during a long local render when the
+          // browser supports Screen Wake Lock. This is best-effort only.
+          if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "") && "wakeLock" in navigator) {
+            try {
+              screenWakeLock = await navigator.wakeLock.request("screen");
+              wakeLockReleaseHandler = () => { screenWakeLock = null; };
+              screenWakeLock.addEventListener("release", wakeLockReleaseHandler, { once: true });
+            } catch (wakeLockError) {
+              console.warn("Screen Wake Lock unavailable:", wakeLockError);
+            }
+          }
+          visibilityHandler = () => {
+            if (document.visibilityState === "hidden") {
+              showToast("Export လုပ်နေဆဲပါ။ Browser ကို မပိတ်ပါနဲ့၊ App ကို နောက်ခံမပို့ပါနဲ့။", "info");
+            }
+          };
+          document.addEventListener("visibilitychange", visibilityHandler);
+
           const canvas = document.getElementById("offscreenRenderCanvas");
           const ctx = canvas.getContext("2d");
 
@@ -1483,11 +1504,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           // Mobile browsers can be killed by Android/iOS when a large canvas is
           // encoded at 30fps. Use a lighter export profile on phones.
           const isMobileExport = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-          const exportScale = isMobileExport ? 0.75 : 1;
-          const exportFps = isMobileExport ? 18 : 30;
-          const exportBitrate = isMobileExport ? 1400000 : 3000000;
-          targetW = Math.round(targetW * exportScale);
-          targetH = Math.round(targetH * exportScale);
+          const exportScale = isMobileExport ? (Number(videoFile.size) > 150 * 1024 * 1024 ? 0.60 : 0.667) : 1;
+          const exportFps = isMobileExport ? 15 : 30;
+          const exportBitrate = isMobileExport ? 850000 : 3000000;
+          targetW = Math.max(2, Math.round(targetW * exportScale / 2) * 2);
+          targetH = Math.max(2, Math.round(targetH * exportScale / 2) * 2);
 
           canvas.width = targetW;
           canvas.height = targetH;
@@ -1560,6 +1581,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             const finalBlob = new Blob(recordedChunks, { type: mime });
             mixedStream.getTracks().forEach(track => track.stop());
             audioCtx.close().catch(() => {});
+            if (visibilityHandler) document.removeEventListener("visibilitychange", visibilityHandler);
+            if (screenWakeLock) screenWakeLock.release().catch(() => {});
             sourceVideo.pause();
             speechAudio.pause();
             sourceVideo.removeAttribute("src");
@@ -1705,7 +1728,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             animationFrameId = requestAnimationFrame(renderFrame);
           }
 
-          mediaRecorder.start(250);
+          // One-second chunks reduce encoder callback pressure; the mobile
+          // bitrate profile keeps the accumulated in-memory Blob smaller.
+          mediaRecorder.start(1000);
           sourceVideo.currentTime = 0;
           speechAudio.currentTime = 0;
 
@@ -1715,6 +1740,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           animationFrameId = requestAnimationFrame(renderFrame);
 
         } catch (err) {
+          if (visibilityHandler) document.removeEventListener("visibilitychange", visibilityHandler);
+          if (screenWakeLock) screenWakeLock.release().catch(() => {});
           reject(err);
         }
       });
