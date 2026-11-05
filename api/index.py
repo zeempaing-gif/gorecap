@@ -1789,16 +1789,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       btn.disabled = true;
       resultCard.classList.add("hidden");
       document.getElementById("recapSourceTranscript").value = "";
+      document.getElementById("recapTitlesOutput").value = "";
+      document.getElementById("recapHashtagsOutput").value = "";
       spinner.classList.remove("hidden");
       icon.classList.add("hidden");
-      setWorkflowStep("1/5 — မူရင်းအသံမှ Transcript ထုတ်ယူနေပါတယ်...", "Groq Whisper က Video ထဲက စကားပြောသံကို အလိုအလျောက် စာသားပြောင်းနေပါတယ်။");
+      setWorkflowStep("1/6 — မူရင်းအသံမှ Transcript ထုတ်ယူနေပါတယ်...", "Groq Whisper က Video ထဲက စကားပြောသံကို အလိုအလျောက် စာသားပြောင်းနေပါတယ်။");
 
       try {
-        setWorkflowStep("1/5 — Video ထဲက အသံကို ခွဲထုတ်နေပါတယ်...", "Video အကြီးကြီးကို မတင်ဘဲ Browser ထဲမှာ Audio သီးသန့် ထုတ်ယူနေပါတယ်။");
+        setWorkflowStep("1/6 — Video ထဲက အသံကို ခွဲထုတ်နေပါတယ်...", "Video အကြီးကြီးကို မတင်ဘဲ Browser ထဲမှာ Audio သီးသန့် ထုတ်ယူနေပါတယ်။");
         const extractedAudio = await extractAudioForWhisper(currentUploadedRecapFile, (percent) => {
           workflowHint.innerText = `Audio ကို မြန်နှုန်း 4 ဆနဲ့ ခွဲထုတ်နေပါတယ်... ${percent}%`;
         });
-        setWorkflowStep("1/5 — Audio ကို စာသားပြောင်းနေပါတယ်...", "အသံဖိုင်သေးသေးကို Groq Whisper ဆီပို့ပြီး Transcript ထုတ်နေပါတယ်။");
+        setWorkflowStep("1/6 — Audio ကို စာသားပြောင်းနေပါတယ်...", "အသံဖိုင်သေးသေးကို Groq Whisper ဆီပို့ပြီး Transcript ထုတ်နေပါတယ်။");
         const transcribeForm = new FormData();
         transcribeForm.append("file", extractedAudio, "gorecap-audio.webm");
         let transcribeResponse;
@@ -1820,7 +1822,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           throw new Error("Video ထဲက စကားပြောသံ မလုံလောက်ပါ။ အသံပါဝင်တဲ့ Video ကို ပြန်တင်ပါ။");
         }
         document.getElementById("recapSourceTranscript").value = sourceTranscript;
-        setWorkflowStep("2/5 — ဇာတ်လမ်းကို မြန်မာ Movie Recap အဖြစ် ရေးသားနေပါတယ်...", "Transcript ရရှိပါပြီ။ AI က ဇာတ်လမ်းအစမှ အဆုံးအထိ စကားပြောပုံစံနဲ့ ပြန်ရေးနေပါတယ်။");
+        setWorkflowStep("2/6 — ဇာတ်လမ်းကို မြန်မာ Movie Recap အဖြစ် ရေးသားနေပါတယ်...", "Transcript ရရှိပါပြီ။ AI က ဇာတ်လမ်းအစမှ အဆုံးအထိ စကားပြောပုံစံနဲ့ ပြန်ရေးနေပါတယ်။");
         const durSecs = videoDurationSeconds || 180;
         const targetWords = Math.max(180, Math.min(520, Math.round(durSecs * 2.2)));
 
@@ -1842,7 +1844,7 @@ Vd to Burmese translate text.
 
 IMPORTANT: Translate every available transcript detail faithfully. Do not summarize, omit scenes, invent events, or invent an ending. The transcript is the only source of story facts.
 TRANSCRIPT:
-${sourceTranscript.slice(0, 60000)}
+${sourceTranscript.slice(0, 100000)}
         `.trim();
 
         let finalScript = "";
