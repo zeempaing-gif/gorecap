@@ -185,6 +185,53 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </section>
 
+      <!-- 2. OUTPUT FORMAT -->
+      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md">
+        <div class="flex items-center justify-between text-sm">
+          <div class="flex items-center gap-2 font-bold text-slate-200">
+            <span class="text-blue-400">❖</span>
+            <span>Output Format</span>
+            <span class="text-[11px] font-normal text-slate-400 font-mono">Aspect ratio</span>
+          </div>
+          <span class="text-[10px] text-emerald-400 font-bold">No Black Bars</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 text-center text-xs">
+          <div onclick="selectAspectRatio('16:9')" id="aspectCard16_9" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-8 h-4.5 rounded-sm border-2 border-slate-400 aspect-video mb-1"></div>
+            <span class="font-bold text-slate-100 block">YouTube</span>
+            <span class="text-[10px] text-slate-400 block font-mono">16:9 Landscape</span>
+          </div>
+
+          <div onclick="selectAspectRatio('9:16')" id="aspectCard9_16" class="aspect-card p-4 rounded-2xl bg-blue-950/40 border-2 border-blue-500 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/20">
+            <div class="w-4 h-7 rounded-sm border-2 border-blue-400 aspect-[9/16] mb-1"></div>
+            <span class="font-bold text-blue-300 block">TikTok</span>
+            <span class="text-[10px] text-blue-400/90 block font-mono">9:16 Portrait</span>
+          </div>
+
+          <div onclick="selectAspectRatio('1:1')" id="aspectCard1_1" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-5 h-5 rounded-sm border-2 border-slate-400 mb-1"></div>
+            <span class="font-bold text-slate-100 block">Square</span>
+            <span class="text-[10px] text-slate-400 block font-mono">1:1</span>
+          </div>
+
+          <div onclick="selectAspectRatio('4:3')" id="aspectCard4_3" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-6 h-4.5 rounded-sm border-2 border-slate-400 aspect-[4/3] mb-1"></div>
+            <span class="font-bold text-slate-100 block">Classic</span>
+            <span class="text-[10px] text-slate-400 block font-mono">4:3</span>
+          </div>
+
+          <div onclick="selectAspectRatio('3:4')" id="aspectCard3_4" class="aspect-card col-span-2 p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
+            <div class="w-4.5 h-6 rounded-sm border-2 border-slate-400 aspect-[3/4] mb-1"></div>
+            <span class="font-bold text-slate-100 block">Portrait</span>
+            <span class="text-[10px] text-slate-400 block font-mono">3:4</span>
+          </div>
+        </div>
+      </div>
+
+
+
+
       <!-- 1. VIDEO UPLOAD CARD -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md">
         <div class="flex items-center gap-2 font-bold text-slate-200 text-sm">
@@ -264,52 +311,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       <!-- Transcript is generated automatically inside the one-click workflow -->
       <textarea id="recapSourceTranscript" class="hidden" aria-hidden="true"></textarea>
-
-      <!-- 2. OUTPUT FORMAT -->
-      <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md">
-        <div class="flex items-center justify-between text-sm">
-          <div class="flex items-center gap-2 font-bold text-slate-200">
-            <span class="text-blue-400">❖</span>
-            <span>Output Format</span>
-            <span class="text-[11px] font-normal text-slate-400 font-mono">Aspect ratio</span>
-          </div>
-          <span class="text-[10px] text-emerald-400 font-bold">No Black Bars</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2.5 text-center text-xs">
-          <div onclick="selectAspectRatio('16:9')" id="aspectCard16_9" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
-            <div class="w-8 h-4.5 rounded-sm border-2 border-slate-400 aspect-video mb-1"></div>
-            <span class="font-bold text-slate-100 block">YouTube</span>
-            <span class="text-[10px] text-slate-400 block font-mono">16:9 Landscape</span>
-          </div>
-
-          <div onclick="selectAspectRatio('9:16')" id="aspectCard9_16" class="aspect-card p-4 rounded-2xl bg-blue-950/40 border-2 border-blue-500 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center ring-1 ring-blue-500/50 shadow-lg shadow-blue-500/20">
-            <div class="w-4 h-7 rounded-sm border-2 border-blue-400 aspect-[9/16] mb-1"></div>
-            <span class="font-bold text-blue-300 block">TikTok</span>
-            <span class="text-[10px] text-blue-400/90 block font-mono">9:16 Portrait</span>
-          </div>
-
-          <div onclick="selectAspectRatio('1:1')" id="aspectCard1_1" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
-            <div class="w-5 h-5 rounded-sm border-2 border-slate-400 mb-1"></div>
-            <span class="font-bold text-slate-100 block">Square</span>
-            <span class="text-[10px] text-slate-400 block font-mono">1:1</span>
-          </div>
-
-          <div onclick="selectAspectRatio('4:3')" id="aspectCard4_3" class="aspect-card p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
-            <div class="w-6 h-4.5 rounded-sm border-2 border-slate-400 aspect-[4/3] mb-1"></div>
-            <span class="font-bold text-slate-100 block">Classic</span>
-            <span class="text-[10px] text-slate-400 block font-mono">4:3</span>
-          </div>
-
-          <div onclick="selectAspectRatio('3:4')" id="aspectCard3_4" class="aspect-card col-span-2 p-4 rounded-2xl bg-[#080d1a] border border-slate-800 hover:border-blue-500/60 cursor-pointer transition-all space-y-1.5 flex flex-col items-center justify-center">
-            <div class="w-4.5 h-6 rounded-sm border-2 border-slate-400 aspect-[3/4] mb-1"></div>
-            <span class="font-bold text-slate-100 block">Portrait</span>
-            <span class="text-[10px] text-slate-400 block font-mono">3:4</span>
-          </div>
-        </div>
-      </div>
-
-
 
       <!-- 5. BLUR EDITOR: placed directly below Output Format -->
       <section id="blurEditorCard" class="bg-[#0f172b]/95 border border-cyan-500/40 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md text-xs">
