@@ -2135,7 +2135,7 @@ ${sourceTranscript.slice(0, 100000)}
       c.toBlob(b=>{if(!b)return showToast("Thumbnail ထုတ်မရပါ","error");const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="GoRecap_Source_Thumbnail.jpg";a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);},"image/jpeg",.92);
     }
     function makeRecapThumbnailPrompt(script){
-      const context=(script||"").replace(/\\s+/g," ").slice(0,800);
+      const context=(script||"").replace(/\s+/g," ").slice(0,800);
       const el=document.getElementById("recapThumbnailPrompt");if(el)el.value="Create a cinematic ultra-realistic 3:4 vertical movie recap thumbnail. Use the source video frame as visual reference, preserve the characters and scene identity, dramatic expressive faces, strong foreground subject, cinematic lighting, sharp details, clean composition. Add bold Burmese headline text exactly here: { }. Story context: "+context+". No watermark, no extra text.";
     }
 
