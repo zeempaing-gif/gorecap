@@ -1480,6 +1480,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           else if (targetAspect === "4:3") { targetW = 960; targetH = 720; }
           else if (targetAspect === "3:4") { targetW = 720; targetH = 960; }
 
+          // Mobile browsers can be killed by Android/iOS when a large canvas is
+          // encoded at 30fps. Use a lighter export profile on phones.
+          const isMobileExport = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+          const exportScale = isMobileExport ? 0.75 : 1;
+          const exportFps = isMobileExport ? 18 : 30;
+          const exportBitrate = isMobileExport ? 1400000 : 3000000;
+          targetW = Math.round(targetW * exportScale);
+          targetH = Math.round(targetH * exportScale);
+
           canvas.width = targetW;
           canvas.height = targetH;
 
@@ -1525,7 +1534,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           const audioDestNode = audioCtx.createMediaStreamDestination();
           sourceNode.connect(audioDestNode);
 
-          const canvasStream = canvas.captureStream(30);
+          const canvasStream = canvas.captureStream(exportFps);
           const mixedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...audioDestNode.stream.getAudioTracks()
@@ -1536,7 +1545,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
           if (!MediaRecorder.isTypeSupported(mime)) throw new Error("ဒီ Browser မှာ Video Export Format ကို မထောက်ပံ့ပါ။ Chrome/Edge နောက်ဆုံးဗားရှင်းကို သုံးပါ။");
 
-          const mediaRecorder = new MediaRecorder(mixedStream, { mimeType: mime });
+          const mediaRecorder = new MediaRecorder(mixedStream, {
+            mimeType: mime,
+            videoBitsPerSecond: exportBitrate,
+            audioBitsPerSecond: 128000
+          });
           const recordedChunks = [];
 
           mediaRecorder.ondataavailable = (e) => {
@@ -2022,7 +2035,13 @@ ${sourceTranscript.slice(0, 100000)}
           throw new Error("Voiceover synthesis failed");
         }
 
-        setWorkflowStep("5/6 — Video ကို အလိုအလျောက် Edit လုပ်နေပါတယ်...", "အသံ၊ Zoom၊ Color၊ Subtitle နဲ့ ရွေးထားတဲ့ Aspect Ratio ကို ပေါင်းစပ်နေပါတယ်။");
+        const mobileExportNotice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+        setWorkflowStep(
+          "5/6 — Video ကို အလိုအလျောက် Edit လုပ်နေပါတယ်...",
+          mobileExportNotice
+            ? "ဖုန်းအပူနဲ့ Memory သုံးစွဲမှု လျှော့ချဖို့ Mobile Safe Export (Resolution/FPS လျှော့ထား) နဲ့ ထုတ်နေပါတယ်။ Screen မပိတ်ဘဲ Browser ကို ဖွင့်ထားပါ။"
+            : "အသံ၊ Zoom၊ Color၊ Subtitle နဲ့ ရွေးထားတဲ့ Aspect Ratio ကို ပေါင်းစပ်နေပါတယ်။"
+        );
         showToast("Video Edit နဲ့ အသံပေါင်းစပ်နေပါတယ်...", "info");
 
         const effects = {
