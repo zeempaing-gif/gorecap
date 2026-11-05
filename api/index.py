@@ -278,7 +278,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <!-- Moveable Blur Box -->
             <div
               id="draggableBlurBox"
-              class="absolute z-20 border-2 border-dashed border-cyan-400 bg-cyan-500/20 backdrop-blur-md rounded-xl hidden flex flex-col justify-between p-1.5 shadow-2xl"
+              class="absolute z-20 border-2 border-dashed border-cyan-400 rounded-xl hidden flex flex-col justify-between p-1.5 shadow-2xl"
               style="width: 160px; height: 50px; left: 24%; top: 72%;"
             >
               <div class="flex items-center justify-between text-[8px] font-bold text-cyan-200 px-1 bg-black/60 rounded">
@@ -341,10 +341,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <input type="range" id="blurHeightSlider" min="25" max="150" step="5" value="50" oninput="adjustBlurDimensionsFromSlider()" class="w-full accent-cyan-400" />
             </div>
           </div>
+          <div class="col-span-2 border-t border-slate-800 pt-3">
+            <div class="flex justify-between text-slate-300 mb-1.5">
+              <label for="blurOpacitySlider">Blur Opacity (အတိုး / အလျော့)</label>
+              <span id="blurOpacityTag" class="text-cyan-300 font-mono font-bold">100%</span>
+            </div>
+            <input type="range" id="blurOpacitySlider" min="0" max="100" step="1" value="100" oninput="adjustBlurOpacity()" class="w-full accent-cyan-400"/>
+            <div class="flex justify-between text-[9px] text-slate-500"><span>0% — မမြင်ရ</span><span>100% — အပြည့်</span></div>
+          </div>
         </div>
 
 
-        <p class="text-[10px] text-cyan-300/80">ဗီဒီယို Preview ထဲရှိ အပြာရောင်အကွက်ကို တိုက်ရိုက်ရွှေ့/ချဲ့နိုင်ပါတယ်။</p>
+        <p class="text-[10px] text-cyan-300/80">Preview ထဲက Blur Box ကို ရွှေ့/ချဲ့ပြီး Opacity ကိုပါ ချိန်ညှိနိုင်ပါတယ်။</p>
       </section>
 
       <!-- 5. SUBTITLES FULL STYLING CARD -->
@@ -1194,13 +1202,23 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById("blurWidthSlider").value = newW;
       document.getElementById("blurHeightSlider").value = newH;
       document.getElementById("blurWTag").innerText = `${newW}px`;
-      document.getElementById("blurHTag").innerText = `${h}px`;
+      document.getElementById("blurHTag").innerText = `${newH}px`;
 
       const containerRect = containerWrapper.getBoundingClientRect();
       blurBoxRect.w = newW / containerRect.width;
       blurBoxRect.h = newH / containerRect.height;
 
       if (e.cancelable) e.preventDefault();
+    }
+
+    function adjustBlurOpacity() {
+      const opacity = Math.max(0, Math.min(100, Number(document.getElementById("blurOpacitySlider").value) || 0));
+      document.getElementById("blurOpacityTag").innerText = opacity + "%";
+      const blurPx = 18 * opacity / 100;
+      blurBoxEl.style.backdropFilter = opacity > 0 ? `blur(${blurPx}px)` : "none";
+      blurBoxEl.style.webkitBackdropFilter = opacity > 0 ? `blur(${blurPx}px)` : "none";
+      blurBoxEl.style.backgroundColor = `rgba(6, 182, 212, ${0.20 * opacity / 100})`;
+      blurBoxEl.style.borderColor = `rgba(34, 211, 238, ${Math.max(0.15, opacity / 100)})`;
     }
 
     function adjustBlurDimensionsFromSlider() {
@@ -1237,6 +1255,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         filterStr += "brightness(1.15) contrast(1.15) saturate(1.15) sepia(0.15) hue-rotate(-5deg) ";
       }
       vEl.style.filter = filterStr || "none";
+
+      adjustBlurOpacity();
 
       if (isBlur) {
         blurBoxEl.classList.remove("hidden");
@@ -1591,6 +1611,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.beginPath();
               ctx.rect(bx, by, bw, bh);
               ctx.clip();
+              const blurOpacity = Math.max(0, Math.min(100, Number(effects.blurOpacity ?? 100))) / 100;
+              ctx.globalAlpha = blurOpacity;
               ctx.filter = "blur(18px)";
               ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
               ctx.restore();
@@ -1958,6 +1980,7 @@ ${sourceTranscript.slice(0, 60000)}
           isColor: document.getElementById("effectColorGradingSwitch")?.checked,
           isZoom: document.getElementById("effectBypassZoomSwitch")?.checked,
           isBlur: document.getElementById("effectBlurSwitch")?.checked,
+          blurOpacity: Number(document.getElementById("blurOpacitySlider")?.value ?? 100),
           isSub: document.getElementById("effectSubtitleSwitch")?.checked
         };
 
@@ -2080,6 +2103,7 @@ ${sourceTranscript.slice(0, 60000)}
         },
         blur:{
           width:g("blurWidthSlider").value, height:g("blurHeightSlider").value,
+          opacity:g("blurOpacitySlider").value,
           x:blurBoxRect.x,
           y:blurBoxRect.y
         }
@@ -2103,8 +2127,10 @@ ${sourceTranscript.slice(0, 60000)}
       const b=s.blur||{};
       g("blurWidthSlider").value=Math.max(50,Math.min(300,Number(b.width??160)));
       g("blurHeightSlider").value=Math.max(25,Math.min(150,Number(b.height??50)));
+      g("blurOpacitySlider").value=Math.max(0,Math.min(100,Number(b.opacity??100)));
       blurBoxEl.style.width=g("blurWidthSlider").value+"px"; blurBoxEl.style.height=g("blurHeightSlider").value+"px";
       g("blurWTag").innerText=g("blurWidthSlider").value+"px"; g("blurHTag").innerText=g("blurHeightSlider").value+"px";
+      adjustBlurOpacity();
       blurBoxRect.x=Math.max(0,Math.min(0.95,Number(b.x??0.22))); blurBoxRect.y=Math.max(0,Math.min(0.95,Number(b.y??0.72)));
       blurBoxRect.w=Number(g("blurWidthSlider").value)/Math.max(1,containerWrapper.clientWidth);
       blurBoxRect.h=Number(g("blurHeightSlider").value)/Math.max(1,containerWrapper.clientHeight);
