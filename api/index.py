@@ -1484,7 +1484,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           canvas.height = targetH;
 
           const sourceVideo = document.createElement("video");
-          sourceVideo.src = URL.createObjectURL(videoFile);
+          const sourceVideoUrl = URL.createObjectURL(videoFile);
+          sourceVideo.src = sourceVideoUrl;
           sourceVideo.muted = true;
           sourceVideo.playsInline = true;
           await new Promise((r) => { sourceVideo.onloadedmetadata = r; });
@@ -1492,7 +1493,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           const requestedVideoSpeed = Math.max(0.75, Math.min(2.0, Number(playbackSpeed) || 1.3));
           sourceVideo.playbackRate = requestedVideoSpeed;
 
-          const speechAudio = new Audio(URL.createObjectURL(audioBlob));
+          const speechAudio = new Audio();
+          const speechAudioUrl = URL.createObjectURL(audioBlob);
+          speechAudio.src = speechAudioUrl;
           await new Promise((resolve, reject) => {
             speechAudio.onloadedmetadata = resolve;
             speechAudio.onerror = () => reject(new Error("Voiceover audio metadata ကို ဖတ်မရပါ"));
@@ -1542,6 +1545,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
           mediaRecorder.onstop = () => {
             const finalBlob = new Blob(recordedChunks, { type: mime });
+            mixedStream.getTracks().forEach(track => track.stop());
+            audioCtx.close().catch(() => {});
+            sourceVideo.pause();
+            speechAudio.pause();
+            sourceVideo.removeAttribute("src");
+            speechAudio.removeAttribute("src");
+            sourceVideo.load();
+            URL.revokeObjectURL(sourceVideoUrl);
+            URL.revokeObjectURL(speechAudioUrl);
             resolve(finalBlob);
           };
 
@@ -1553,7 +1565,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           function renderFrame(now) {
             const elapsed = (now - startTimeStamp) / 1000;
 
-            if (elapsed >= totalExpectedDuration || (speechAudio.ended && sourceVideo.currentTime >= (sourceVideo.duration * 0.95))) {
+            if (elapsed >= totalExpectedDuration || speechAudio.ended) {
               cancelAnimationFrame(animationFrameId);
               mediaRecorder.stop();
               return;
@@ -1695,9 +1707,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       });
     }
 
-    // Extract audio at an accelerated playback rate. This is still browser-side
-    // decoding (so the source video never has to be uploaded), but 4x playback
-    // substantially reduces wait time while keeping speech usable for Whisper.
+    // Extract audio client-side so the source video never needs to be uploaded.
+    // Playback is accelerated to reduce wait time; Whisper accuracy can vary with
+    // highly accelerated speech, so keep the source recording available for retry.
     async function extractAudioForWhisper(videoFile, onProgress) {
       return new Promise((resolve, reject) => {
         const video = document.createElement("video");
