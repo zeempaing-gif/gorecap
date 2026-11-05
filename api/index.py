@@ -1046,6 +1046,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       subSpan.style.color = textColor;
       subSpan.style.fontSize = `${fontSize}px`;
+      subSpan.style.fontFamily = recapSubtitleFont || "Padauk";
       subSpan.style.textShadow = `-2px -2px 0 ${borderColor}, 2px -2px 0 ${borderColor}, -2px 2px 0 ${borderColor}, 2px 2px 0 ${borderColor}, 0 4px 8px rgba(0,0,0,0.8)`;
       subBox.style.backgroundColor = "rgba(0, 0, 0, 0.75)";
       subBox.style.border = `1.5px solid ${borderColor}`;
@@ -1197,7 +1198,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById("blurWidthSlider").value = newW;
       document.getElementById("blurHeightSlider").value = newH;
       document.getElementById("blurWTag").innerText = `${newW}px`;
-      document.getElementById("blurHTag").innerText = `${h}px`;
+      document.getElementById("blurHTag").innerText = `${newH}px`;
 
       const containerRect = containerWrapper.getBoundingClientRect();
       blurBoxRect.w = newW / containerRect.width;
@@ -1597,7 +1598,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.beginPath();
               ctx.rect(bx, by, bw, bh);
               ctx.clip();
-              ctx.filter = "blur(18px)";
+              ctx.globalAlpha = Number(document.getElementById("blurOpacitySlider")?.value || 100) / 100;
+              ctx.filter = `blur(${Number(document.getElementById("blurStrengthSlider")?.value || 18)}px)`;
               ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
               ctx.restore();
 
@@ -1605,6 +1607,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.lineWidth = 2;
               ctx.strokeRect(bx, by, bw, bh);
             }
+
+            const logoEl=document.getElementById("recapLogoOverlay");
+            if(logoEl&&recapLogoUrl&&logoEl.complete&&logoEl.naturalWidth){const lw=targetW*recapLogoWidth,lh=lw*(logoEl.naturalHeight/logoEl.naturalWidth);ctx.save();ctx.globalAlpha=recapLogoOpacity;ctx.drawImage(logoEl,recapLogoPosition.x*targetW,recapLogoPosition.y*targetH,lw,lh);ctx.restore();}
 
             if (effects.isSub && sentences.length > 0) {
               const audioDur = speechAudio.duration || totalExpectedDuration;
@@ -1615,7 +1620,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               if (textToDraw) {
                 ctx.save();
                 const renderedFontSize = Math.round((subStyles.fontSize / 18) * (targetW * 0.04));
-                ctx.font = `bold ${renderedFontSize}px Padauk, sans-serif`;
+                ctx.font = `bold ${renderedFontSize}px ${recapSubtitleFont || "Padauk"}, sans-serif`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 
@@ -1910,6 +1915,7 @@ ${sourceTranscript.slice(0, 100000)}
         }
 
         scriptArea.value = finalScript;
+        makeRecapThumbnailPrompt(finalScript);
 
         try {
           setWorkflowStep("3/6 — TikTok ခေါင်းစဉ်နဲ့ Hashtags ဖန်တီးနေပါတယ်...", "Gemini 3.8 Flash က ခေါင်းစဉ် ၃ ခုနဲ့ Hashtags ၅ ခု ထုတ်ပေးနေပါတယ်။");
@@ -2086,7 +2092,55 @@ ${sourceTranscript.slice(0, 100000)}
     }
     try { applyTheme(localStorage.getItem("gorecap_theme") || "dark"); } catch (_) { applyTheme("dark"); }
 
+
+    // Editor upgrades: logo overlay, blur tuning, custom font and thumbnail tools.
+    let recapLogoUrl=null, recapLogoOpacity=.9, recapLogoWidth=.22;
+    let recapLogoPosition={x:.72,y:.04}, recapLogoDragging=false, recapLogoDragOffset={x:0,y:0};
+    let recapSubtitleFont="Padauk";
+    function installEditorEnhancements(){
+      const wrap=document.getElementById("videoContainerWrapper");
+      const logo=document.createElement("img"); logo.id="recapLogoOverlay"; logo.alt="Logo";
+      Object.assign(logo.style,{position:"absolute",zIndex:40,display:"none",width:"22%",maxHeight:"25%",objectFit:"contain",left:"72%",top:"4%",opacity:".9",cursor:"move",touchAction:"none",filter:"drop-shadow(0 2px 5px #0008)"});
+      wrap.appendChild(logo);
+      logo.addEventListener("pointerdown",e=>{if(!recapLogoUrl)return;const r=logo.getBoundingClientRect();recapLogoDragging=true;recapLogoDragOffset={x:e.clientX-r.left,y:e.clientY-r.top};logo.setPointerCapture(e.pointerId);e.preventDefault();});
+      logo.addEventListener("pointermove",e=>{if(!recapLogoDragging)return;const r=wrap.getBoundingClientRect();const x=Math.max(0,Math.min(r.width-logo.offsetWidth,e.clientX-r.left-recapLogoDragOffset.x));const y=Math.max(0,Math.min(r.height-logo.offsetHeight,e.clientY-r.top-recapLogoDragOffset.y));recapLogoPosition={x:x/r.width,y:y/r.height};logo.style.left=(recapLogoPosition.x*100)+"%";logo.style.top=(recapLogoPosition.y*100)+"%";});
+      ["pointerup","pointercancel"].forEach(ev=>logo.addEventListener(ev,()=>recapLogoDragging=false));
+      const blur=document.getElementById("blurDimensionControls");
+      if(blur&&!document.getElementById("blurStrengthSlider")){
+        blur.insertAdjacentHTML("beforeend",'<label class="col-span-2 text-[11px] text-slate-300">Blur strength <b id="blurStrengthTag">18px</b><input id="blurStrengthSlider" type="range" min="2" max="36" value="18" class="w-full accent-cyan-400"></label><label class="col-span-2 text-[11px] text-slate-300">Blur opacity <b id="blurOpacityTag">100%</b><input id="blurOpacitySlider" type="range" min="10" max="100" value="100" class="w-full accent-cyan-400"></label>');
+        document.getElementById("blurStrengthSlider").oninput=e=>document.getElementById("blurStrengthTag").textContent=e.target.value+"px";
+        document.getElementById("blurOpacitySlider").oninput=e=>document.getElementById("blurOpacityTag").textContent=e.target.value+"%";
+      }
+      const sub=document.getElementById("subtitleStylingCard");
+      if(sub&&!document.getElementById("subFontUpload")){
+        const box=document.createElement("div");box.className="p-3 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-2";
+        box.innerHTML='<label class="font-bold text-slate-300 block">Upload subtitle font (TTF / OTF / WOFF2)</label><input id="subFontUpload" type="file" accept=".ttf,.otf,.woff,.woff2" class="w-full text-[11px]"><p id="subFontStatus" class="text-[10px] text-slate-400">Default: Padauk</p>';sub.appendChild(box);
+        document.getElementById("subFontUpload").onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const url=URL.createObjectURL(file),face=new FontFace("GoRecapCustomFont",`url(${url})`);await face.load();document.fonts.add(face);recapSubtitleFont="GoRecapCustomFont";document.getElementById("subPreviewSpanText").style.fontFamily=recapSubtitleFont;document.getElementById("subFontStatus").textContent="Loaded: "+file.name;showToast("Subtitle font loaded","success");}catch(_){showToast("Font file ကို ဖတ်မရပါ","error");}};
+      }
+      const panel=document.getElementById("panelRecapVd");
+      if(panel&&!document.getElementById("recapAssetTools")){
+        const card=document.createElement("section");card.id="recapAssetTools";card.className="bg-[#0f172b]/95 border border-slate-800 rounded-3xl p-5 space-y-3 text-xs";
+        card.innerHTML='<div class="font-bold text-slate-200 text-sm">🧩 Logo & Thumbnail Tools</div><label class="block font-bold text-slate-300">Logo upload<input id="recapLogoUpload" type="file" accept="image/png,image/jpeg,image/webp" class="mt-2 block w-full"></label><label class="block text-slate-300">Logo size <b id="logoSizeTag">22%</b><input id="logoSizeSlider" type="range" min="8" max="45" value="22" class="w-full"></label><label class="block text-slate-300">Logo opacity <b id="logoOpacityTag">90%</b><input id="logoOpacitySlider" type="range" min="10" max="100" value="90" class="w-full"></label><p class="text-slate-400">Preview ထဲက Logo ကို ဆွဲရွှေ့နိုင်ပြီး Export ထဲမှာလည်း ပါဝင်ပါမယ်။</p><button id="sourceThumbBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">🖼️ Source Video Thumbnail Download</button><label class="block font-bold text-slate-300">3:4 Thumbnail Prompt<textarea id="recapThumbnailPrompt" rows="4" readonly class="mt-2 w-full"></textarea></label><button id="copyThumbPromptBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">📋 Thumbnail Prompt Copy</button>';
+        panel.insertBefore(card,document.getElementById("recapResultCard")||null);
+        document.getElementById("recapLogoUpload").onchange=e=>{const file=e.target.files?.[0];if(!file)return;if(recapLogoUrl)URL.revokeObjectURL(recapLogoUrl);recapLogoUrl=URL.createObjectURL(file);logo.src=recapLogoUrl;logo.style.display="block";};
+        document.getElementById("logoSizeSlider").oninput=e=>{recapLogoWidth=Number(e.target.value)/100;logo.style.width=e.target.value+"%";document.getElementById("logoSizeTag").textContent=e.target.value+"%";};
+        document.getElementById("logoOpacitySlider").oninput=e=>{recapLogoOpacity=Number(e.target.value)/100;logo.style.opacity=String(recapLogoOpacity);document.getElementById("logoOpacityTag").textContent=e.target.value+"%";};
+        document.getElementById("sourceThumbBtn").onclick=downloadSourceVideoThumbnail;
+        document.getElementById("copyThumbPromptBtn").onclick=()=>copyRecapField("recapThumbnailPrompt");
+      }
+    }
+    function downloadSourceVideoThumbnail(){
+      const v=document.getElementById("recapVideoPlayerEl");if(!v?.videoWidth)return showToast("Video ကို အရင် upload လုပ်ပါ","error");
+      const c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+      c.toBlob(b=>{if(!b)return showToast("Thumbnail ထုတ်မရပါ","error");const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="GoRecap_Source_Thumbnail.jpg";a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);},"image/jpeg",.92);
+    }
+    function makeRecapThumbnailPrompt(script){
+      const context=(script||"").replace(/\\s+/g," ").slice(0,800);
+      const el=document.getElementById("recapThumbnailPrompt");if(el)el.value="Create a cinematic ultra-realistic 3:4 vertical movie recap thumbnail. Use the source video frame as visual reference, preserve the characters and scene identity, dramatic expressive faces, strong foreground subject, cinematic lighting, sharp details, clean composition. Add bold Burmese headline text exactly here: { }. Story context: "+context+". No watermark, no extra text.";
+    }
+
     // Init
+    installEditorEnhancements();
     updateVoiceTriggerLabel();
     syncRecapSliders();
     updateSubtitleStyles();
