@@ -201,7 +201,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               🎬
             </div>
             <p class="text-xs font-bold text-slate-100" id="recapPromptText">Drag & drop a video file</p>
-            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · Whisper max 25MB</p>
+            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · 200MB+ Video ကို Audio ခွဲထုတ်ပြီး လုပ်ဆောင်မည်</p>
             <div class="pt-2">
               <span class="inline-block px-5 py-2 rounded-xl bg-[#0e1628] hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700/80 shadow-md transition-all">
                 Browse
@@ -1659,6 +1659,88 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       });
     }
 
+    // Extract only the audio track in the browser. This avoids uploading a large
+    // 200MB+ video to Whisper; only the compressed audio is sent to Groq.
+    async function extractAudioForWhisper(videoFile, onProgress) {
+      return new Promise((resolve, reject) => {
+        const video = document.createElement("video");
+        const objectUrl = URL.createObjectURL(videoFile);
+        const chunks = [];
+        let recorder = null;
+        let audioContext = null;
+        let finished = false;
+        const cleanup = () => {
+          video.pause();
+          video.removeAttribute("src");
+          video.load();
+          URL.revokeObjectURL(objectUrl);
+          if (audioContext && audioContext.state !== "closed") audioContext.close().catch(() => {});
+        };
+        const fail = (message) => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          reject(new Error(message));
+        };
+        video.preload = "auto";
+        video.playsInline = true;
+        video.src = objectUrl;
+        video.onloadedmetadata = async () => {
+          try {
+            if (!window.MediaRecorder || !(window.AudioContext || window.webkitAudioContext)) {
+              throw new Error("ဒီ Browser မှာ Audio Extraction မထောက်ပံ့ပါ။ Chrome Browser နဲ့ ပြန်စမ်းပါ။");
+            }
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            await audioContext.resume();
+            const source = audioContext.createMediaElementSource(video);
+            const destination = audioContext.createMediaStreamDestination();
+            source.connect(destination);
+            if (!destination.stream.getAudioTracks().length) {
+              throw new Error("Video ထဲမှာ အသံ Track မတွေ့ပါ။");
+            }
+            const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+              ? "audio/webm;codecs=opus"
+              : (MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "");
+            recorder = new MediaRecorder(destination.stream, {
+              ...(mimeType ? { mimeType } : {}),
+              audioBitsPerSecond: 64000
+            });
+            recorder.ondataavailable = (event) => {
+              if (event.data && event.data.size) chunks.push(event.data);
+            };
+            recorder.onerror = () => fail("Audio Extraction မအောင်မြင်ပါ။ Video Format ကို စစ်ဆေးပါ။");
+            recorder.onstop = () => {
+              if (finished) return;
+              finished = true;
+              const audioBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+              cleanup();
+              if (!audioBlob.size) {
+                reject(new Error("Video ထဲက အသံကို ထုတ်ယူလို့မရပါ။"));
+              } else if (audioBlob.size > 24 * 1024 * 1024) {
+                reject(new Error("ထုတ်ယူထားတဲ့ Audio ဖိုင်က 24MB ကျော်နေပါတယ်။ ပိုတိုတဲ့ Video အပိုင်းနဲ့ စမ်းပါ။"));
+              } else {
+                resolve(audioBlob);
+              }
+            };
+            video.ontimeupdate = () => {
+              if (video.duration && onProgress) {
+                onProgress(Math.min(100, Math.floor(video.currentTime / video.duration * 100)));
+              }
+            };
+            video.onended = () => {
+              if (recorder && recorder.state !== "inactive") recorder.stop();
+            };
+            video.onerror = () => fail("Video ကို Browser မှာ ဖွင့်မရပါ။ MP4 (H.264) ဖိုင်နဲ့ ပြန်စမ်းပါ။");
+            recorder.start(10000);
+            await video.play();
+          } catch (error) {
+            fail(error.message || "Audio Extraction မအောင်မြင်ပါ။");
+          }
+        };
+        video.onerror = () => fail("Video ကို ဖတ်မရပါ။ MP4 သို့မဟုတ် WebM ဖိုင်နဲ့ ပြန်စမ်းပါ။");
+      });
+    }
+
     async function executeAutoRecapVdWorkflow() {
       if (!currentUploadedRecapFile) {
         showToast("Please upload a video file first", "error");
@@ -1679,11 +1761,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         openKeysModal();
         return;
       }
-      if (currentUploadedRecapFile.size > 25 * 1024 * 1024) {
-        showToast("အလိုအလျောက် Transcript အတွက် Video ဖိုင် 25MB အောက် လိုအပ်ပါတယ်။ ဖိုင်ကို Compress လုပ်ပြီး ပြန်တင်ပါ။", "error");
-        return;
-      }
-
       const btn = document.getElementById("generateRecapBtn");
       const spinner = document.getElementById("recapSpinner");
       const icon = document.getElementById("recapIcon");
@@ -1709,8 +1786,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       setWorkflowStep("1/5 — မူရင်းအသံမှ Transcript ထုတ်ယူနေပါတယ်...", "Groq Whisper က Video ထဲက စကားပြောသံကို အလိုအလျောက် စာသားပြောင်းနေပါတယ်။");
 
       try {
+        setWorkflowStep("1/5 — Video ထဲက အသံကို ခွဲထုတ်နေပါတယ်...", "Video အကြီးကြီးကို မတင်ဘဲ Browser ထဲမှာ Audio သီးသန့် ထုတ်ယူနေပါတယ်။");
+        const extractedAudio = await extractAudioForWhisper(currentUploadedRecapFile, (percent) => {
+          workflowHint.innerText = `Audio Extraction လုပ်နေပါတယ်... ${percent}%`;
+        });
+        setWorkflowStep("1/5 — Audio ကို စာသားပြောင်းနေပါတယ်...", "အသံဖိုင်သေးသေးကို Groq Whisper ဆီပို့ပြီး Transcript ထုတ်နေပါတယ်။");
         const transcribeForm = new FormData();
-        transcribeForm.append("file", currentUploadedRecapFile, currentUploadedRecapFile.name);
+        transcribeForm.append("file", extractedAudio, "gorecap-audio.webm");
         transcribeForm.append("model", "whisper-large-v3-turbo");
         transcribeForm.append("response_format", "json");
         const transcribeResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
