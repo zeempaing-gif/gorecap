@@ -3,7 +3,7 @@ import asyncio
 import urllib.parse
 import urllib.request
 import edge_tts
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, HTMLResponse
 from pydantic import BaseModel
@@ -1659,8 +1659,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       });
     }
 
-    // Extract only the audio track in the browser. This avoids uploading a large
-    // 200MB+ video to Whisper; only the compressed audio is sent to Groq.
+    // Extract audio at an accelerated playback rate. This is still browser-side
+    // decoding (so the source video never has to be uploaded), but 4x playback
+    // substantially reduces wait time while keeping speech usable for Whisper.
     async function extractAudioForWhisper(videoFile, onProgress) {
       return new Promise((resolve, reject) => {
         const video = document.createElement("video");
@@ -1685,34 +1686,35 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         video.preload = "auto";
         video.playsInline = true;
+        video.playbackRate = 4;
+        if ("preservesPitch" in video) video.preservesPitch = true;
         video.src = objectUrl;
-        video.onerror = () => fail("Video ကို ဖတ်မရပါ။ MP4 သို့မဟုတ် WebM ဖိုင်နဲ့ ပြန်စမ်းပါ။");
+        video.onerror = () => fail("Video ဖိုင်ကို ဖတ်မရပါ။ MP4 သို့မဟုတ် WebM ဖိုင်နဲ့ ပြန်စမ်းပါ။");
 
         try {
           if (!window.MediaRecorder || !(window.AudioContext || window.webkitAudioContext)) {
-            throw new Error("ဒီ Browser မှာ Audio Extraction မထောက်ပံ့ပါ။ Chrome Browser နဲ့ ပြန်စမ်းပါ။");
+            throw new Error("ဒီ Browser မှာ Audio Extraction မထောက်ပံ့ပါ။ Chrome နောက်ဆုံးဗားရှင်းနဲ့ ပြန်စမ်းပါ။");
           }
-          // Start/resume audio and playback directly from the user's button click
-          // so mobile browser autoplay restrictions do not block extraction.
+          // Resume audio synchronously from the Generate button gesture for mobile browsers.
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          audioContext.resume().catch(() => {});
+          const resumePromise = audioContext.resume();
           const source = audioContext.createMediaElementSource(video);
           const destination = audioContext.createMediaStreamDestination();
           source.connect(destination);
           if (!destination.stream.getAudioTracks().length) {
-            throw new Error("Video ထဲမှာ အသံ Track မတွေ့ပါ။");
+            throw new Error("ဒီ Video ထဲမှာ အသံ Track မတွေ့ပါ။");
           }
           const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
             ? "audio/webm;codecs=opus"
             : (MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "");
           recorder = new MediaRecorder(destination.stream, {
             ...(mimeType ? { mimeType } : {}),
-            audioBitsPerSecond: 64000
+            audioBitsPerSecond: 48000
           });
           recorder.ondataavailable = (event) => {
             if (event.data && event.data.size) chunks.push(event.data);
           };
-          recorder.onerror = () => fail("Audio Extraction မအောင်မြင်ပါ။ Video Format ကို စစ်ဆေးပါ။");
+          recorder.onerror = () => fail("Audio Extraction မအောင်မြင်ပါ။ Browser သို့မဟုတ် Video Format ကို စစ်ဆေးပါ။");
           recorder.onstop = () => {
             if (finished) return;
             finished = true;
@@ -1720,8 +1722,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             cleanup();
             if (!audioBlob.size) {
               reject(new Error("Video ထဲက အသံကို ထုတ်ယူလို့မရပါ။"));
-            } else if (audioBlob.size > 24 * 1024 * 1024) {
-              reject(new Error("ထုတ်ယူထားတဲ့ Audio ဖိုင်က 24MB ကျော်နေပါတယ်။ ပိုတိုတဲ့ Video အပိုင်းနဲ့ စမ်းပါ။"));
+            } else if (audioBlob.size > 4 * 1024 * 1024) {
+              reject(new Error("Audio ဖိုင်က Server တင်နိုင်တဲ့ အရွယ်အစားထက် ကျော်နေပါတယ်။ ပိုတိုတဲ့ Video အပိုင်းနဲ့ စမ်းပါ။"));
             } else {
               resolve(audioBlob);
             }
@@ -1734,8 +1736,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           video.onended = () => {
             if (recorder && recorder.state !== "inactive") recorder.stop();
           };
-          recorder.start(10000);
-          video.play().catch(() => fail("Video ကို Browser မှာ ဖွင့်မရပါ။ Chrome Browser နဲ့ ပြန်စမ်းပါ။"));
+          recorder.start(1000);
+          Promise.resolve(resumePromise)
+            .then(() => video.play())
+            .catch(() => fail("Video ကို Browser မှာ ဖွင့်မရပါ။ Chrome နောက်ဆုံးဗားရှင်းနဲ့ ပြန်စမ်းပါ။"));
         } catch (error) {
           fail(error.message || "Audio Extraction မအောင်မြင်ပါ။");
         }
@@ -1789,21 +1793,24 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       try {
         setWorkflowStep("1/5 — Video ထဲက အသံကို ခွဲထုတ်နေပါတယ်...", "Video အကြီးကြီးကို မတင်ဘဲ Browser ထဲမှာ Audio သီးသန့် ထုတ်ယူနေပါတယ်။");
         const extractedAudio = await extractAudioForWhisper(currentUploadedRecapFile, (percent) => {
-          workflowHint.innerText = `Audio Extraction လုပ်နေပါတယ်... ${percent}%`;
+          workflowHint.innerText = `Audio ကို မြန်နှုန်း 4 ဆနဲ့ ခွဲထုတ်နေပါတယ်... ${percent}%`;
         });
         setWorkflowStep("1/5 — Audio ကို စာသားပြောင်းနေပါတယ်...", "အသံဖိုင်သေးသေးကို Groq Whisper ဆီပို့ပြီး Transcript ထုတ်နေပါတယ်။");
         const transcribeForm = new FormData();
         transcribeForm.append("file", extractedAudio, "gorecap-audio.webm");
-        transcribeForm.append("model", "whisper-large-v3-turbo");
-        transcribeForm.append("response_format", "json");
-        const transcribeResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${groqKey}` },
-          body: transcribeForm
-        });
+        let transcribeResponse;
+        try {
+          transcribeResponse = await fetch("/api/transcribe", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${groqKey}` },
+            body: transcribeForm
+          });
+        } catch (networkError) {
+          throw new Error("Whisper Server ကို မဆက်သွယ်နိုင်ပါ။ Internet connection စစ်ပြီး ထပ်စမ်းပါ။");
+        }
         const transcribeData = await transcribeResponse.json().catch(() => ({}));
         if (!transcribeResponse.ok) {
-          throw new Error(transcribeData.error?.message || `Whisper Transcript မအောင်မြင်ပါ (${transcribeResponse.status})`);
+          throw new Error(transcribeData.detail || transcribeData.error?.message || `Whisper Transcript မအောင်မြင်ပါ (${transcribeResponse.status})`);
         }
         const sourceTranscript = (transcribeData.text || "").trim();
         if (sourceTranscript.length < 30) {
@@ -2177,6 +2184,66 @@ async def generate_speech(req: GenerateTTSRequest):
         return Response(content=fallback_audio, media_type="audio/mpeg")
     
     raise HTTPException(status_code=500, detail="Voice synthesis failed")
+
+@app.post("/api/transcribe")
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    authorization: str = Header(default="")
+):
+    """Proxy Whisper requests server-side to avoid browser-to-Groq fetch/CORS failures."""
+    api_key = authorization.removeprefix("Bearer ").strip()
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Groq API Key မတွေ့ပါ။ Settings မှာ စစ်ဆေးပါ။")
+
+    audio_bytes = await file.read(4 * 1024 * 1024 + 1)
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio ဖိုင်အလွတ်ဖြစ်နေပါတယ်။")
+    if len(audio_bytes) > 4 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Audio ဖိုင် 4MB ကျော်နေပါတယ်။ Video ကို ပိုတိုအောင် ဖြတ်ပြီး ပြန်စမ်းပါ။")
+
+    boundary = "----GoRecapWhisperBoundary7MA4YWxkTrZu0gW"
+    filename = (file.filename or "gorecap-audio.webm").replace('"', "")
+    content_type = file.content_type or "audio/webm"
+    parts = []
+    for name, value in (("model", "whisper-large-v3-turbo"), ("response_format", "json")):
+        parts.append(
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n".encode()
+        )
+    parts.append(
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: {content_type}\r\n\r\n".encode()
+        + audio_bytes + b"\r\n"
+    )
+    body = b"".join(parts) + f"--{boundary}--\r\n".encode()
+
+    def call_groq():
+        request = urllib.request.Request(
+            "https://api.groq.com/openai/v1/audio/transcriptions",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "Accept": "application/json",
+                "User-Agent": "GoRecap/1.0"
+            },
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=90) as response:
+                import json
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            import json
+            raw = error.read().decode("utf-8", errors="replace")
+            try:
+                detail = json.loads(raw).get("error", {}).get("message", raw)
+            except Exception:
+                detail = raw or str(error)
+            raise HTTPException(status_code=error.code, detail=f"Groq Whisper: {detail[:500]}")
+        except Exception as error:
+            raise HTTPException(status_code=502, detail=f"Groq Whisper connection failed: {str(error)[:300]}")
+
+    return await asyncio.to_thread(call_groq)
+
 
 @app.get("/{full_path:path}")
 def catch_all_routes(full_path: str):
