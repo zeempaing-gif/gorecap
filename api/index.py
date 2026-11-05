@@ -1832,42 +1832,80 @@ ${sourceTranscript.slice(0, 60000)}
         `.trim();
 
         let finalScript = "";
+        const recapProviderErrors = [];
 
+        // The former llama-3.3-70b-versatile model was retired for Free/Developer
+        // Groq usage. Use currently supported Groq models with a clear fallback.
         if (groqKey) {
-          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "llama-3.3-70b-versatile",
-              messages: [
-                { role: "system", content: prompt },
-                { role: "user", content: `Write a complete ${durSecs}-second storytelling recap in Burmese using only the transcript included in the system instructions. Do not invent plot details.` }
-              ],
-              temperature: 0.3
-            })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            finalScript = sanitizePureScript(data.choices?.[0]?.message?.content || "");
+          const groqModels = [
+            { id: "openai/gpt-oss-120b", label: "Groq GPT-OSS 120B" },
+            { id: "qwen/qwen3.8-27b", label: "Groq Qwen 3.8 27B" }
+          ];
+          for (const model of groqModels) {
+            try {
+              const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  model: model.id,
+                  messages: [
+                    { role: "system", content: prompt },
+                    { role: "user", content: `Write a complete ${durSecs}-second storytelling recap in Burmese using only the transcript included in the system instructions. Do not invent plot details.` }
+                  ],
+                  max_completion_tokens: 6000,
+                  temperature: 0.3,
+                  ...(model.id === "openai/gpt-oss-120b" ? { reasoning_effort: "low" } : {})
+                })
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                const detail = data.error?.message || data.message || res.statusText || "Unknown Groq error";
+                recapProviderErrors.push(`${model.label} (${res.status}): ${detail}`);
+                continue;
+              }
+              const raw = data.choices?.[0]?.message?.content || "";
+              const candidate = sanitizePureScript(typeof raw === "string" ? raw : "");
+              if (candidate.length > 80) {
+                finalScript = candidate;
+                break;
+              }
+              recapProviderErrors.push(`${model.label}: API က စာသားအလွတ် ပြန်ပေးခဲ့ပါတယ်`);
+            } catch (error) {
+              recapProviderErrors.push(`${model.label}: ${error.message || "Network error"}`);
+            }
           }
         }
 
         if (!finalScript && geminiKey) {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `${prompt}\n\nWrite pure Burmese movie recap script for full length.` }] }]
-            })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            finalScript = sanitizePureScript(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
+          try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `${prompt}\n\nWrite pure Burmese movie recap script for full length.` }] }],
+                generationConfig: { temperature: 0.3, maxOutputTokens: 6000 }
+              })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              recapProviderErrors.push(`Gemini (${res.status}): ${data.error?.message || data.message || res.statusText || "Unknown Gemini error"}`);
+            } else {
+              const raw = data.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("\n") || "";
+              finalScript = sanitizePureScript(raw);
+              if (!finalScript) {
+                recapProviderErrors.push(`Gemini: ${data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || "စာသားမရရှိပါ"}`);
+              }
+            }
+          } catch (error) {
+            recapProviderErrors.push(`Gemini: ${error.message || "Network error"}`);
           }
         }
 
         if (!finalScript) {
-          throw new Error("AI Recap မရရှိပါ။ Gemini/Groq API Key နဲ့ quota ကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။");
+          const detail = recapProviderErrors.length
+            ? recapProviderErrors.join(" | ").slice(0, 900)
+            : "Gemini သို့မဟုတ် Groq API Key မတွေ့ပါ။";
+          throw new Error(`AI Recap မအောင်မြင်ပါ။ ${detail}`);
         }
 
         scriptArea.value = finalScript;
