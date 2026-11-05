@@ -201,7 +201,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               🎬
             </div>
             <p class="text-xs font-bold text-slate-100" id="recapPromptText">Drag & drop a video file</p>
-            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · max 500MB</p>
+            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · Whisper max 25MB</p>
             <div class="pt-2">
               <span class="inline-block px-5 py-2 rounded-xl bg-[#0e1628] hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700/80 shadow-md transition-all">
                 Browse
@@ -261,15 +261,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- STORY SOURCE: transcript used to ground the recap -->
-      <div class="bg-[#0f172b]/95 border border-emerald-500/30 rounded-3xl p-5 space-y-3 shadow-xl">
-        <div class="flex items-center justify-between gap-2">
-          <div class="font-bold text-slate-100 text-sm">📝 Movie Transcript / ဇာတ်လမ်းအကြောင်းအရာ</div>
-          <button type="button" onclick="switchStudioView('transcriber')" class="text-[10px] text-emerald-300 underline">Transcriber ဖွင့်ရန်</button>
-        </div>
-        <p class="text-[10px] text-slate-400">ဇာတ်ကားထဲက စကားပြောစာသားကို Transcriber နဲ့ ထုတ်ယူပြီး ဒီနေရာမှာ ထည့်ပါ။ AI က ဒီအကြောင်းအရာကို အခြေခံပြီး Recap ရေးပေးမယ်။</p>
-        <textarea id="recapSourceTranscript" rows="6" placeholder="ဇာတ်ကားရဲ့ Transcript ကို ဒီမှာ ထည့်ပါ..." class="w-full bg-[#080d1a] border border-slate-700 rounded-2xl p-3 text-xs leading-relaxed text-slate-100 custom-scroll"></textarea>
-      </div>
+      <!-- Transcript is generated automatically inside the one-click workflow -->
+      <textarea id="recapSourceTranscript" class="hidden" aria-hidden="true"></textarea>
 
       <!-- 2. OUTPUT FORMAT -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3 shadow-2xl backdrop-blur-md">
@@ -519,17 +512,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- 7. MAIN GENERATE RECAP BUTTON -->
+      <!-- One-click pipeline: transcribe → Burmese recap → voice → final edit/export -->
       <button
         id="generateRecapBtn"
         type="button"
         onclick="executeAutoRecapVdWorkflow()"
-        class="w-full py-4 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-2xl glow-btn flex items-center justify-center gap-2.5 transition-all"
+        class="w-full py-4 rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-2xl glow-btn flex items-center justify-center gap-2.5 transition-all"
       >
         <span id="recapSpinner" class="hidden animate-spin">🌀</span>
         <span id="recapIcon">✨</span>
-        <span id="recapBtnLabel">Generate Recap</span>
+        <span id="recapBtnLabel">One-Click Generate Recap</span>
       </button>
+      <div id="recapWorkflowStatus" class="hidden rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-xs text-violet-800 space-y-1" role="status" aria-live="polite">
+        <div id="recapWorkflowStep" class="font-bold">Preparing...</div>
+        <div id="recapWorkflowHint" class="text-violet-600">AI က အဆင့်ဆင့် အလိုအလျောက် လုပ်ဆောင်နေပါတယ်။ Tab ကို မပိတ်ပါနဲ့။</div>
+      </div>
 
       <!-- 8. REAL EXPORTED VIDEO PLAYER & DOWNLOAD CARD -->
       <div id="recapResultCard" class="hidden bg-[#0f172b]/95 border border-emerald-500/50 rounded-3xl p-5 space-y-4 shadow-2xl backdrop-blur-md">
@@ -1668,17 +1665,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         return;
       }
 
-      const sourceTranscript = document.getElementById("recapSourceTranscript").value.trim();
-      if (sourceTranscript.length < 80) {
-        showToast("ဇာတ်ကားရဲ့ Transcript ကို အရင်ထည့်ပါ။ Transcriber ကို အသုံးပြုနိုင်ပါတယ်။", "error");
-        return;
-      }
       const geminiKey = (localStorage.getItem("gemini_api_key") || "").trim();
       const groqKey = (localStorage.getItem("groq_api_key") || "").trim();
 
-      if (!geminiKey && !groqKey) {
-        showToast("Please provide Gemini or Groq API Key", "error");
+      // Whisper is the automatic speech-to-text stage, so Groq is required.
+      if (!groqKey) {
+        showToast("Auto Transcript အတွက် Groq API Key လိုအပ်ပါတယ်", "error");
         openKeysModal();
+        return;
+      }
+      if (!geminiKey && !groqKey) {
+        showToast("Gemini သို့မဟုတ် Groq API Key ထည့်ပါ", "error");
+        openKeysModal();
+        return;
+      }
+      if (currentUploadedRecapFile.size > 25 * 1024 * 1024) {
+        showToast("အလိုအလျောက် Transcript အတွက် Video ဖိုင် 25MB အောက် လိုအပ်ပါတယ်။ ဖိုင်ကို Compress လုပ်ပြီး ပြန်တင်ပါ။", "error");
         return;
       }
 
@@ -1689,13 +1691,43 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const resultCard = document.getElementById("recapResultCard");
       const scriptArea = document.getElementById("recapFinalScriptArea");
       const finalVideoEl = document.getElementById("finalRenderedVideoEl");
+      const workflowStatus = document.getElementById("recapWorkflowStatus");
+      const workflowStep = document.getElementById("recapWorkflowStep");
+      const workflowHint = document.getElementById("recapWorkflowHint");
+      const setWorkflowStep = (step, hint) => {
+        workflowStatus.classList.remove("hidden");
+        workflowStep.innerText = step;
+        workflowHint.innerText = hint || "ပြီးဆုံးတဲ့အထိ စောင့်ပေးပါ။";
+        label.innerText = step;
+      };
 
       btn.disabled = true;
+      resultCard.classList.add("hidden");
+      document.getElementById("recapSourceTranscript").value = "";
       spinner.classList.remove("hidden");
       icon.classList.add("hidden");
-      label.innerText = "1/3: ဇာတ်လမ်းဇာတ်ကွက် ပြည့်စုံအောင် ရေးသားနေပါသည်...";
+      setWorkflowStep("1/5 — မူရင်းအသံမှ Transcript ထုတ်ယူနေပါတယ်...", "Groq Whisper က Video ထဲက စကားပြောသံကို အလိုအလျောက် စာသားပြောင်းနေပါတယ်။");
 
       try {
+        const transcribeForm = new FormData();
+        transcribeForm.append("file", currentUploadedRecapFile, currentUploadedRecapFile.name);
+        transcribeForm.append("model", "whisper-large-v3-turbo");
+        transcribeForm.append("response_format", "json");
+        const transcribeResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${groqKey}` },
+          body: transcribeForm
+        });
+        const transcribeData = await transcribeResponse.json().catch(() => ({}));
+        if (!transcribeResponse.ok) {
+          throw new Error(transcribeData.error?.message || `Whisper Transcript မအောင်မြင်ပါ (${transcribeResponse.status})`);
+        }
+        const sourceTranscript = (transcribeData.text || "").trim();
+        if (sourceTranscript.length < 30) {
+          throw new Error("Video ထဲက စကားပြောသံ မလုံလောက်ပါ။ အသံပါဝင်တဲ့ Video ကို ပြန်တင်ပါ။");
+        }
+        document.getElementById("recapSourceTranscript").value = sourceTranscript;
+        setWorkflowStep("2/5 — ဇာတ်လမ်းကို မြန်မာ Movie Recap အဖြစ် ရေးသားနေပါတယ်...", "Transcript ရရှိပါပြီ။ AI က ဇာတ်လမ်းအစမှ အဆုံးအထိ စကားပြောပုံစံနဲ့ ပြန်ရေးနေပါတယ်။");
         const durSecs = videoDurationSeconds || 180;
         const targetWords = Math.max(180, Math.min(520, Math.round(durSecs * 2.2)));
 
@@ -1757,7 +1789,7 @@ ${sourceTranscript.slice(0, 60000)}
 
         scriptArea.value = finalScript;
 
-        label.innerText = "2/3: AI မြန်မာအသံဖိုင် ဖန်တီးနေပါသည်...";
+        setWorkflowStep("3/5 — ရွေးထားတဲ့ မြန်မာအသံ ဖန်တီးနေပါတယ်...", "AI Recap Script ကို ရွေးထားတဲ့ Voice နဲ့ အသံဖိုင်ပြောင်းနေပါတယ်။");
 
         const speedOffset = parseInt(document.getElementById("recapSpeedRange").value);
         const pitchOffset = parseInt(document.getElementById("recapPitchRange").value);
@@ -1793,8 +1825,8 @@ ${sourceTranscript.slice(0, 60000)}
           throw new Error("Voiceover synthesis failed");
         }
 
-        label.innerText = "3/3: ဗီဒီယိုနှင့် အသံ ပေါင်းစပ် ထုတ်လုပ်နေပါသည်...";
-        showToast("Color Grading, Blur, Zoom နှင့် အသံ ပေါင်းစပ်နေပါသည်...", "info");
+        setWorkflowStep("4/5 — Video ကို အလိုအလျောက် Edit လုပ်နေပါတယ်...", "အသံ၊ Zoom၊ Color၊ Subtitle နဲ့ ရွေးထားတဲ့ Aspect Ratio ကို ပေါင်းစပ်နေပါတယ်။");
+        showToast("Video Edit နဲ့ အသံပေါင်းစပ်နေပါတယ်...", "info");
 
         const effects = {
           isMirror: document.getElementById("effectMirrorSwitch")?.checked,
@@ -1815,6 +1847,7 @@ ${sourceTranscript.slice(0, 60000)}
         );
 
         finalVideoEl.src = URL.createObjectURL(exportedRenderedVideoBlob);
+        setWorkflowStep("5/5 — ပြီးပါပြီ။ Final Video အသင့်ဖြစ်ပါပြီ။", "အောက်က Preview မှာ ကြည့်ပြီး Download လုပ်နိုင်ပါပြီ။");
         resultCard.classList.remove("hidden");
         resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         await finalVideoEl.play();
@@ -1827,7 +1860,7 @@ ${sourceTranscript.slice(0, 60000)}
         btn.disabled = false;
         spinner.classList.add("hidden");
         icon.classList.remove("hidden");
-        label.innerText = "Generate Recap";
+        label.innerText = "One-Click Generate Recap";
       }
     }
 
