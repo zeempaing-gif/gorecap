@@ -1,5 +1,7 @@
 import os
 import asyncio
+import urllib.parse
+import urllib.request
 import edge_tts
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -232,6 +234,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="p-2 bg-slate-900 rounded-xl border border-slate-800 text-blue-400 font-bold" id="recapMediaSizeTag">0 MB</div>
           </div>
         </div>
+      </div>
+
+      <!-- STORY SOURCE: transcript used to ground the recap -->
+      <div class="bg-[#0f172b]/95 border border-emerald-500/30 rounded-3xl p-5 space-y-3 shadow-xl">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-bold text-slate-100 text-sm">📝 Movie Transcript / ဇာတ်လမ်းအကြောင်းအရာ</div>
+          <button type="button" onclick="switchStudioView('transcriber')" class="text-[10px] text-emerald-300 underline">Transcriber ဖွင့်ရန်</button>
+        </div>
+        <p class="text-[10px] text-slate-400">ဇာတ်ကားထဲက စကားပြောစာသားကို Transcriber နဲ့ ထုတ်ယူပြီး ဒီနေရာမှာ ထည့်ပါ။ AI က ဒီအကြောင်းအရာကို အခြေခံပြီး Recap ရေးပေးမယ်။</p>
+        <textarea id="recapSourceTranscript" rows="6" placeholder="ဇာတ်ကားရဲ့ Transcript ကို ဒီမှာ ထည့်ပါ..." class="w-full bg-[#080d1a] border border-slate-700 rounded-2xl p-3 text-xs leading-relaxed text-slate-100 custom-scroll"></textarea>
       </div>
 
       <!-- 2. OUTPUT FORMAT -->
@@ -541,22 +553,34 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="panelTranscriber" class="hidden space-y-4">
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl">
         <div class="flex items-center gap-2 font-bold text-slate-200 text-sm border-b border-slate-800 pb-2.5">
-          <span class="text-blue-400">📤</span>
-          <span>File Upload</span>
+          <span class="text-blue-400">📤</span><span>AI Transcriber • Groq Whisper</span>
         </div>
-        <p class="text-xs text-slate-300">AI Transcriber mode is ready.</p>
-        <button onclick="switchStudioView('recapvd')" class="w-full py-3 rounded-2xl bg-blue-600 text-white font-bold text-xs">Go to Auto Recap VD</button>
+        <p class="text-xs text-slate-300 leading-relaxed">ဗီဒီယို/အသံဖိုင်ထဲက စကားပြောသံကို စာသားအဖြစ် ပြောင်းပေးမယ်။ Groq API Key လိုအပ်ပြီး ဖိုင်အရွယ်အစား 25MB အောက် ဖြစ်ရပါမယ်။</p>
+        <input id="transcriberFileInput" type="file" accept="audio/*,video/mp4,video/webm,.mp4,.webm,.mpeg,.mpga,.m4a,.wav,.mp3,.flac" class="w-full text-xs text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:font-bold file:text-white"/>
+        <button id="transcribeSourceBtn" onclick="transcribeSourceMedia()" class="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs">🎙️ စာသားထုတ်ယူမည် (Transcribe)</button>
+        <textarea id="transcriberResultText" rows="9" placeholder="Transcription ရလဒ် ဒီမှာ ပေါ်လာပါမယ်..." class="w-full bg-[#080d1a] border border-slate-700 rounded-2xl p-3 text-xs leading-relaxed text-slate-100 custom-scroll"></textarea>
+        <button onclick="sendTranscriptToRecap()" class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">စာသားကို Auto Recap ထဲသို့ ပို့မည် →</button>
       </div>
     </div>
 
     <!-- VIEW 3: TTS VOICE OVER STUDIO -->
     <div id="panelTts" class="hidden space-y-4">
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl">
-        <div class="flex items-center justify-between text-xs border-b border-slate-800 pb-2.5">
-          <span class="font-bold text-blue-400 text-sm">📄 Burmese Script</span>
+        <div class="font-bold text-blue-400 text-sm border-b border-slate-800 pb-2.5">📄 Burmese Script → MP3 Voice Over</div>
+        <textarea id="ttsInputTextArea" rows="7" placeholder="မြန်မာစာသားကို ဒီမှာ ထည့်ပါ..." class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-4 text-xs leading-relaxed text-slate-100 focus:outline-none focus:border-blue-500 custom-scroll resize-y">သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။</textarea>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="text-[11px] text-slate-400">Voice
+            <select id="standaloneTtsVoice" class="mt-1 w-full bg-[#080d1a] border border-slate-700 rounded-xl p-2 text-xs text-white"></select>
+          </label>
+          <label class="text-[11px] text-slate-400">Speed
+            <select id="standaloneTtsSpeed" class="mt-1 w-full bg-[#080d1a] border border-slate-700 rounded-xl p-2 text-xs text-white">
+              <option value="-10">0.90x</option><option value="0" selected>1.00x</option><option value="10">1.10x</option><option value="20">1.20x</option>
+            </select>
+          </label>
         </div>
-        <textarea id="ttsInputTextArea" rows="5" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-4 text-xs leading-relaxed text-slate-100 focus:outline-none focus:border-blue-500 custom-scroll resize-y">သူက အိမ်ထဲကို ဝင်သွားပြီးတော့ ခဏအကြာမှာ ပြန်ထွက်လာတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း ဖြစ်ပျက်သွားခဲ့ပါတယ်။</textarea>
-        <button onclick="switchStudioView('recapvd')" class="w-full py-3 rounded-2xl bg-blue-600 text-white font-bold text-xs">Open in Auto Recap VD</button>
+        <button id="standaloneTtsBtn" onclick="generateStandaloneTTS()" class="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs">အသံဖိုင် ဖန်တီးမည်</button>
+        <audio id="standaloneTtsPlayer" controls class="hidden w-full"></audio>
+        <a id="standaloneTtsDownload" class="hidden text-center text-xs text-emerald-300 underline" download="GoRecap-Voiceover.mp3">MP3 ဒေါင်းလုဒ်</a>
       </div>
     </div>
 
@@ -648,6 +672,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     ];
 
     let currentSelectedVoiceId = "bunny-phyoe";
+    const standaloneVoiceSelect = document.getElementById("standaloneTtsVoice");
+    if (standaloneVoiceSelect) standaloneVoiceSelect.innerHTML = PERSONAS.map(p => `<option value="${p.id}">${p.name} (${p.badge})</option>`).join("");
     let activePlayingTestVoiceId = null;
     let selectedRecapAspect = "9:16";
     let currentUploadedRecapFile = null;
@@ -1109,7 +1135,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById("blurWidthSlider").value = newW;
       document.getElementById("blurHeightSlider").value = newH;
       document.getElementById("blurWTag").innerText = `${newW}px`;
-      document.getElementById("blurHTag").innerText = `${newH}px`;
+      document.getElementById("blurHTag").innerText = `${h}px`;
 
       const containerRect = containerWrapper.getBoundingClientRect();
       blurBoxRect.w = newW / containerRect.width;
@@ -1124,7 +1150,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       blurBoxEl.style.width = `${w}px`;
       blurBoxEl.style.height = `${h}px`;
       document.getElementById("blurWTag").innerText = `${w}px`;
-      document.getElementById("blurHTag").innerText = `${newH}px`;
+      document.getElementById("blurHTag").innerText = `${h}px`;
 
       const containerRect = containerWrapper.getBoundingClientRect();
       blurBoxRect.w = w / containerRect.width;
@@ -1195,6 +1221,86 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const el = document.getElementById("recapPitchRange");
       el.value = Math.max(-15, Math.min(15, parseInt(el.value) + delta));
       syncRecapSliders();
+    }
+
+    async function transcribeSourceMedia() {
+      const file = document.getElementById("transcriberFileInput").files?.[0];
+      const groqKey = (localStorage.getItem("groq_api_key") || "").trim();
+      if (!file) return showToast("ဗီဒီယို သို့မဟုတ် အသံဖိုင် အရင်ရွေးပါ", "error");
+      if (!groqKey) { showToast("Groq API Key ထည့်ပေးပါ", "error"); openKeysModal(); return; }
+      if (file.size > 25 * 1024 * 1024) return showToast("Groq Whisper ဖိုင်ကန့်သတ်ချက် 25MB ထက်ကျော်နေပါတယ်", "error");
+      const btn = document.getElementById("transcribeSourceBtn");
+      const result = document.getElementById("transcriberResultText");
+      btn.disabled = true;
+      btn.innerText = "အသံကို စာသားပြောင်းနေပါတယ်...";
+      try {
+        const form = new FormData();
+        form.append("file", file, file.name);
+        form.append("model", "whisper-large-v3-turbo");
+        form.append("response_format", "json");
+        const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${groqKey}` },
+          body: form
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error?.message || data.message || `Whisper API error (${response.status})`);
+        const transcript = (data.text || "").trim();
+        if (!transcript) throw new Error("အသံထဲက စကားပြောစာသား မတွေ့ပါ");
+        result.value = transcript;
+        showToast("Transcription ပြီးပါပြီ", "success");
+      } catch (err) {
+        showToast(err.message || "Transcription မအောင်မြင်ပါ", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "🎙️ စာသားထုတ်ယူမည် (Transcribe)";
+      }
+    }
+
+    function sendTranscriptToRecap() {
+      const transcript = document.getElementById("transcriberResultText").value.trim();
+      if (!transcript) return showToast("ပို့မယ့် Transcript မရှိသေးပါ", "error");
+      document.getElementById("recapSourceTranscript").value = transcript;
+      switchStudioView("recapvd");
+      showToast("Transcript ကို Auto Recap ထဲ ပို့ပြီးပါပြီ", "success");
+    }
+
+    async function generateStandaloneTTS() {
+      const text = document.getElementById("ttsInputTextArea").value.trim();
+      if (!text) return showToast("အသံပြောင်းမယ့် စာသား ထည့်ပါ", "error");
+      const btn = document.getElementById("standaloneTtsBtn");
+      btn.disabled = true;
+      btn.innerText = "အသံဖန်တီးနေပါတယ်...";
+      try {
+        const response = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            persona_id: document.getElementById("standaloneTtsVoice").value || "bunny-phyoe",
+            user_rate_offset: parseInt(document.getElementById("standaloneTtsSpeed").value || "0", 10),
+            user_pitch_offset: 0
+          })
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || "TTS အသံဖန်တီးမှု မအောင်မြင်ပါ");
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const player = document.getElementById("standaloneTtsPlayer");
+        const download = document.getElementById("standaloneTtsDownload");
+        player.src = url;
+        player.classList.remove("hidden");
+        download.href = url;
+        download.classList.remove("hidden");
+        showToast("MP3 အသံဖိုင် အသင့်ဖြစ်ပါပြီ", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "အသံဖိုင် ဖန်တီးမည်";
+      }
     }
 
     // =========================================================================
@@ -1383,6 +1489,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         return;
       }
 
+      const sourceTranscript = document.getElementById("recapSourceTranscript").value.trim();
+      if (sourceTranscript.length < 80) {
+        showToast("ဇာတ်ကားရဲ့ Transcript ကို အရင်ထည့်ပါ။ Transcriber ကို အသုံးပြုနိုင်ပါတယ်။", "error");
+        return;
+      }
       const geminiKey = (localStorage.getItem("gemini_api_key") || "").trim();
       const groqKey = (localStorage.getItem("groq_api_key") || "").trim();
 
@@ -1419,7 +1530,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 ၃။ "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...", "နောက်ဆုံးမှာတော့..." စသည့် သဘာဝစကားပြော စကားဆက်များ သုံးပါ။
 ၄။ အပိုစာသား လုံးဝမပါရ (ZERO ENGLISH)။ "*Intro:*", "*Middle:*" ခေါင်းစဉ်များ၊ "No English? Yes" စသည့် စာတန်းများ လုံးဝမထည့်ရ။
 
+အောက်ပါ Transcript ကိုသာ ဇာတ်လမ်းအချက်အလက်အဖြစ် အသုံးပြုပါ။ Transcript ထဲမှာ မပါသော ဇာတ်ကောင်၊ ဖြစ်ရပ်၊ ဇာတ်သိမ်းကို မတီထွင်ပါနှင့်။ အချက်အလက်မပြည့်စုံလျှင် ရှိသည့်အချက်အလက်ကိုသာ သဘာဝကျကျ ပြန်ရေးပါ။
 အထက်ပါ စည်းမျဉ်းအတိုင်း သန့်ရှင်းသော မြန်မာ Movie Recap Script စစ်စစ်ကိုသာ ထုတ်ပေးပါ:
+
+TRANSCRIPT:
+${sourceTranscript.slice(0, 60000)}
         `.trim();
 
         let finalScript = "";
@@ -1432,7 +1547,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               model: "llama-3.3-70b-versatile",
               messages: [
                 { role: "system", content: prompt },
-                { role: "user", content: `Write a complete ${durSecs}-second storytelling recap in Burmese covering the entire drama plot.` }
+                { role: "user", content: `Write a complete ${durSecs}-second storytelling recap in Burmese based only on this transcript:\\n\\n${sourceTranscript.slice(0, 60000)}` }
               ],
               temperature: 0.3
             })
@@ -1458,7 +1573,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         }
 
         if (!finalScript) {
-          finalScript = "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့ အိမ်ဖော်မလေးဟာ အိမ်ရှင်တွေ မသိအောင် တစ်စုံတစ်ခုကို လျှို့ဝှက် လုပ်ဆောင်နေခဲ့တာ ဖြစ်ပါတယ်။ အဲဒီအချိန်မှာပဲ သားဖြစ်သူ ပြန်ရောက်လာပြီး မထင်မှတ်ထားတဲ့ အမှန်တရားတစ်ခုကို သိရှိသွားခဲ့ပါတယ်။ အရာအားလုံးက မထင်မှတ်ထားတဲ့အတိုင်း အလှည့်အပြောင်းတွေ ဖြစ်ပျက်သွားခဲ့ပြီး နောက်ဆုံးမှာတော့ အားလုံးအတွက် မေ့မရနိုင်တဲ့ အဖြစ်ဆိုးတစ်ခု ဖြစ်သွားခဲ့ပါတယ်။";
+          throw new Error("AI Recap မရရှိပါ။ Gemini/Groq API Key နဲ့ quota ကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။");
         }
 
         scriptArea.value = finalScript;
