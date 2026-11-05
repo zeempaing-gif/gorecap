@@ -541,6 +541,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <textarea id="recapFinalScriptArea" rows="4" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-200 text-xs custom-scroll" readonly></textarea>
         </div>
 
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-2">
+            <label class="font-bold text-slate-300 text-xs">TikTok Titles (၃ ခု)</label>
+            <textarea id="recapTitlesOutput" rows="3" readonly class="w-full bg-[#080d1a] border border-slate-800 rounded-xl p-3 text-xs"></textarea>
+            <button type="button" onclick="copyRecapField('recapTitlesOutput')" class="w-full py-2 bg-slate-800 text-slate-200 text-xs">📋 ခေါင်းစဉ် ၃ ခု Copy</button>
+          </div>
+          <div class="space-y-2">
+            <label class="font-bold text-slate-300 text-xs">TikTok Hashtags (၅ ခု)</label>
+            <textarea id="recapHashtagsOutput" rows="3" readonly class="w-full bg-[#080d1a] border border-slate-800 rounded-xl p-3 text-xs"></textarea>
+            <button type="button" onclick="copyRecapField('recapHashtagsOutput')" class="w-full py-2 bg-slate-800 text-slate-200 text-xs">📋 Hashtags ၅ ခု Copy</button>
+          </div>
+        </div>
+
         <div class="space-y-2 pt-1">
           <button
             id="downloadVideoFileBtn"
@@ -1812,18 +1825,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         const targetWords = Math.max(180, Math.min(520, Math.round(durSecs * 2.2)));
 
         const prompt = `
-သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
-ဗီဒီယို ကြာချိန် ခန့်မှန်းခြေ ${durSecs} စက္ကန့်စာနှင့် ကိုက်ညီစေရန်အတွက် ဇာတ်လမ်းအစ၊ အလယ်၊ ဇာတ်ကွက်အလှည့်အပြောင်းနှင့် ဇာတ်သိမ်းအထိ အစအဆုံး ပြည့်စုံသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။ (အနည်းဆုံး မြန်မာစကားလုံး ${targetWords} လုံးခန့် ပါဝင်အောင် ရေးပေးပါ)။
+Act as a high-energy TikTok movie recap narrator. Translate the following transcript into 100% natural spoken Myanmar language (ဗမာစကားပြော).
+Follow these strict rules:
+1. Natural & Engaging Narration: Absolutely NO formal or bookish Myanmar words (Strictly avoid သည်။, ၏, သော, ၍). Use conversational particles like တယ်, တာ, ပေါ့, လေ, ဗျာ to make it sound like an exciting story told to a friend. Make the tone fast-paced and thrilling.
+2. Transform Dialogues (Indirect Speech): Do NOT translate dialogues as direct quotes. Convert all character dialogues into indirect speech and weave them seamlessly into the narrative recap flow (e.g., instead of writing He said, "I will do this", write 'he angrily told them that he was going to do it').
+3. 100% Complete yet Smooth: Translate the entire transcript accurately without skipping details. Keep the story completely intact but ensure it flows naturally in Myanmar.
+4. TikTok Safety Bypass (Strictly Follow): Automatically replace restricted words with these safe metaphors:
+Alcohol/Beer/Liquor -> 'အထူးဖျော်ရည်'
+Cigarettes/Smoking -> 'မီးခိုးတံ'
+Drugs/Pills/Injections -> 'ပစ္စည်း' or 'အားဆေး'
+Violence/Kill/Death/Blood -> 'ရှင်းထုတ်လိုက်တယ်' / 'အနားယူသွားတယ်' / 'အနီရောင်အမှတ်တွေ'
+Swear words -> Intense but safe emotional expressions (e.g., ဟာကွာ, တောက်).
+5. Voiceover Optimized (TTS): Keep sentences short and punchy. Use commas ( , ) ONLY for natural breathing pauses to make the AI voice sound fast and smooth.
+6. Final Output Format: Provide the translation as ONE continuous flow of text. Absolutely NO line numbering, NO section titles, NO bullet points, NO line breaks, and NO quotation marks (" "). Output ONLY the final Myanmar script with zero introductory or concluding remarks.
+Vd to Burmese translate text.
 
-စည်းမျဉ်းများ:
-၁။ Maid/Servant -> "အိမ်ဖော်မလေး/အိမ်အကူကောင်မလေး", Dog -> "ခွေးလေး", Father -> "အဖေကြီး", Son -> "သားဖြစ်သူ", Daughter-in-law -> "ချွေးမ" စသည့် သဘာဝနာမ်စားများကိုသာ သုံးပါ။
-၂။ "ကျွန်တော်", "ကျွန်မ", "ခင်ဗျာ", "ရှင်" မသုံးရ။ ကျား/မ မရွေး ဖတ်နိုင်သော Voiceover လေသံ ဖြစ်ရမည်။
-၃။ "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...", "နောက်ဆုံးမှာတော့..." စသည့် သဘာဝစကားပြော စကားဆက်များ သုံးပါ။
-၄။ အပိုစာသား လုံးဝမပါရ (ZERO ENGLISH)။ "*Intro:*", "*Middle:*" ခေါင်းစဉ်များ၊ "No English? Yes" စသည့် စာတန်းများ လုံးဝမထည့်ရ။
-
-အောက်ပါ Transcript ကိုသာ ဇာတ်လမ်းအချက်အလက်အဖြစ် အသုံးပြုပါ။ Transcript ထဲမှာ မပါသော ဇာတ်ကောင်၊ ဖြစ်ရပ်၊ ဇာတ်သိမ်းကို မတီထွင်ပါနှင့်။ အချက်အလက်မပြည့်စုံလျှင် ရှိသည့်အချက်အလက်ကိုသာ သဘာဝကျကျ ပြန်ရေးပါ။
-အထက်ပါ စည်းမျဉ်းအတိုင်း သန့်ရှင်းသော မြန်မာ Movie Recap Script စစ်စစ်ကိုသာ ထုတ်ပေးပါ:
-
+IMPORTANT: Translate every available transcript detail faithfully. Do not summarize, omit scenes, invent events, or invent an ending. The transcript is the only source of story facts.
 TRANSCRIPT:
 ${sourceTranscript.slice(0, 60000)}
         `.trim();
@@ -1833,7 +1850,7 @@ ${sourceTranscript.slice(0, 60000)}
 
         // The former llama-3.3-70b-versatile model was retired for Free/Developer
         // Groq usage. Use currently supported Groq models with a clear fallback.
-        if (groqKey) {
+        if (groqKey && !geminiKey) {
           const groqModels = [
             { id: "openai/gpt-oss-120b", label: "Groq GPT-OSS 120B" },
             { id: "qwen/qwen3.8-27b", label: "Groq Qwen 3.8 27B" }
@@ -1875,26 +1892,11 @@ ${sourceTranscript.slice(0, 60000)}
 
         if (!finalScript && geminiKey) {
           try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: `${prompt}\n\nWrite pure Burmese movie recap script for full length.` }] }],
-                generationConfig: { temperature: 0.3, maxOutputTokens: 6000 }
-              })
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              recapProviderErrors.push(`Gemini (${res.status}): ${data.error?.message || data.message || res.statusText || "Unknown Gemini error"}`);
-            } else {
-              const raw = data.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("\n") || "";
-              finalScript = sanitizePureScript(raw);
-              if (!finalScript) {
-                recapProviderErrors.push(`Gemini: ${data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || "စာသားမရရှိပါ"}`);
-              }
-            }
+            const geminiData = await callGemini(prompt, 8192, geminiKey);
+            finalScript = sanitizePureScript(geminiData.text || "");
+            if (!finalScript) recapProviderErrors.push("Gemini: စာသားအလွတ် ပြန်ရရှိပါတယ်။");
           } catch (error) {
-            recapProviderErrors.push(`Gemini: ${error.message || "Network error"}`);
+            recapProviderErrors.push(`Gemini 3.8 Flash: ${error.message || "Network error"}`);
           }
         }
 
@@ -1907,7 +1909,22 @@ ${sourceTranscript.slice(0, 60000)}
 
         scriptArea.value = finalScript;
 
-        setWorkflowStep("3/5 — ရွေးထားတဲ့ မြန်မာအသံ ဖန်တီးနေပါတယ်...", "AI Recap Script ကို ရွေးထားတဲ့ Voice နဲ့ အသံဖိုင်ပြောင်းနေပါတယ်။");
+        try {
+          setWorkflowStep("3/6 — TikTok ခေါင်းစဉ်နဲ့ Hashtags ဖန်တီးနေပါတယ်...", "Gemini 3.8 Flash က ခေါင်းစဉ် ၃ ခုနဲ့ Hashtags ၅ ခု ထုတ်ပေးနေပါတယ်။");
+          const metaPrompt = `Based only on the following Burmese movie recap, return valid JSON only with this exact shape: {"titles":["title 1","title 2","title 3"],"hashtags":["#tag1","#tag2","#tag3","#tag4","#tag5"]}. Titles must be catchy natural Burmese TikTok titles. Exactly 3 titles and exactly 5 relevant TikTok hashtags. No markdown fences or extra text. Recap:\n${finalScript.slice(0, 18000)}`;
+          const meta = await callGemini(metaPrompt, 1200, geminiKey);
+          const cleanedMeta = (meta.text || "").replace(/```json|```/g, "").trim();
+          const jsonMatch = cleanedMeta.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const social = JSON.parse(jsonMatch[0]);
+            document.getElementById("recapTitlesOutput").value = (Array.isArray(social.titles) ? social.titles.slice(0,3) : []).join("\n");
+            document.getElementById("recapHashtagsOutput").value = (Array.isArray(social.hashtags) ? social.hashtags.slice(0,5) : []).join(" ");
+          }
+        } catch (metaError) {
+          console.warn("Social metadata generation failed:", metaError);
+        }
+
+        setWorkflowStep("4/6 — ရွေးထားတဲ့ မြန်မာအသံ ဖန်တီးနေပါတယ်...", "AI Recap Script ကို ရွေးထားတဲ့ Voice နဲ့ အသံဖိုင်ပြောင်းနေပါတယ်။");
 
         const speedOffset = parseInt(document.getElementById("recapSpeedRange").value);
         const pitchOffset = parseInt(document.getElementById("recapPitchRange").value);
@@ -1943,7 +1960,7 @@ ${sourceTranscript.slice(0, 60000)}
           throw new Error("Voiceover synthesis failed");
         }
 
-        setWorkflowStep("4/5 — Video ကို အလိုအလျောက် Edit လုပ်နေပါတယ်...", "အသံ၊ Zoom၊ Color၊ Subtitle နဲ့ ရွေးထားတဲ့ Aspect Ratio ကို ပေါင်းစပ်နေပါတယ်။");
+        setWorkflowStep("5/6 — Video ကို အလိုအလျောက် Edit လုပ်နေပါတယ်...", "အသံ၊ Zoom၊ Color၊ Subtitle နဲ့ ရွေးထားတဲ့ Aspect Ratio ကို ပေါင်းစပ်နေပါတယ်။");
         showToast("Video Edit နဲ့ အသံပေါင်းစပ်နေပါတယ်...", "info");
 
         const effects = {
@@ -1965,7 +1982,7 @@ ${sourceTranscript.slice(0, 60000)}
         );
 
         finalVideoEl.src = URL.createObjectURL(exportedRenderedVideoBlob);
-        setWorkflowStep("5/5 — ပြီးပါပြီ။ Final Video အသင့်ဖြစ်ပါပြီ။", "အောက်က Preview မှာ ကြည့်ပြီး Download လုပ်နိုင်ပါပြီ။");
+        setWorkflowStep("6/6 — ပြီးပါပြီ။ Final Video အသင့်ဖြစ်ပါပြီ။", "အောက်က Preview မှာ ကြည့်ပြီး Download လုပ်နိုင်ပါပြီ။");
         resultCard.classList.remove("hidden");
         resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         await finalVideoEl.play();
@@ -1980,6 +1997,27 @@ ${sourceTranscript.slice(0, 60000)}
         icon.classList.remove("hidden");
         label.innerText = "One-Click Generate Recap";
       }
+    }
+
+    async function callGemini(prompt, maxOutputTokens = 8192, apiKey = (localStorage.getItem("gemini_api_key") || "").trim()) {
+      if (!apiKey) throw new Error("Gemini API Key မရှိပါ။ Settings မှာ ထည့်ပါ။");
+      const response = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({ prompt, max_output_tokens: maxOutputTokens })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || data.error?.message || `Gemini request failed (${response.status})`);
+      return data;
+    }
+
+    async function copyRecapField(id) {
+      const el = document.getElementById(id);
+      const value = (el?.value || "").trim();
+      if (!value) return showToast("Copy လုပ်ရန် စာသားမရှိသေးပါ။", "error");
+      try { await navigator.clipboard.writeText(value); }
+      catch (_) { el.focus(); el.select(); document.execCommand("copy"); }
+      showToast("Copied!", "success");
     }
 
     function downloadExportedVideoFile() {
@@ -2247,6 +2285,70 @@ async def transcribe_audio(
             raise HTTPException(status_code=502, detail=f"Groq Whisper connection failed: {str(error)[:300]}")
 
     return await asyncio.to_thread(call_groq)
+
+
+class GeminiGenerateRequest(BaseModel):
+    prompt: str
+    max_output_tokens: int = 8192
+    temperature: float = 0.25
+
+
+@app.post("/api/gemini")
+async def generate_gemini_text(
+    req: GeminiGenerateRequest,
+    x_goog_api_key: str = Header(default="")
+):
+    """Server-side Gemini proxy; keeps API keys out of query strings."""
+    api_key = x_goog_api_key.strip()
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Gemini API Key မတွေ့ပါ။ Settings မှာ စစ်ဆေးပါ။")
+    if not req.prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt အလွတ်ဖြစ်နေပါတယ်။")
+    if len(req.prompt) > 180000:
+        raise HTTPException(status_code=413, detail="Prompt အလွန်ရှည်နေပါတယ်။")
+    payload = {
+        "contents": [{"parts": [{"text": req.prompt}]}],
+        "generationConfig": {
+            "temperature": max(0.0, min(1.0, req.temperature)),
+            "maxOutputTokens": max(256, min(16384, req.max_output_tokens))
+        }
+    }
+
+    def call_gemini():
+        import json
+        request = urllib.request.Request(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "x-goog-api-key": api_key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "User-Agent": "GoRecap/2.0"
+            },
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=50) as response:
+                result = json.loads(response.read().decode("utf-8"))
+            parts = result.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            output = "\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
+            if not output:
+                reason = result.get("promptFeedback", {}).get("blockReason") or result.get("candidates", [{}])[0].get("finishReason", "empty response")
+                raise HTTPException(status_code=502, detail=f"Gemini returned no text: {reason}")
+            return {"text": output, "model": result.get("modelVersion", "gemini-3.8-flash")}
+        except urllib.error.HTTPError as error:
+            raw = error.read().decode("utf-8", errors="replace")
+            try:
+                detail = json.loads(raw).get("error", {}).get("message", raw)
+            except Exception:
+                detail = raw or str(error)
+            raise HTTPException(status_code=error.code, detail=f"Gemini API: {detail[:600]}")
+        except HTTPException:
+            raise
+        except Exception as error:
+            raise HTTPException(status_code=502, detail=f"Gemini connection failed: {str(error)[:300]}")
+
+    return await asyncio.to_thread(call_gemini)
 
 
 @app.get("/{full_path:path}")
