@@ -541,6 +541,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <textarea id="recapFinalScriptArea" rows="4" class="w-full bg-[#080d1a] border border-slate-800 rounded-2xl p-3 text-slate-200 text-xs custom-scroll" readonly></textarea>
         </div>
 
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-2">
+            <label class="font-bold text-slate-300 text-xs">TikTok Titles (၃ ခု)</label>
+            <textarea id="recapTitlesOutput" rows="3" readonly class="w-full bg-[#080d1a] border border-slate-800 rounded-xl p-3 text-xs"></textarea>
+            <button type="button" onclick="copyRecapField('recapTitlesOutput')" class="w-full py-2 bg-slate-800 text-slate-200 text-xs">📋 ခေါင်းစဉ် ၃ ခု Copy</button>
+          </div>
+          <div class="space-y-2">
+            <label class="font-bold text-slate-300 text-xs">TikTok Hashtags (၅ ခု)</label>
+            <textarea id="recapHashtagsOutput" rows="3" readonly class="w-full bg-[#080d1a] border border-slate-800 rounded-xl p-3 text-xs"></textarea>
+            <button type="button" onclick="copyRecapField('recapHashtagsOutput')" class="w-full py-2 bg-slate-800 text-slate-200 text-xs">📋 Hashtags ၅ ခု Copy</button>
+          </div>
+        </div>
+
         <div class="space-y-2 pt-1">
           <button
             id="downloadVideoFileBtn"
@@ -981,35 +994,28 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       toggleEffectPreview();
     }
 
-    document.getElementById("recapVideoFileInput").addEventListener("change", function(e) {
-      const file = this.files && this.files[0];
+    function loadRecapVideoFile(file) {
       if (!file) return;
-
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       if (file.size > 500 * 1024 * 1024) {
         showToast(`File size is ${sizeMB}MB. Max 500MB allowed`, "error");
         return;
       }
-
       currentUploadedRecapFile = file;
       document.getElementById("recapMediaNameTag").innerText = file.name;
       document.getElementById("recapMediaSizeTag").innerText = `${sizeMB} MB`;
       document.getElementById("recapDropzoneBox").classList.add("hidden");
       document.getElementById("recapVideoPreviewBox").classList.remove("hidden");
-
       const vEl = document.getElementById("recapVideoPlayerEl");
       const bgClone = document.getElementById("recapBlurredBackdropEl");
       const url = URL.createObjectURL(file);
-
-      vEl.src = url;
-      bgClone.src = url;
-
-      vEl.onloadedmetadata = () => {
-        videoDurationSeconds = Math.round(vEl.duration) || 180;
-      };
-
+      vEl.src = url; bgClone.src = url;
+      vEl.onloadedmetadata = () => { videoDurationSeconds = Math.round(vEl.duration) || 180; };
       toggleEffectPreview();
       showToast(`Video loaded: ${file.name} (${sizeMB} MB)`, "success");
+    }
+    document.getElementById("recapVideoFileInput").addEventListener("change", function() {
+      loadRecapVideoFile(this.files && this.files[0]);
     });
 
     // =========================================================================
@@ -1033,6 +1039,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       subSpan.style.color = textColor;
       subSpan.style.fontSize = `${fontSize}px`;
+      subSpan.style.fontFamily = recapSubtitleFont || "Padauk";
       subSpan.style.textShadow = `-2px -2px 0 ${borderColor}, 2px -2px 0 ${borderColor}, -2px 2px 0 ${borderColor}, 2px 2px 0 ${borderColor}, 0 4px 8px rgba(0,0,0,0.8)`;
       subBox.style.backgroundColor = "rgba(0, 0, 0, 0.75)";
       subBox.style.border = `1.5px solid ${borderColor}`;
@@ -1184,7 +1191,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById("blurWidthSlider").value = newW;
       document.getElementById("blurHeightSlider").value = newH;
       document.getElementById("blurWTag").innerText = `${newW}px`;
-      document.getElementById("blurHTag").innerText = `${h}px`;
+      document.getElementById("blurHTag").innerText = `${newH}px`;
 
       const containerRect = containerWrapper.getBoundingClientRect();
       blurBoxRect.w = newW / containerRect.width;
@@ -1482,17 +1489,30 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           sourceVideo.playsInline = true;
           await new Promise((r) => { sourceVideo.onloadedmetadata = r; });
 
-          sourceVideo.playbackRate = playbackSpeed || 1.20;
+          const requestedVideoSpeed = Math.max(0.75, Math.min(2.0, Number(playbackSpeed) || 1.3));
+          sourceVideo.playbackRate = requestedVideoSpeed;
 
           const speechAudio = new Audio(URL.createObjectURL(audioBlob));
           await new Promise((resolve, reject) => {
             speechAudio.onloadedmetadata = resolve;
             speechAudio.onerror = () => reject(new Error("Voiceover audio metadata ကို ဖတ်မရပါ"));
           });
-          // Fit a long Burmese voice track into the source video's duration without slowing it down.
-          if (Number.isFinite(speechAudio.duration) && speechAudio.duration > sourceVideo.duration) {
-            speechAudio.playbackRate = Math.min(2, Math.max(1, speechAudio.duration / sourceVideo.duration));
-          }
+          // Keep narration at natural speed; adapt source-video speed in 10-second
+          // source segments so visual playback follows the narration timeline.
+          speechAudio.playbackRate = 1.0;
+          let nextVideoSyncMark = 0;
+          const updateSegmentPlaybackRate = () => {
+            if (!Number.isFinite(sourceVideo.duration) || !Number.isFinite(speechAudio.duration)) return;
+            const remainingVideo = Math.max(0.25, sourceVideo.duration - sourceVideo.currentTime);
+            const remainingVoice = Math.max(0.25, (speechAudio.duration - speechAudio.currentTime) / speechAudio.playbackRate);
+            const adaptiveRate = remainingVideo / remainingVoice;
+            sourceVideo.playbackRate = Math.max(0.75, Math.min(2.0, adaptiveRate));
+            nextVideoSyncMark = Math.floor(sourceVideo.currentTime / 10) * 10 + 10;
+          };
+          updateSegmentPlaybackRate();
+          sourceVideo.addEventListener("timeupdate", () => {
+            if (sourceVideo.currentTime >= nextVideoSyncMark - 0.12) updateSegmentPlaybackRate();
+          });
 
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           if (!AudioContextClass) throw new Error("ဒီ Browser မှာ Audio Export ကို မထောက်ပံ့ပါ");
@@ -1584,7 +1604,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.beginPath();
               ctx.rect(bx, by, bw, bh);
               ctx.clip();
-              ctx.filter = "blur(18px)";
+              ctx.globalAlpha = Number(document.getElementById("blurOpacitySlider")?.value || 100) / 100;
+              ctx.filter = `blur(${Number(document.getElementById("blurStrengthSlider")?.value || 18)}px)`;
               ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
               ctx.restore();
 
@@ -1592,6 +1613,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               ctx.lineWidth = 2;
               ctx.strokeRect(bx, by, bw, bh);
             }
+
+            const logoEl=document.getElementById("recapLogoOverlay");
+            if(logoEl&&recapLogoUrl&&logoEl.complete&&logoEl.naturalWidth){const lw=targetW*recapLogoWidth,lh=lw*(logoEl.naturalHeight/logoEl.naturalWidth);ctx.save();ctx.globalAlpha=recapLogoOpacity;ctx.drawImage(logoEl,recapLogoPosition.x*targetW,recapLogoPosition.y*targetH,lw,lh);ctx.restore();}
 
             if (effects.isSub && sentences.length > 0) {
               const audioDur = speechAudio.duration || totalExpectedDuration;
@@ -1602,31 +1626,53 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               if (textToDraw) {
                 ctx.save();
                 const renderedFontSize = Math.round((subStyles.fontSize / 18) * (targetW * 0.04));
-                ctx.font = `bold ${renderedFontSize}px Padauk, sans-serif`;
+                ctx.font = `bold ${renderedFontSize}px ${recapSubtitleFont || "Padauk"}, sans-serif`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 
                 const subX = (subBoxPos.x + 0.4) * targetW;
                 const subY = (subBoxPos.y + 0.05) * targetH;
-                const textWidth = ctx.measureText(textToDraw).width;
-                const padX = 24, padY = 14;
+                const maxTextWidth = targetW * 0.88;
+                const lineHeight = Math.round(renderedFontSize * 1.28);
+                const segments = (typeof Intl.Segmenter === "function")
+                  ? Array.from(new Intl.Segmenter("my", {granularity:"grapheme"}).segment(textToDraw), item => item.segment)
+                  : Array.from(textToDraw);
+                const subtitleLines = [""];
+                for (const part of segments) {
+                  const candidate = subtitleLines[subtitleLines.length - 1] + part;
+                  if (ctx.measureText(candidate).width <= maxTextWidth || !subtitleLines[subtitleLines.length - 1]) {
+                    subtitleLines[subtitleLines.length - 1] = candidate;
+                  } else if (subtitleLines.length < 2) {
+                    subtitleLines.push(part.trimStart());
+                  } else {
+                    let last = subtitleLines[1];
+                    while (last && ctx.measureText(last + "…").width > maxTextWidth) last = Array.from(last).slice(0, -1).join("");
+                    subtitleLines[1] = last + "…";
+                    break;
+                  }
+                }
+                const textWidth = Math.min(maxTextWidth, Math.max(...subtitleLines.map(line => ctx.measureText(line).width)));
+                const padX = 24, padY = 12;
+                const blockHeight = lineHeight * subtitleLines.length;
 
                 ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
                 ctx.roundRect(
                   subX - textWidth / 2 - padX,
-                  subY - padY,
+                  subY - blockHeight / 2 - padY,
                   textWidth + padX * 2,
-                  padY * 2,
+                  blockHeight + padY * 2,
                   12
                 );
                 ctx.fill();
 
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = subStyles.borderColor;
-                ctx.strokeText(textToDraw, subX, subY);
-
                 ctx.fillStyle = subStyles.textColor;
-                ctx.fillText(textToDraw, subX, subY);
+                subtitleLines.forEach((line, index) => {
+                  const lineY = subY + (index - (subtitleLines.length - 1) / 2) * lineHeight;
+                  ctx.strokeText(line, subX, lineY);
+                  ctx.fillText(line, subX, lineY);
+                });
                 ctx.restore();
               }
             }
@@ -1776,16 +1822,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       btn.disabled = true;
       resultCard.classList.add("hidden");
       document.getElementById("recapSourceTranscript").value = "";
+      document.getElementById("recapTitlesOutput").value = "";
+      document.getElementById("recapHashtagsOutput").value = "";
       spinner.classList.remove("hidden");
       icon.classList.add("hidden");
-      setWorkflowStep("1/5 — မူရင်းအသံမှ Transcript ထုတ်ယူနေပါတယ်...", "Groq Whisper က Video ထဲက စကားပြောသံကို အလိုအလျောက် စာသားပြောင်းနေပါတယ်။");
+      setWorkflowStep("1/6 — မူရင်းအသံမှ Transcript ထုတ်ယူနေပါတယ်...", "Groq Whisper က Video ထဲက စကားပြောသံကို အလိုအလျောက် စာသားပြောင်းနေပါတယ်။");
 
       try {
-        setWorkflowStep("1/5 — Video ထဲက အသံကို ခွဲထုတ်နေပါတယ်...", "Video အကြီးကြီးကို မတင်ဘဲ Browser ထဲမှာ Audio သီးသန့် ထုတ်ယူနေပါတယ်။");
+        setWorkflowStep("1/6 — Video ထဲက အသံကို ခွဲထုတ်နေပါတယ်...", "Video အကြီးကြီးကို မတင်ဘဲ Browser ထဲမှာ Audio သီးသန့် ထုတ်ယူနေပါတယ်။");
         const extractedAudio = await extractAudioForWhisper(currentUploadedRecapFile, (percent) => {
           workflowHint.innerText = `Audio ကို မြန်နှုန်း 4 ဆနဲ့ ခွဲထုတ်နေပါတယ်... ${percent}%`;
         });
-        setWorkflowStep("1/5 — Audio ကို စာသားပြောင်းနေပါတယ်...", "အသံဖိုင်သေးသေးကို Groq Whisper ဆီပို့ပြီး Transcript ထုတ်နေပါတယ်။");
+        setWorkflowStep("1/6 — Audio ကို စာသားပြောင်းနေပါတယ်...", "အသံဖိုင်သေးသေးကို Groq Whisper ဆီပို့ပြီး Transcript ထုတ်နေပါတယ်။");
         const transcribeForm = new FormData();
         transcribeForm.append("file", extractedAudio, "gorecap-audio.webm");
         let transcribeResponse;
@@ -1807,25 +1855,29 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           throw new Error("Video ထဲက စကားပြောသံ မလုံလောက်ပါ။ အသံပါဝင်တဲ့ Video ကို ပြန်တင်ပါ။");
         }
         document.getElementById("recapSourceTranscript").value = sourceTranscript;
-        setWorkflowStep("2/5 — ဇာတ်လမ်းကို မြန်မာ Movie Recap အဖြစ် ရေးသားနေပါတယ်...", "Transcript ရရှိပါပြီ။ AI က ဇာတ်လမ်းအစမှ အဆုံးအထိ စကားပြောပုံစံနဲ့ ပြန်ရေးနေပါတယ်။");
+        setWorkflowStep("2/6 — ဇာတ်လမ်းကို မြန်မာ Movie Recap အဖြစ် ရေးသားနေပါတယ်...", "Transcript ရရှိပါပြီ။ AI က ဇာတ်လမ်းအစမှ အဆုံးအထိ စကားပြောပုံစံနဲ့ ပြန်ရေးနေပါတယ်။");
         const durSecs = videoDurationSeconds || 180;
         const targetWords = Math.max(180, Math.min(520, Math.round(durSecs * 2.2)));
 
         const prompt = `
-သင်သည် နာမည်ကြီး မြန်မာ Movie Recap (ရုပ်ရှင်ဇာတ်ကြောင်းပြန်) အစီအစဉ် ဖန်တီးသူ ဖြစ်သည်။
-ဗီဒီယို ကြာချိန် ခန့်မှန်းခြေ ${durSecs} စက္ကန့်စာနှင့် ကိုက်ညီစေရန်အတွက် ဇာတ်လမ်းအစ၊ အလယ်၊ ဇာတ်ကွက်အလှည့်အပြောင်းနှင့် ဇာတ်သိမ်းအထိ အစအဆုံး ပြည့်စုံသော မြန်မာစကားပြော Movie Recap Voiceover ဇာတ်ညွှန်းကို ရေးသားပေးရမည်။ (အနည်းဆုံး မြန်မာစကားလုံး ${targetWords} လုံးခန့် ပါဝင်အောင် ရေးပေးပါ)။
+Act as a high-energy TikTok movie recap narrator. Translate the following transcript into 100% natural spoken Myanmar language (ဗမာစကားပြော).
+Follow these strict rules:
+1. Natural & Engaging Narration: Absolutely NO formal or bookish Myanmar words (Strictly avoid သည်။, ၏, သော, ၍). Use conversational particles like တယ်, တာ, ပေါ့, လေ, ဗျာ to make it sound like an exciting story told to a friend. Make the tone fast-paced and thrilling.
+2. Transform Dialogues (Indirect Speech): Do NOT translate dialogues as direct quotes. Convert all character dialogues into indirect speech and weave them seamlessly into the narrative recap flow (e.g., instead of writing He said, "I will do this", write 'he angrily told them that he was going to do it').
+3. 100% Complete yet Smooth: Translate the entire transcript accurately without skipping details. Keep the story completely intact but ensure it flows naturally in Myanmar.
+4. TikTok Safety Bypass (Strictly Follow): Automatically replace restricted words with these safe metaphors:
+Alcohol/Beer/Liquor -> 'အထူးဖျော်ရည်'
+Cigarettes/Smoking -> 'မီးခိုးတံ'
+Drugs/Pills/Injections -> 'ပစ္စည်း' or 'အားဆေး'
+Violence/Kill/Death/Blood -> 'ရှင်းထုတ်လိုက်တယ်' / 'အနားယူသွားတယ်' / 'အနီရောင်အမှတ်တွေ'
+Swear words -> Intense but safe emotional expressions (e.g., ဟာကွာ, တောက်).
+5. Voiceover Optimized (TTS): Keep sentences short and punchy. Use commas ( , ) ONLY for natural breathing pauses to make the AI voice sound fast and smooth.
+6. Final Output Format: Provide the translation as ONE continuous flow of text. Absolutely NO line numbering, NO section titles, NO bullet points, NO line breaks, and NO quotation marks (" "). Output ONLY the final Myanmar script with zero introductory or concluding remarks.
+Vd to Burmese translate text.
 
-စည်းမျဉ်းများ:
-၁။ Maid/Servant -> "အိမ်ဖော်မလေး/အိမ်အကူကောင်မလေး", Dog -> "ခွေးလေး", Father -> "အဖေကြီး", Son -> "သားဖြစ်သူ", Daughter-in-law -> "ချွေးမ" စသည့် သဘာဝနာမ်စားများကိုသာ သုံးပါ။
-၂။ "ကျွန်တော်", "ကျွန်မ", "ခင်ဗျာ", "ရှင်" မသုံးရ။ ကျား/မ မရွေး ဖတ်နိုင်သော Voiceover လေသံ ဖြစ်ရမည်။
-၃။ "ဒီနေ့ ဇာတ်လမ်းလေးမှာတော့...", "ကောင်မလေးက...", "အဲဒီအချိန်မှာပဲ...", "မထင်မှတ်ထားဘဲ...", "အခြေအနေတွေက ပိုဆိုးသွားပြီးတော့...", "နောက်ဆုံးမှာတော့..." စသည့် သဘာဝစကားပြော စကားဆက်များ သုံးပါ။
-၄။ အပိုစာသား လုံးဝမပါရ (ZERO ENGLISH)။ "*Intro:*", "*Middle:*" ခေါင်းစဉ်များ၊ "No English? Yes" စသည့် စာတန်းများ လုံးဝမထည့်ရ။
-
-အောက်ပါ Transcript ကိုသာ ဇာတ်လမ်းအချက်အလက်အဖြစ် အသုံးပြုပါ။ Transcript ထဲမှာ မပါသော ဇာတ်ကောင်၊ ဖြစ်ရပ်၊ ဇာတ်သိမ်းကို မတီထွင်ပါနှင့်။ အချက်အလက်မပြည့်စုံလျှင် ရှိသည့်အချက်အလက်ကိုသာ သဘာဝကျကျ ပြန်ရေးပါ။
-အထက်ပါ စည်းမျဉ်းအတိုင်း သန့်ရှင်းသော မြန်မာ Movie Recap Script စစ်စစ်ကိုသာ ထုတ်ပေးပါ:
-
+IMPORTANT: Translate every available transcript detail faithfully. Do not summarize, omit scenes, invent events, or invent an ending. The transcript is the only source of story facts.
 TRANSCRIPT:
-${sourceTranscript.slice(0, 60000)}
+${sourceTranscript.slice(0, 100000)}
         `.trim();
 
         let finalScript = "";
@@ -1833,7 +1885,7 @@ ${sourceTranscript.slice(0, 60000)}
 
         // The former llama-3.3-70b-versatile model was retired for Free/Developer
         // Groq usage. Use currently supported Groq models with a clear fallback.
-        if (groqKey) {
+        if (groqKey && !geminiKey) {
           const groqModels = [
             { id: "openai/gpt-oss-120b", label: "Groq GPT-OSS 120B" },
             { id: "qwen/qwen3.8-27b", label: "Groq Qwen 3.8 27B" }
@@ -1875,26 +1927,11 @@ ${sourceTranscript.slice(0, 60000)}
 
         if (!finalScript && geminiKey) {
           try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: `${prompt}\n\nWrite pure Burmese movie recap script for full length.` }] }],
-                generationConfig: { temperature: 0.3, maxOutputTokens: 6000 }
-              })
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              recapProviderErrors.push(`Gemini (${res.status}): ${data.error?.message || data.message || res.statusText || "Unknown Gemini error"}`);
-            } else {
-              const raw = data.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("\n") || "";
-              finalScript = sanitizePureScript(raw);
-              if (!finalScript) {
-                recapProviderErrors.push(`Gemini: ${data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || "စာသားမရရှိပါ"}`);
-              }
-            }
+            const geminiData = await callGemini(prompt, 8192, geminiKey);
+            finalScript = sanitizePureScript(geminiData.text || "");
+            if (!finalScript) recapProviderErrors.push("Gemini: စာသားအလွတ် ပြန်ရရှိပါတယ်။");
           } catch (error) {
-            recapProviderErrors.push(`Gemini: ${error.message || "Network error"}`);
+            recapProviderErrors.push(`Gemini 3.8 Flash: ${error.message || "Network error"}`);
           }
         }
 
@@ -1906,8 +1943,24 @@ ${sourceTranscript.slice(0, 60000)}
         }
 
         scriptArea.value = finalScript;
+        makeRecapThumbnailPrompt(finalScript);
 
-        setWorkflowStep("3/5 — ရွေးထားတဲ့ မြန်မာအသံ ဖန်တီးနေပါတယ်...", "AI Recap Script ကို ရွေးထားတဲ့ Voice နဲ့ အသံဖိုင်ပြောင်းနေပါတယ်။");
+        try {
+          setWorkflowStep("3/6 — TikTok ခေါင်းစဉ်နဲ့ Hashtags ဖန်တီးနေပါတယ်...", "Gemini 3.8 Flash က ခေါင်းစဉ် ၃ ခုနဲ့ Hashtags ၅ ခု ထုတ်ပေးနေပါတယ်။");
+          const metaPrompt = `Based only on the following Burmese movie recap, return valid JSON only with this exact shape: {"titles":["title 1","title 2","title 3"],"hashtags":["#tag1","#tag2","#tag3","#tag4","#tag5"]}. Titles must be catchy natural Burmese TikTok titles. Exactly 3 titles and exactly 5 relevant TikTok hashtags. No markdown fences or extra text. Recap:\n${finalScript.slice(0, 18000)}`;
+          const meta = await callGemini(metaPrompt, 1200, geminiKey);
+          const cleanedMeta = (meta.text || "").replace(/```json|```/g, "").trim();
+          const jsonMatch = cleanedMeta.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const social = JSON.parse(jsonMatch[0]);
+            document.getElementById("recapTitlesOutput").value = (Array.isArray(social.titles) ? social.titles.slice(0,3) : []).join("\n");
+            document.getElementById("recapHashtagsOutput").value = (Array.isArray(social.hashtags) ? social.hashtags.slice(0,5) : []).join(" ");
+          }
+        } catch (metaError) {
+          console.warn("Social metadata generation failed:", metaError);
+        }
+
+        setWorkflowStep("4/6 — ရွေးထားတဲ့ မြန်မာအသံ ဖန်တီးနေပါတယ်...", "AI Recap Script ကို ရွေးထားတဲ့ Voice နဲ့ အသံဖိုင်ပြောင်းနေပါတယ်။");
 
         const speedOffset = parseInt(document.getElementById("recapSpeedRange").value);
         const pitchOffset = parseInt(document.getElementById("recapPitchRange").value);
@@ -1943,7 +1996,7 @@ ${sourceTranscript.slice(0, 60000)}
           throw new Error("Voiceover synthesis failed");
         }
 
-        setWorkflowStep("4/5 — Video ကို အလိုအလျောက် Edit လုပ်နေပါတယ်...", "အသံ၊ Zoom၊ Color၊ Subtitle နဲ့ ရွေးထားတဲ့ Aspect Ratio ကို ပေါင်းစပ်နေပါတယ်။");
+        setWorkflowStep("5/6 — Video ကို အလိုအလျောက် Edit လုပ်နေပါတယ်...", "အသံ၊ Zoom၊ Color၊ Subtitle နဲ့ ရွေးထားတဲ့ Aspect Ratio ကို ပေါင်းစပ်နေပါတယ်။");
         showToast("Video Edit နဲ့ အသံပေါင်းစပ်နေပါတယ်...", "info");
 
         const effects = {
@@ -1965,7 +2018,7 @@ ${sourceTranscript.slice(0, 60000)}
         );
 
         finalVideoEl.src = URL.createObjectURL(exportedRenderedVideoBlob);
-        setWorkflowStep("5/5 — ပြီးပါပြီ။ Final Video အသင့်ဖြစ်ပါပြီ။", "အောက်က Preview မှာ ကြည့်ပြီး Download လုပ်နိုင်ပါပြီ။");
+        setWorkflowStep("6/6 — ပြီးပါပြီ။ Final Video အသင့်ဖြစ်ပါပြီ။", "အောက်က Preview မှာ ကြည့်ပြီး Download လုပ်နိုင်ပါပြီ။");
         resultCard.classList.remove("hidden");
         resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         await finalVideoEl.play();
@@ -1980,6 +2033,27 @@ ${sourceTranscript.slice(0, 60000)}
         icon.classList.remove("hidden");
         label.innerText = "One-Click Generate Recap";
       }
+    }
+
+    async function callGemini(prompt, maxOutputTokens = 8192, apiKey = (localStorage.getItem("gemini_api_key") || "").trim()) {
+      if (!apiKey) throw new Error("Gemini API Key မရှိပါ။ Settings မှာ ထည့်ပါ။");
+      const response = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({ prompt, max_output_tokens: maxOutputTokens })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || data.error?.message || `Gemini request failed (${response.status})`);
+      return data;
+    }
+
+    async function copyRecapField(id) {
+      const el = document.getElementById(id);
+      const value = (el?.value || "").trim();
+      if (!value) return showToast("Copy လုပ်ရန် စာသားမရှိသေးပါ။", "error");
+      try { await navigator.clipboard.writeText(value); }
+      catch (_) { el.focus(); el.select(); document.execCommand("copy"); }
+      showToast("Copied!", "success");
     }
 
     function downloadExportedVideoFile() {
@@ -2046,7 +2120,83 @@ ${sourceTranscript.slice(0, 60000)}
     }
     try { applyTheme(localStorage.getItem("gorecap_theme") || "dark"); } catch (_) { applyTheme("dark"); }
 
+
+    // Editor upgrades: logo overlay, blur tuning, custom font and thumbnail tools.
+    let recapLogoUrl=null, recapLogoOpacity=.9, recapLogoWidth=.22;
+    let recapLogoPosition={x:.72,y:.04}, recapLogoDragging=false, recapLogoDragOffset={x:0,y:0};
+    let recapSubtitleFont="Padauk";
+    function installEditorEnhancements(){
+      const wrap=document.getElementById("videoContainerWrapper");
+      const logo=document.createElement("img"); logo.id="recapLogoOverlay"; logo.alt="Logo";
+      Object.assign(logo.style,{position:"absolute",zIndex:40,display:"none",width:"22%",maxHeight:"25%",objectFit:"contain",left:"72%",top:"4%",opacity:".9",cursor:"move",touchAction:"none",filter:"drop-shadow(0 2px 5px #0008)"});
+      wrap.appendChild(logo);
+      logo.addEventListener("pointerdown",e=>{if(!recapLogoUrl)return;const r=logo.getBoundingClientRect();recapLogoDragging=true;recapLogoDragOffset={x:e.clientX-r.left,y:e.clientY-r.top};logo.setPointerCapture(e.pointerId);e.preventDefault();});
+      logo.addEventListener("pointermove",e=>{if(!recapLogoDragging)return;const r=wrap.getBoundingClientRect();const x=Math.max(0,Math.min(r.width-logo.offsetWidth,e.clientX-r.left-recapLogoDragOffset.x));const y=Math.max(0,Math.min(r.height-logo.offsetHeight,e.clientY-r.top-recapLogoDragOffset.y));recapLogoPosition={x:x/r.width,y:y/r.height};logo.style.left=(recapLogoPosition.x*100)+"%";logo.style.top=(recapLogoPosition.y*100)+"%";});
+      ["pointerup","pointercancel"].forEach(ev=>logo.addEventListener(ev,()=>recapLogoDragging=false));
+      const blur=document.getElementById("blurDimensionControls");
+      if(blur&&!document.getElementById("blurStrengthSlider")){
+        blur.insertAdjacentHTML("beforeend",'<label class="col-span-2 text-[11px] text-slate-300">Blur strength <b id="blurStrengthTag">18px</b><input id="blurStrengthSlider" type="range" min="2" max="36" value="18" class="w-full accent-cyan-400"></label><label class="col-span-2 text-[11px] text-slate-300">Blur opacity <b id="blurOpacityTag">100%</b><input id="blurOpacitySlider" type="range" min="10" max="100" value="100" class="w-full accent-cyan-400"></label>');
+        document.getElementById("blurStrengthSlider").oninput=e=>document.getElementById("blurStrengthTag").textContent=e.target.value+"px";
+        document.getElementById("blurOpacitySlider").oninput=e=>document.getElementById("blurOpacityTag").textContent=e.target.value+"%";
+      }
+      const sub=document.getElementById("subtitleStylingCard");
+      if(sub&&!document.getElementById("subFontUpload")){
+        const box=document.createElement("div");box.className="p-3 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-2";
+        box.innerHTML='<label class="font-bold text-slate-300 block">Upload subtitle font (TTF / OTF / WOFF2)</label><input id="subFontUpload" type="file" accept=".ttf,.otf,.woff,.woff2" class="w-full text-[11px]"><p id="subFontStatus" class="text-[10px] text-slate-400">Default: Padauk</p>';sub.appendChild(box);
+        document.getElementById("subFontUpload").onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const url=URL.createObjectURL(file),face=new FontFace("GoRecapCustomFont",`url(${url})`);await face.load();document.fonts.add(face);recapSubtitleFont="GoRecapCustomFont";document.getElementById("subPreviewSpanText").style.fontFamily=recapSubtitleFont;document.getElementById("subFontStatus").textContent="Loaded: "+file.name;showToast("Subtitle font loaded","success");}catch(_){showToast("Font file ကို ဖတ်မရပါ","error");}};
+      }
+      const panel=document.getElementById("panelRecapVd");
+      if(panel&&!document.getElementById("recapAssetTools")){
+        const card=document.createElement("section");card.id="recapAssetTools";card.className="bg-[#0f172b]/95 border border-slate-800 rounded-3xl p-5 space-y-3 text-xs";
+        card.innerHTML=`<div class="mb-3 p-3 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-2">
+          <label for="recapSourceUrlInput" class="block text-[11px] font-bold text-slate-300">Paste a direct video URL (MP4 / WebM)</label>
+          <input id="recapSourceUrlInput" type="url" placeholder="https://example.com/video.mp4" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white">
+          <button id="loadSourceUrlBtn" type="button" class="w-full py-2 rounded-xl bg-blue-600 text-white font-bold">Load Direct Video URL</button>
+          <p class="text-[10px] text-slate-400">TikTok / Douyin share links need an authorized download source. This field loads direct video-file URLs only; cross-origin restrictions may apply.</p>
+        </div><div class="font-bold text-slate-200 text-sm">🧩 Logo & Thumbnail Tools</div><label class="block font-bold text-slate-300">Logo upload<input id="recapLogoUpload" type="file" accept="image/png,image/jpeg,image/webp" class="mt-2 block w-full"></label><label class="block text-slate-300">Logo size <b id="logoSizeTag">22%</b><input id="logoSizeSlider" type="range" min="8" max="45" value="22" class="w-full"></label><label class="block text-slate-300">Logo opacity <b id="logoOpacityTag">90%</b><input id="logoOpacitySlider" type="range" min="10" max="100" value="90" class="w-full"></label><p class="text-slate-400">Preview ထဲက Logo ကို ဆွဲရွှေ့နိုင်ပြီး Export ထဲမှာလည်း ပါဝင်ပါမယ်။</p><button id="sourceThumbBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">🖼️ Source Video Thumbnail Download</button><label class="block font-bold text-slate-300">3:4 Thumbnail Prompt<textarea id="recapThumbnailPrompt" rows="4" readonly class="mt-2 w-full"></textarea></label><button id="copyThumbPromptBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">📋 Thumbnail Prompt Copy</button>`;
+        panel.insertBefore(card,document.getElementById("recapResultCard")||null);
+
+        document.getElementById("loadSourceUrlBtn").onclick=async()=>{
+          const field=document.getElementById("recapSourceUrlInput"), raw=(field.value||"").trim();
+          if(!raw)return showToast("Video URL ထည့်ပေးပါ","error");
+          let parsed;try{parsed=new URL(raw);}catch(_){return showToast("URL မှားနေပါတယ်","error");}
+          if(!["https:","http:"].includes(parsed.protocol))return showToast("HTTP/HTTPS URL သာ အသုံးပြုနိုင်ပါတယ်","error");
+          if(/(^|\\.)((tiktok\\.com)|(douyin\\.com))$/i.test(parsed.hostname.replace(/^www\\./,"")) || /tiktok|douyin/i.test(parsed.hostname)){
+            return showToast("TikTok/Douyin Share Link ကို တိုက်ရိုက်မရယူနိုင်သေးပါ။ ခွင့်ပြုထားတဲ့နည်းနဲ့ MP4 ဖိုင်ရယူပြီး Upload လုပ်ပါ","error");
+          }
+          const button=document.getElementById("loadSourceUrlBtn");button.disabled=true;button.textContent="Downloading video file…";
+          try{
+            const response=await fetch(parsed.href,{mode:"cors"});
+            if(!response.ok)throw new Error("Server returned HTTP "+response.status);
+            const type=(response.headers.get("content-type")||"").toLowerCase();
+            if(!type.startsWith("video/") && !/\\.(mp4|webm|mov|m4v)(?:$|[?#])/i.test(parsed.pathname+parsed.search))throw new Error("ဒီ URL က တိုက်ရိုက် Video ဖိုင် မဟုတ်ပါ");
+            const blob=await response.blob();
+            if(!blob.size)throw new Error("Video ဖိုင်အလွတ် ဖြစ်နေပါတယ်");
+            if(blob.size>500*1024*1024)throw new Error("Video ဖိုင် 500MB ကျော်နေပါတယ်");
+            const ext=type.includes("webm")?"webm":type.includes("quicktime")?"mov":"mp4";
+            loadRecapVideoFile(new File([blob],"gorecap-import."+ext,{type:type.startsWith("video/")?type:"video/mp4"}));
+          }catch(err){showToast("URL ကနေ Video မရယူနိုင်ပါ။ CORS ပိတ်ထားခြင်း သို့မဟုတ် Share Page URL ဖြစ်နိုင်ပါတယ်။ "+(err.message||""),"error");}
+          finally{button.disabled=false;button.textContent="Load Direct Video URL";}
+        };
+        document.getElementById("recapLogoUpload").onchange=e=>{const file=e.target.files?.[0];if(!file)return;if(recapLogoUrl)URL.revokeObjectURL(recapLogoUrl);recapLogoUrl=URL.createObjectURL(file);logo.src=recapLogoUrl;logo.style.display="block";};
+        document.getElementById("logoSizeSlider").oninput=e=>{recapLogoWidth=Number(e.target.value)/100;logo.style.width=e.target.value+"%";document.getElementById("logoSizeTag").textContent=e.target.value+"%";};
+        document.getElementById("logoOpacitySlider").oninput=e=>{recapLogoOpacity=Number(e.target.value)/100;logo.style.opacity=String(recapLogoOpacity);document.getElementById("logoOpacityTag").textContent=e.target.value+"%";};
+        document.getElementById("sourceThumbBtn").onclick=downloadSourceVideoThumbnail;
+        document.getElementById("copyThumbPromptBtn").onclick=()=>copyRecapField("recapThumbnailPrompt");
+      }
+    }
+    function downloadSourceVideoThumbnail(){
+      const v=document.getElementById("recapVideoPlayerEl");if(!v?.videoWidth)return showToast("Video ကို အရင် upload လုပ်ပါ","error");
+      const c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+      c.toBlob(b=>{if(!b)return showToast("Thumbnail ထုတ်မရပါ","error");const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="GoRecap_Source_Thumbnail.jpg";a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);},"image/jpeg",.92);
+    }
+    function makeRecapThumbnailPrompt(script){
+      const context=(script||"").replace(/\s+/g," ").slice(0,800);
+      const el=document.getElementById("recapThumbnailPrompt");if(el)el.value="Create a cinematic ultra-realistic 3:4 vertical movie recap thumbnail. Use the source video frame as visual reference, preserve the characters and scene identity, dramatic expressive faces, strong foreground subject, cinematic lighting, sharp details, clean composition. Add bold Burmese headline text exactly here: { }. Story context: "+context+". No watermark, no extra text.";
+    }
+
     // Init
+    installEditorEnhancements();
     updateVoiceTriggerLabel();
     syncRecapSliders();
     updateSubtitleStyles();
@@ -2247,6 +2397,70 @@ async def transcribe_audio(
             raise HTTPException(status_code=502, detail=f"Groq Whisper connection failed: {str(error)[:300]}")
 
     return await asyncio.to_thread(call_groq)
+
+
+class GeminiGenerateRequest(BaseModel):
+    prompt: str
+    max_output_tokens: int = 8192
+    temperature: float = 0.25
+
+
+@app.post("/api/gemini")
+async def generate_gemini_text(
+    req: GeminiGenerateRequest,
+    x_goog_api_key: str = Header(default="")
+):
+    """Server-side Gemini proxy; keeps API keys out of query strings."""
+    api_key = x_goog_api_key.strip()
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Gemini API Key မတွေ့ပါ။ Settings မှာ စစ်ဆေးပါ။")
+    if not req.prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt အလွတ်ဖြစ်နေပါတယ်။")
+    if len(req.prompt) > 180000:
+        raise HTTPException(status_code=413, detail="Prompt အလွန်ရှည်နေပါတယ်။")
+    payload = {
+        "contents": [{"parts": [{"text": req.prompt}]}],
+        "generationConfig": {
+            "temperature": max(0.0, min(1.0, req.temperature)),
+            "maxOutputTokens": max(256, min(16384, req.max_output_tokens))
+        }
+    }
+
+    def call_gemini():
+        import json
+        request = urllib.request.Request(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "x-goog-api-key": api_key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "User-Agent": "GoRecap/2.0"
+            },
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=50) as response:
+                result = json.loads(response.read().decode("utf-8"))
+            parts = result.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            output = "\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
+            if not output:
+                reason = result.get("promptFeedback", {}).get("blockReason") or result.get("candidates", [{}])[0].get("finishReason", "empty response")
+                raise HTTPException(status_code=502, detail=f"Gemini returned no text: {reason}")
+            return {"text": output, "model": result.get("modelVersion", "gemini-3.8-flash")}
+        except urllib.error.HTTPError as error:
+            raw = error.read().decode("utf-8", errors="replace")
+            try:
+                detail = json.loads(raw).get("error", {}).get("message", raw)
+            except Exception:
+                detail = raw or str(error)
+            raise HTTPException(status_code=error.code, detail=f"Gemini API: {detail[:600]}")
+        except HTTPException:
+            raise
+        except Exception as error:
+            raise HTTPException(status_code=502, detail=f"Gemini connection failed: {str(error)[:300]}")
+
+    return await asyncio.to_thread(call_gemini)
 
 
 @app.get("/{full_path:path}")
