@@ -1466,9 +1466,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           sourceVideo.playbackRate = playbackSpeed || 1.20;
 
           const speechAudio = new Audio(URL.createObjectURL(audioBlob));
+          await new Promise((resolve, reject) => {
+            speechAudio.onloadedmetadata = resolve;
+            speechAudio.onerror = () => reject(new Error("Voiceover audio metadata ကို ဖတ်မရပါ"));
+          });
+          // Fit a long Burmese voice track into the source video's duration without slowing it down.
+          if (Number.isFinite(speechAudio.duration) && speechAudio.duration > sourceVideo.duration) {
+            speechAudio.playbackRate = Math.min(2, Math.max(1, speechAudio.duration / sourceVideo.duration));
+          }
 
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) throw new Error("ဒီ Browser မှာ Audio Export ကို မထောက်ပံ့ပါ");
           const audioCtx = new AudioContextClass();
+          if (audioCtx.state === "suspended") await audioCtx.resume();
           const sourceNode = audioCtx.createMediaElementSource(speechAudio);
           const audioDestNode = audioCtx.createMediaStreamDestination();
           sourceNode.connect(audioDestNode);
@@ -1482,6 +1492,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           let mime = 'video/webm;codecs=vp9,opus';
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
           if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/mp4';
+          if (!MediaRecorder.isTypeSupported(mime)) throw new Error("ဒီ Browser မှာ Video Export Format ကို မထောက်ပံ့ပါ။ Chrome/Edge နောက်ဆုံးဗားရှင်းကို သုံးပါ။");
 
           const mediaRecorder = new MediaRecorder(mixedStream, { mimeType: mime });
           const recordedChunks = [];
