@@ -86,6 +86,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     #themeToggle { border:1px solid var(--line); background:var(--surface); color:var(--ink); }
     @media (max-width:480px) { .rg-tab { flex-direction:column; gap:3px; padding:9px 3px; font-size:10px; } .rg-tab span:first-child { font-size:16px; } main { padding-left:13px !important; padding-right:13px !important; } }
   </style>
+  <script src="https://telegram.org/js/telegram-web-app.js?62"></script>
+  <style>
+    html.telegram-mini-app, html.telegram-mini-app body { min-height:100%; }
+    html.telegram-mini-app body { padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+    html.telegram-mini-app #toastContainer { top:calc(env(safe-area-inset-top) + 12px); }
+  </style>
 </head>
 <body class="bg-[#070b16] text-slate-100 min-h-screen flex flex-col items-center antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
@@ -2208,6 +2214,28 @@ ${sourceTranscript.slice(0, 60000)}
       const items=readVideoPresets(),p=items.find(x=>x.id===id);if(!p||!window.confirm('"'+p.name+'" Preset ကို ဖျက်မှာ သေချာပါသလား။'))return;
       writeVideoPresets(items.filter(x=>x.id!==id));renderVideoPresetsList();showToast("Preset ဖျက်ပြီးပါပြီ","success");
     }
+
+    // Telegram Mini App integration (the same GoRecap UI runs inside Telegram).
+    function initTelegramMiniApp() {
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (!tg) return;
+      document.documentElement.classList.add("telegram-mini-app");
+      try { tg.ready(); } catch (_) {}
+      try { tg.expand(); } catch (_) {}
+      try { tg.setHeaderColor("#070b16"); } catch (_) {}
+      try { tg.setBackgroundColor("#070b16"); } catch (_) {}
+      const applyTelegramTheme = () => {
+        const p = tg.themeParams || {};
+        if (p.bg_color) document.documentElement.style.setProperty("--app-bg", p.bg_color);
+        if (p.text_color) document.documentElement.style.setProperty("--ink", p.text_color);
+        if (p.hint_color) document.documentElement.style.setProperty("--muted", p.hint_color);
+        if (p.button_color) document.documentElement.style.setProperty("--accent", p.button_color);
+      };
+      applyTelegramTheme();
+      try { tg.onEvent("themeChanged", applyTelegramTheme); } catch (_) {}
+      window.GoRecapTelegram = { webApp: tg, isMiniApp: true };
+    }
+    initTelegramMiniApp();
 
     // Init
     updateVoiceTriggerLabel();
