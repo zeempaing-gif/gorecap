@@ -201,7 +201,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               🎬
             </div>
             <p class="text-xs font-bold text-slate-100" id="recapPromptText">Drag & drop a video file</p>
-            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · max 500MB</p>
+            <p class="text-[10px] text-slate-400 font-mono">mp4, mov, mkv, webm · Whisper max 25MB</p>
             <div class="pt-2">
               <span class="inline-block px-5 py-2 rounded-xl bg-[#0e1628] hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-700/80 shadow-md transition-all">
                 Browse
