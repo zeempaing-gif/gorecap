@@ -2086,13 +2086,13 @@ ${sourceTranscript.slice(0, 60000)}
         subtitle:{
           textColor:g("subTextColorInput").value, borderColor:g("subBorderColorInput").value,
           fontSize:g("subSizeRange").value,
-          x:parent.width ? (sub.left-parent.left)/parent.width : subBoxPos.x,
-          y:parent.height ? (sub.top-parent.top)/parent.height : subBoxPos.y
+          x:subBoxPos.x,
+          y:subBoxPos.y
         },
         blur:{
           width:g("blurWidthSlider").value, height:g("blurHeightSlider").value,
-          x:parent.width ? (blur.left-parent.left)/parent.width : blurBoxRect.x,
-          y:parent.height ? (blur.top-parent.top)/parent.height : blurBoxRect.y
+          x:blurBoxRect.x,
+          y:blurBoxRect.y
         }
       };
     }
