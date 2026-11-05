@@ -571,7 +571,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <div class="flex items-center gap-2 font-bold text-slate-200 text-sm border-b border-slate-800 pb-2.5">
           <span class="text-blue-400">📤</span><span>AI Transcriber • Groq Whisper</span>
         </div>
-        <p class="text-xs text-slate-300 leading-relaxed">ဗီဒီယို/အသံဖိုင်ထဲက စကားပြောသံကို စာသားအဖြစ် ပြောင်းပေးမယ်။ Groq API Key လိုအပ်ပြီး ဖိုင်အရွယ်အစား 25MB အောက် ဖြစ်ရပါမယ်။</p>
+        <p class="text-xs text-slate-300 leading-relaxed">ဗီဒီယို/အသံဖိုင်ထဲက စကားပြောသံကို စာသားအဖြစ် ပြောင်းပေးမယ်။ Groq API Key လိုအပ်ပါတယ်။ Audio ကို Browser မှာ အလိုအလျောက် ခွဲထုတ်ပြီး Whisper Server ဆီ ပို့ပေးမယ်။</p>
         <input id="transcriberFileInput" type="file" accept="audio/*,video/mp4,video/webm,.mp4,.webm,.mpeg,.mpga,.m4a,.wav,.mp3,.flac" class="w-full text-xs text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:font-bold file:text-white"/>
         <button id="transcribeSourceBtn" onclick="transcribeSourceMedia()" class="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs">🎙️ စာသားထုတ်ယူမည် (Transcribe)</button>
         <textarea id="transcriberResultText" rows="9" placeholder="Transcription ရလဒ် ဒီမှာ ပေါ်လာပါမယ်..." class="w-full bg-[#080d1a] border border-slate-700 rounded-2xl p-3 text-xs leading-relaxed text-slate-100 custom-scroll"></textarea>
@@ -2232,7 +2232,7 @@ async def transcribe_audio(
             method="POST"
         )
         try:
-            with urllib.request.urlopen(request, timeout=90) as response:
+            with urllib.request.urlopen(request, timeout=50) as response:
                 import json
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
