@@ -178,6 +178,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <!-- VIEW 1: AUTO RECAP VD -->
     <div id="panelRecapVd" class="space-y-4">
 
+      <section class="bg-gradient-to-r from-violet-950/70 to-indigo-950/60 border border-violet-500/30 rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0"><div class="text-sm font-extrabold text-violet-200">🎛️ Video Presets</div><p id="activePresetLabel" class="text-[10px] text-slate-400 truncate">မိမိကြိုက်တဲ့ Setting အားလုံးကို နာမည်ပေးသိမ်းထားနိုင်ပါတယ်</p></div>
+          <button type="button" onclick="openPresetsModal()" class="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-extrabold">📚 Presets</button>
+        </div>
+      </section>
+
       <!-- 1. VIDEO UPLOAD CARD -->
       <div class="bg-[#0f172b]/95 border border-slate-800/90 rounded-3xl p-5 space-y-3.5 shadow-2xl backdrop-blur-md">
         <div class="flex items-center gap-2 font-bold text-slate-200 text-sm">
@@ -652,6 +659,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   </footer>
 
   <!-- POP-UP MODAL (Z-INDEX 999: NO CLIPPING, PROPER SPACING) -->
+
+  <div id="videoPresetsModal" class="fixed inset-0 z-[1200] hidden items-center justify-center bg-black/85 backdrop-blur-sm p-3" onclick="if(event.target===this)closePresetsModal()">
+    <div class="w-full max-w-md max-h-[88vh] overflow-hidden rounded-3xl border border-violet-500/30 bg-[#0c1426] shadow-2xl flex flex-col">
+      <div class="flex items-center justify-between gap-3 border-b border-slate-700 p-4"><div><h3 class="text-base font-extrabold text-white">🎛️ My Video Presets</h3><p class="text-[10px] text-slate-400">Setting အားလုံးကို တစ်ချက်နှိပ်ပြီး ပြန်သုံးပါ</p></div><button type="button" onclick="closePresetsModal()" class="rounded-xl bg-slate-800 px-3 py-2 text-slate-300">✕</button></div>
+      <div class="p-4 space-y-3 overflow-y-auto custom-scroll">
+        <button type="button" onclick="saveCurrentVideoPreset()" class="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-extrabold text-white">＋ လက်ရှိ Setting ကို Preset အသစ်အဖြစ် Save မည်</button>
+        <div id="videoPresetsList" class="space-y-2"></div>
+        <p class="text-[10px] text-slate-500 leading-relaxed">Preset များကို ဒီ Browser / Device ထဲတွင် သိမ်းထားမည်။ Video ဖိုင်ကိုတော့ Preset ထဲတွင် မသိမ်းပါ။</p>
+      </div>
+    </div>
+  </div>
   <div id="voiceSelectorModalBackdrop" onclick="closeVoiceSelectorModal(event)" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[999] hidden flex items-center justify-center p-4 transition-opacity">
     <div onclick="event.stopPropagation()" class="bg-[#0c1426] border border-slate-700/90 rounded-3xl max-w-md w-full p-5 space-y-3.5 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
@@ -2045,6 +2063,103 @@ ${sourceTranscript.slice(0, 60000)}
       applyTheme(current === "dark" ? "light" : "dark");
     }
     try { applyTheme(localStorage.getItem("gorecap_theme") || "dark"); } catch (_) { applyTheme("dark"); }
+
+
+    const VIDEO_PRESETS_STORAGE_KEY = "gorecap_video_presets_v1";
+    function readVideoPresets() {
+      try { const v = JSON.parse(localStorage.getItem(VIDEO_PRESETS_STORAGE_KEY) || "[]"); return Array.isArray(v) ? v : []; }
+      catch (_) { return []; }
+    }
+    function writeVideoPresets(items) { localStorage.setItem(VIDEO_PRESETS_STORAGE_KEY, JSON.stringify(items)); }
+    function collectVideoPresetSettings() {
+      const g = id => document.getElementById(id);
+      const parent = containerWrapper.getBoundingClientRect();
+      const blur = blurBoxEl.getBoundingClientRect();
+      const sub = subBoxEl.getBoundingClientRect();
+      return {
+        version: 1, aspect: selectedRecapAspect, voiceId: currentSelectedVoiceId,
+        switches: {
+          subtitles:g("effectSubtitleSwitch").checked, colorGrading:g("effectColorGradingSwitch").checked,
+          zoom:g("effectBypassZoomSwitch").checked, blur:g("effectBlurSwitch").checked, mirror:g("effectMirrorSwitch").checked
+        },
+        voice:{ speed:g("recapSpeedRange").value, pitch:g("recapPitchRange").value },
+        subtitle:{
+          textColor:g("subTextColorInput").value, borderColor:g("subBorderColorInput").value,
+          fontSize:g("subSizeRange").value,
+          x:parent.width ? (sub.left-parent.left)/parent.width : subBoxPos.x,
+          y:parent.height ? (sub.top-parent.top)/parent.height : subBoxPos.y
+        },
+        blur:{
+          width:g("blurWidthSlider").value, height:g("blurHeightSlider").value,
+          x:parent.width ? (blur.left-parent.left)/parent.width : blurBoxRect.x,
+          y:parent.height ? (blur.top-parent.top)/parent.height : blurBoxRect.y
+        }
+      };
+    }
+    function applyVideoPresetSettings(s) {
+      if (!s || s.version !== 1) return showToast("ဒီ Preset ကို အသုံးမပြုနိုင်ပါ", "error");
+      const g = id => document.getElementById(id);
+      if (["16:9","9:16","1:1","4:3","3:4"].includes(s.aspect)) selectAspectRatio(s.aspect);
+      if (PERSONAS.some(p => p.id === s.voiceId)) currentSelectedVoiceId = s.voiceId;
+      updateVoiceTriggerLabel();
+      const sw=s.switches||{};
+      g("effectSubtitleSwitch").checked=!!sw.subtitles; g("effectColorGradingSwitch").checked=!!sw.colorGrading;
+      g("effectBypassZoomSwitch").checked=!!sw.zoom; g("effectBlurSwitch").checked=!!sw.blur; g("effectMirrorSwitch").checked=!!sw.mirror;
+      const v=s.voice||{}; g("recapSpeedRange").value=v.speed??20; g("recapPitchRange").value=v.pitch??0; syncRecapSliders();
+      const sub=s.subtitle||{};
+      g("subTextColorInput").value=sub.textColor||"#fde047"; g("subBorderColorInput").value=sub.borderColor||"#000000";
+      g("subSizeRange").value=sub.fontSize??18;
+      subBoxPos.x=Math.max(0,Math.min(0.95,Number(sub.x??0.10))); subBoxPos.y=Math.max(0,Math.min(0.95,Number(sub.y??0.82)));
+      subBoxEl.style.left=(subBoxPos.x*100)+"%"; subBoxEl.style.top=(subBoxPos.y*100)+"%"; updateSubtitleStyles();
+      const b=s.blur||{};
+      g("blurWidthSlider").value=Math.max(50,Math.min(300,Number(b.width??160)));
+      g("blurHeightSlider").value=Math.max(25,Math.min(150,Number(b.height??50)));
+      blurBoxEl.style.width=g("blurWidthSlider").value+"px"; blurBoxEl.style.height=g("blurHeightSlider").value+"px";
+      g("blurWTag").innerText=g("blurWidthSlider").value+"px"; g("blurHTag").innerText=g("blurHeightSlider").value+"px";
+      blurBoxRect.x=Math.max(0,Math.min(0.95,Number(b.x??0.22))); blurBoxRect.y=Math.max(0,Math.min(0.95,Number(b.y??0.72)));
+      blurBoxRect.w=Number(g("blurWidthSlider").value)/Math.max(1,containerWrapper.clientWidth);
+      blurBoxRect.h=Number(g("blurHeightSlider").value)/Math.max(1,containerWrapper.clientHeight);
+      blurBoxEl.style.left=(blurBoxRect.x*100)+"%"; blurBoxEl.style.top=(blurBoxRect.y*100)+"%";
+      toggleEffectPreview();
+    }
+    function openPresetsModal() { renderVideoPresetsList(); const m=document.getElementById("videoPresetsModal"); m.classList.remove("hidden"); m.classList.add("flex"); }
+    function closePresetsModal() { const m=document.getElementById("videoPresetsModal"); m.classList.add("hidden"); m.classList.remove("flex"); }
+    function renderVideoPresetsList() {
+      const list=document.getElementById("videoPresetsList"), presets=readVideoPresets(); list.innerHTML="";
+      if (!presets.length) { const empty=document.createElement("div"); empty.className="rounded-2xl border border-dashed border-slate-700 p-5 text-center text-xs text-slate-400"; empty.textContent="Preset မရှိသေးပါ။ လက်ရှိ Setting ကို Save လုပ်ပြီး စတင်ပါ။"; list.appendChild(empty); return; }
+      presets.forEach(p=>{
+        const card=document.createElement("div"); card.className="rounded-2xl border border-slate-700 bg-slate-900/70 p-3 space-y-2";
+        const head=document.createElement("div"); head.className="flex items-center justify-between gap-2";
+        const name=document.createElement("div"); name.className="min-w-0 text-sm font-extrabold text-white truncate"; name.textContent="🎬 "+p.name;
+        const ratio=document.createElement("span"); ratio.className="shrink-0 rounded-lg bg-violet-500/15 px-2 py-1 text-[10px] font-bold text-violet-300"; ratio.textContent=p.settings?.aspect||"Video"; head.append(name,ratio);
+        const meta=document.createElement("p"); meta.className="text-[10px] text-slate-400"; const voice=PERSONAS.find(x=>x.id===p.settings?.voiceId); meta.textContent="Voice: "+(voice?.name||"Default");
+        const actions=document.createElement("div"); actions.className="grid grid-cols-3 gap-2";
+        const btn=(label,cls,fn)=>{const x=document.createElement("button");x.type="button";x.className="rounded-xl px-2 py-2 text-[11px] font-bold "+cls;x.textContent=label;x.addEventListener("click",fn);return x;};
+        actions.append(
+          btn("✓ အသုံးပြုမယ်","bg-violet-600 text-white",()=>{applyVideoPresetSettings(p.settings);document.getElementById("activePresetLabel").textContent="အသုံးပြုနေသည် — "+p.name;closePresetsModal();showToast("Preset အသုံးပြုပြီးပါပြီ: "+p.name,"success");}),
+          btn("✎ အမည်ပြောင်း","bg-slate-800 text-slate-200",()=>renameVideoPreset(p.id)),
+          btn("🗑 ဖျက်မယ်","bg-rose-950 text-rose-300",()=>deleteVideoPreset(p.id))
+        ); card.append(head,meta,actions); list.appendChild(card);
+      });
+    }
+    function saveCurrentVideoPreset() {
+      const raw=window.prompt("ဒီ Video Setting Preset အတွက် နာမည်တစ်ခုပေးပါ။"); if(!raw||!raw.trim())return;
+      const presets=readVideoPresets(), name=raw.trim().slice(0,48);
+      if(presets.some(p=>p.name.toLowerCase()===name.toLowerCase()))return showToast("ဒီနာမည်နဲ့ Preset ရှိပြီးသားပါ", "error");
+      presets.unshift({id:"preset_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),name,settings:collectVideoPresetSettings(),createdAt:new Date().toISOString()});
+      try{writeVideoPresets(presets);document.getElementById("activePresetLabel").textContent="နောက်ဆုံး Save လုပ်ထားသည် — "+name;renderVideoPresetsList();showToast("Preset သိမ်းပြီးပါပြီ: "+name,"success");}
+      catch(_){showToast("Preset သိမ်းမရပါ။ Browser Storage ကို စစ်ဆေးပါ။","error");}
+    }
+    function renameVideoPreset(id) {
+      const items=readVideoPresets(), p=items.find(x=>x.id===id); if(!p)return;
+      const raw=window.prompt("Preset နာမည်အသစ်ထည့်ပါ။",p.name); if(!raw||!raw.trim())return;
+      const name=raw.trim().slice(0,48); if(items.some(x=>x.id!==id&&x.name.toLowerCase()===name.toLowerCase()))return showToast("ဒီနာမည်ကို အသုံးပြုထားပြီးပါပြီ","error");
+      p.name=name;p.updatedAt=new Date().toISOString();writeVideoPresets(items);renderVideoPresetsList();showToast("Preset အမည်ပြောင်းပြီးပါပြီ","success");
+    }
+    function deleteVideoPreset(id) {
+      const items=readVideoPresets(),p=items.find(x=>x.id===id);if(!p||!window.confirm('"'+p.name+'" Preset ကို ဖျက်မှာ သေချာပါသလား။'))return;
+      writeVideoPresets(items.filter(x=>x.id!==id));renderVideoPresetsList();showToast("Preset ဖျက်ပြီးပါပြီ","success");
+    }
 
     // Init
     updateVoiceTriggerLabel();
