@@ -994,35 +994,28 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       toggleEffectPreview();
     }
 
-    document.getElementById("recapVideoFileInput").addEventListener("change", function(e) {
-      const file = this.files && this.files[0];
+    function loadRecapVideoFile(file) {
       if (!file) return;
-
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       if (file.size > 500 * 1024 * 1024) {
         showToast(`File size is ${sizeMB}MB. Max 500MB allowed`, "error");
         return;
       }
-
       currentUploadedRecapFile = file;
       document.getElementById("recapMediaNameTag").innerText = file.name;
       document.getElementById("recapMediaSizeTag").innerText = `${sizeMB} MB`;
       document.getElementById("recapDropzoneBox").classList.add("hidden");
       document.getElementById("recapVideoPreviewBox").classList.remove("hidden");
-
       const vEl = document.getElementById("recapVideoPlayerEl");
       const bgClone = document.getElementById("recapBlurredBackdropEl");
       const url = URL.createObjectURL(file);
-
-      vEl.src = url;
-      bgClone.src = url;
-
-      vEl.onloadedmetadata = () => {
-        videoDurationSeconds = Math.round(vEl.duration) || 180;
-      };
-
+      vEl.src = url; bgClone.src = url;
+      vEl.onloadedmetadata = () => { videoDurationSeconds = Math.round(vEl.duration) || 180; };
       toggleEffectPreview();
       showToast(`Video loaded: ${file.name} (${sizeMB} MB)`, "success");
+    }
+    document.getElementById("recapVideoFileInput").addEventListener("change", function() {
+      loadRecapVideoFile(this.files && this.files[0]);
     });
 
     // =========================================================================
@@ -1496,17 +1489,30 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           sourceVideo.playsInline = true;
           await new Promise((r) => { sourceVideo.onloadedmetadata = r; });
 
-          sourceVideo.playbackRate = playbackSpeed || 1.20;
+          const requestedVideoSpeed = Math.max(0.75, Math.min(2.0, Number(playbackSpeed) || 1.3));
+          sourceVideo.playbackRate = requestedVideoSpeed;
 
           const speechAudio = new Audio(URL.createObjectURL(audioBlob));
           await new Promise((resolve, reject) => {
             speechAudio.onloadedmetadata = resolve;
             speechAudio.onerror = () => reject(new Error("Voiceover audio metadata ကို ဖတ်မရပါ"));
           });
-          // Fit a long Burmese voice track into the source video's duration without slowing it down.
-          if (Number.isFinite(speechAudio.duration) && speechAudio.duration > sourceVideo.duration) {
-            speechAudio.playbackRate = Math.min(2, Math.max(1, speechAudio.duration / sourceVideo.duration));
-          }
+          // Keep narration at natural speed; adapt source-video speed in 10-second
+          // source segments so visual playback follows the narration timeline.
+          speechAudio.playbackRate = 1.0;
+          let nextVideoSyncMark = 0;
+          const updateSegmentPlaybackRate = () => {
+            if (!Number.isFinite(sourceVideo.duration) || !Number.isFinite(speechAudio.duration)) return;
+            const remainingVideo = Math.max(0.25, sourceVideo.duration - sourceVideo.currentTime);
+            const remainingVoice = Math.max(0.25, (speechAudio.duration - speechAudio.currentTime) / speechAudio.playbackRate);
+            const adaptiveRate = remainingVideo / remainingVoice;
+            sourceVideo.playbackRate = Math.max(0.75, Math.min(2.0, adaptiveRate));
+            nextVideoSyncMark = Math.floor(sourceVideo.currentTime / 10) * 10 + 10;
+          };
+          updateSegmentPlaybackRate();
+          sourceVideo.addEventListener("timeupdate", () => {
+            if (sourceVideo.currentTime >= nextVideoSyncMark - 0.12) updateSegmentPlaybackRate();
+          });
 
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           if (!AudioContextClass) throw new Error("ဒီ Browser မှာ Audio Export ကို မထောက်ပံ့ပါ");
@@ -2142,8 +2148,36 @@ ${sourceTranscript.slice(0, 100000)}
       const panel=document.getElementById("panelRecapVd");
       if(panel&&!document.getElementById("recapAssetTools")){
         const card=document.createElement("section");card.id="recapAssetTools";card.className="bg-[#0f172b]/95 border border-slate-800 rounded-3xl p-5 space-y-3 text-xs";
-        card.innerHTML='<div class="font-bold text-slate-200 text-sm">🧩 Logo & Thumbnail Tools</div><label class="block font-bold text-slate-300">Logo upload<input id="recapLogoUpload" type="file" accept="image/png,image/jpeg,image/webp" class="mt-2 block w-full"></label><label class="block text-slate-300">Logo size <b id="logoSizeTag">22%</b><input id="logoSizeSlider" type="range" min="8" max="45" value="22" class="w-full"></label><label class="block text-slate-300">Logo opacity <b id="logoOpacityTag">90%</b><input id="logoOpacitySlider" type="range" min="10" max="100" value="90" class="w-full"></label><p class="text-slate-400">Preview ထဲက Logo ကို ဆွဲရွှေ့နိုင်ပြီး Export ထဲမှာလည်း ပါဝင်ပါမယ်။</p><button id="sourceThumbBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">🖼️ Source Video Thumbnail Download</button><label class="block font-bold text-slate-300">3:4 Thumbnail Prompt<textarea id="recapThumbnailPrompt" rows="4" readonly class="mt-2 w-full"></textarea></label><button id="copyThumbPromptBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">📋 Thumbnail Prompt Copy</button>';
+        card.innerHTML='<div class="mb-3 p-3 rounded-2xl bg-[#080d1a] border border-slate-800 space-y-2">
+          <label for="recapSourceUrlInput" class="block text-[11px] font-bold text-slate-300">Paste a direct video URL (MP4 / WebM)</label>
+          <input id="recapSourceUrlInput" type="url" placeholder="https://example.com/video.mp4" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white">
+          <button id="loadSourceUrlBtn" type="button" class="w-full py-2 rounded-xl bg-blue-600 text-white font-bold">Load Direct Video URL</button>
+          <p class="text-[10px] text-slate-400">TikTok / Douyin share links need an authorized download source. This field loads direct video-file URLs only; cross-origin restrictions may apply.</p>
+        </div><div class="font-bold text-slate-200 text-sm">🧩 Logo & Thumbnail Tools</div><label class="block font-bold text-slate-300">Logo upload<input id="recapLogoUpload" type="file" accept="image/png,image/jpeg,image/webp" class="mt-2 block w-full"></label><label class="block text-slate-300">Logo size <b id="logoSizeTag">22%</b><input id="logoSizeSlider" type="range" min="8" max="45" value="22" class="w-full"></label><label class="block text-slate-300">Logo opacity <b id="logoOpacityTag">90%</b><input id="logoOpacitySlider" type="range" min="10" max="100" value="90" class="w-full"></label><p class="text-slate-400">Preview ထဲက Logo ကို ဆွဲရွှေ့နိုင်ပြီး Export ထဲမှာလည်း ပါဝင်ပါမယ်။</p><button id="sourceThumbBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">🖼️ Source Video Thumbnail Download</button><label class="block font-bold text-slate-300">3:4 Thumbnail Prompt<textarea id="recapThumbnailPrompt" rows="4" readonly class="mt-2 w-full"></textarea></label><button id="copyThumbPromptBtn" type="button" class="w-full py-2.5 bg-slate-800 text-white">📋 Thumbnail Prompt Copy</button>';
         panel.insertBefore(card,document.getElementById("recapResultCard")||null);
+
+        document.getElementById("loadSourceUrlBtn").onclick=async()=>{
+          const field=document.getElementById("recapSourceUrlInput"), raw=(field.value||"").trim();
+          if(!raw)return showToast("Video URL ထည့်ပေးပါ","error");
+          let parsed;try{parsed=new URL(raw);}catch(_){return showToast("URL မှားနေပါတယ်","error");}
+          if(!["https:","http:"].includes(parsed.protocol))return showToast("HTTP/HTTPS URL သာ အသုံးပြုနိုင်ပါတယ်","error");
+          if(/(^|\\.)((tiktok\\.com)|(douyin\\.com))$/i.test(parsed.hostname.replace(/^www\\./,"")) || /tiktok|douyin/i.test(parsed.hostname)){
+            return showToast("TikTok/Douyin Share Link ကို တိုက်ရိုက်မရယူနိုင်သေးပါ။ ခွင့်ပြုထားတဲ့နည်းနဲ့ MP4 ဖိုင်ရယူပြီး Upload လုပ်ပါ","error");
+          }
+          const button=document.getElementById("loadSourceUrlBtn");button.disabled=true;button.textContent="Downloading video file…";
+          try{
+            const response=await fetch(parsed.href,{mode:"cors"});
+            if(!response.ok)throw new Error("Server returned HTTP "+response.status);
+            const type=(response.headers.get("content-type")||"").toLowerCase();
+            if(!type.startsWith("video/") && !/\\.(mp4|webm|mov|m4v)(?:$|[?#])/i.test(parsed.pathname+parsed.search))throw new Error("ဒီ URL က တိုက်ရိုက် Video ဖိုင် မဟုတ်ပါ");
+            const blob=await response.blob();
+            if(!blob.size)throw new Error("Video ဖိုင်အလွတ် ဖြစ်နေပါတယ်");
+            if(blob.size>500*1024*1024)throw new Error("Video ဖိုင် 500MB ကျော်နေပါတယ်");
+            const ext=type.includes("webm")?"webm":type.includes("quicktime")?"mov":"mp4";
+            loadRecapVideoFile(new File([blob],"gorecap-import."+ext,{type:type.startsWith("video/")?type:"video/mp4"}));
+          }catch(err){showToast("URL ကနေ Video မရယူနိုင်ပါ။ CORS ပိတ်ထားခြင်း သို့မဟုတ် Share Page URL ဖြစ်နိုင်ပါတယ်။ "+(err.message||""),"error");}
+          finally{button.disabled=false;button.textContent="Load Direct Video URL";}
+        };
         document.getElementById("recapLogoUpload").onchange=e=>{const file=e.target.files?.[0];if(!file)return;if(recapLogoUrl)URL.revokeObjectURL(recapLogoUrl);recapLogoUrl=URL.createObjectURL(file);logo.src=recapLogoUrl;logo.style.display="block";};
         document.getElementById("logoSizeSlider").oninput=e=>{recapLogoWidth=Number(e.target.value)/100;logo.style.width=e.target.value+"%";document.getElementById("logoSizeTag").textContent=e.target.value+"%";};
         document.getElementById("logoOpacitySlider").oninput=e=>{recapLogoOpacity=Number(e.target.value)/100;logo.style.opacity=String(recapLogoOpacity);document.getElementById("logoOpacityTag").textContent=e.target.value+"%";};
