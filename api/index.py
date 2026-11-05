@@ -1682,62 +1682,63 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           cleanup();
           reject(new Error(message));
         };
+
         video.preload = "auto";
         video.playsInline = true;
         video.src = objectUrl;
-        video.onloadedmetadata = async () => {
-          try {
-            if (!window.MediaRecorder || !(window.AudioContext || window.webkitAudioContext)) {
-              throw new Error("ဒီ Browser မှာ Audio Extraction မထောက်ပံ့ပါ။ Chrome Browser နဲ့ ပြန်စမ်းပါ။");
-            }
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            await audioContext.resume();
-            const source = audioContext.createMediaElementSource(video);
-            const destination = audioContext.createMediaStreamDestination();
-            source.connect(destination);
-            if (!destination.stream.getAudioTracks().length) {
-              throw new Error("Video ထဲမှာ အသံ Track မတွေ့ပါ။");
-            }
-            const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-              ? "audio/webm;codecs=opus"
-              : (MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "");
-            recorder = new MediaRecorder(destination.stream, {
-              ...(mimeType ? { mimeType } : {}),
-              audioBitsPerSecond: 64000
-            });
-            recorder.ondataavailable = (event) => {
-              if (event.data && event.data.size) chunks.push(event.data);
-            };
-            recorder.onerror = () => fail("Audio Extraction မအောင်မြင်ပါ။ Video Format ကို စစ်ဆေးပါ။");
-            recorder.onstop = () => {
-              if (finished) return;
-              finished = true;
-              const audioBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
-              cleanup();
-              if (!audioBlob.size) {
-                reject(new Error("Video ထဲက အသံကို ထုတ်ယူလို့မရပါ။"));
-              } else if (audioBlob.size > 24 * 1024 * 1024) {
-                reject(new Error("ထုတ်ယူထားတဲ့ Audio ဖိုင်က 24MB ကျော်နေပါတယ်။ ပိုတိုတဲ့ Video အပိုင်းနဲ့ စမ်းပါ။"));
-              } else {
-                resolve(audioBlob);
-              }
-            };
-            video.ontimeupdate = () => {
-              if (video.duration && onProgress) {
-                onProgress(Math.min(100, Math.floor(video.currentTime / video.duration * 100)));
-              }
-            };
-            video.onended = () => {
-              if (recorder && recorder.state !== "inactive") recorder.stop();
-            };
-            video.onerror = () => fail("Video ကို Browser မှာ ဖွင့်မရပါ။ MP4 (H.264) ဖိုင်နဲ့ ပြန်စမ်းပါ။");
-            recorder.start(10000);
-            await video.play();
-          } catch (error) {
-            fail(error.message || "Audio Extraction မအောင်မြင်ပါ။");
-          }
-        };
         video.onerror = () => fail("Video ကို ဖတ်မရပါ။ MP4 သို့မဟုတ် WebM ဖိုင်နဲ့ ပြန်စမ်းပါ။");
+
+        try {
+          if (!window.MediaRecorder || !(window.AudioContext || window.webkitAudioContext)) {
+            throw new Error("ဒီ Browser မှာ Audio Extraction မထောက်ပံ့ပါ။ Chrome Browser နဲ့ ပြန်စမ်းပါ။");
+          }
+          // Start/resume audio and playback directly from the user's button click
+          // so mobile browser autoplay restrictions do not block extraction.
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          audioContext.resume().catch(() => {});
+          const source = audioContext.createMediaElementSource(video);
+          const destination = audioContext.createMediaStreamDestination();
+          source.connect(destination);
+          if (!destination.stream.getAudioTracks().length) {
+            throw new Error("Video ထဲမှာ အသံ Track မတွေ့ပါ။");
+          }
+          const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+            ? "audio/webm;codecs=opus"
+            : (MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "");
+          recorder = new MediaRecorder(destination.stream, {
+            ...(mimeType ? { mimeType } : {}),
+            audioBitsPerSecond: 64000
+          });
+          recorder.ondataavailable = (event) => {
+            if (event.data && event.data.size) chunks.push(event.data);
+          };
+          recorder.onerror = () => fail("Audio Extraction မအောင်မြင်ပါ။ Video Format ကို စစ်ဆေးပါ။");
+          recorder.onstop = () => {
+            if (finished) return;
+            finished = true;
+            const audioBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+            cleanup();
+            if (!audioBlob.size) {
+              reject(new Error("Video ထဲက အသံကို ထုတ်ယူလို့မရပါ။"));
+            } else if (audioBlob.size > 24 * 1024 * 1024) {
+              reject(new Error("ထုတ်ယူထားတဲ့ Audio ဖိုင်က 24MB ကျော်နေပါတယ်။ ပိုတိုတဲ့ Video အပိုင်းနဲ့ စမ်းပါ။"));
+            } else {
+              resolve(audioBlob);
+            }
+          };
+          video.ontimeupdate = () => {
+            if (video.duration && onProgress) {
+              onProgress(Math.min(100, Math.floor(video.currentTime / video.duration * 100)));
+            }
+          };
+          video.onended = () => {
+            if (recorder && recorder.state !== "inactive") recorder.stop();
+          };
+          recorder.start(10000);
+          video.play().catch(() => fail("Video ကို Browser မှာ ဖွင့်မရပါ။ Chrome Browser နဲ့ ပြန်စမ်းပါ။"));
+        } catch (error) {
+          fail(error.message || "Audio Extraction မအောင်မြင်ပါ။");
+        }
       });
     }
 
