@@ -1560,7 +1560,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           let animationFrameId = null;
           const sentences = scriptText.split(/(?<=[။!?\n])/).filter(s => s.trim().length > 0);
           let startTimeStamp = performance.now();
-          const totalExpectedDuration = Math.max(1, Math.min(targetDuration || 180, 480));
+          const totalExpectedDuration = Math.max(1, Math.min(Math.max(Number(targetDuration) || 180, Number(speechAudio.duration) || 0), 480));
 
           function renderFrame(now) {
             const elapsed = (now - startTimeStamp) / 1000;
