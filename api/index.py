@@ -1281,13 +1281,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const result = document.getElementById("transcriberResultText");
       btn.disabled = true;
       try {
-        let audioBlob = file;
-        let audioName = file.name;
-        if (file.type.startsWith("video/")) {
-          btn.innerText = "⚡ Audio ကို မြန်နှုန်း 8x နဲ့ ထုတ်ယူနေပါတယ်...";
-          audioBlob = await extractAudioForWhisper(file, percent => { btn.innerText = `⚡ Audio Extraction ${percent}%`; });
-          audioName = "gorecap-transcriber.webm";
-        }
+        btn.innerText = "⚡ Audio ကို မြန်နှုန်း 8x နဲ့ ထုတ်ယူနေပါတယ်...";
+        const audioBlob = await extractAudioForWhisper(file, percent => { btn.innerText = `⚡ Audio Extraction ${percent}%`; });
+        const audioName = "gorecap-transcriber.webm";
         if (audioBlob.size > 4 * 1024 * 1024) throw new Error("Audio ဖိုင် 4MB ကျော်နေပါတယ်။ Video ကို ပိုတိုအောင် ဖြတ်ပါ၊ သို့မဟုတ် Audio ကို အပိုင်းခွဲပါ။");
         btn.innerText = "Whisper Server ကို ဆက်သွယ်နေပါတယ်...";
         const form = new FormData();
@@ -1316,7 +1312,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const groqKey = (localStorage.getItem("groq_api_key") || "").trim();
       if (!videoFile) return showToast("Dubbing လုပ်မယ့် ဗီဒီယိုဖိုင် ရွေးပါ", "error");
       if (!groqKey) { showToast("Groq API Key ထည့်ပေးပါ", "error"); openKeysModal(); return; }
-      if (videoFile.size > 25 * 1024 * 1024) return showToast("Whisper ဖိုင်ကန့်သတ်ချက် 25MB ထက်ကျော်နေပါတယ်", "error");
 
       const btn = document.getElementById("dubbingStartBtn");
       const status = document.getElementById("dubbingStatus");
