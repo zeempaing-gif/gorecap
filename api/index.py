@@ -324,19 +324,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </label>
         </div>
                 <div class="space-y-2 py-1 border-t border-slate-800/60">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-bold text-slate-200">Blur (Shape / Box)</div>
-              <div class="text-[10px] text-slate-400">လိုသလို အကြီးသေးဆွဲဆန့်ပြီး စာတန်း/ရေစာ ဖုံးကွယ်မည်</div>
-            </div>
-            <div class="relative inline-block w-11 h-6 align-middle select-none">
-              <input type="checkbox" id="effectBlurSwitch" onchange="toggleEffectPreview()" class="switch-checkbox hidden" />
-              <label for="effectBlurSwitch" class="switch-label block overflow-hidden h-6 rounded-full bg-slate-800 cursor-pointer transition-colors border border-slate-700">
-                <span class="switch-dot block h-6 w-6 rounded-full bg-white shadow transform transition-transform"></span>
-              </label>
-            </div>
-          </div>
-
           <div id="blurDimensionControls" class="hidden p-3 rounded-2xl bg-[#080d1a] border border-slate-800 grid grid-cols-2 gap-3 text-[11px]">
             <div>
               <div class="flex justify-between text-slate-400 mb-1">
