@@ -2542,7 +2542,9 @@ async def generate_gemini_text(
 def _telegram_config():
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or os.getenv("BOT_TOKEN", "").strip()
     webhook_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
-    web_app_url = os.getenv("WEB_APP_URL", "").strip()
+    web_app_url = (os.getenv("TELEGRAM_WEB_APP_URL", "").strip() or os.getenv("VERCEL_BRANCH_URL", "").strip() or os.getenv("WEB_APP_URL", "").strip())
+    if web_app_url and not web_app_url.startswith(("https://", "http://")):
+        web_app_url = "https://" + web_app_url
     return token, webhook_secret, web_app_url
 
 
@@ -2611,7 +2613,8 @@ async def setup_telegram_webhook(request: Request):
     if not hmac.compare_digest(supplied, webhook_secret):
         raise HTTPException(status_code=403, detail="Invalid setup secret")
 
-    vercel_host = os.getenv("VERCEL_URL", "").strip()
+    # Prefer the stable branch alias so the bot keeps following new preview deployments.
+    vercel_host = (os.getenv("VERCEL_BRANCH_URL", "").strip() or os.getenv("VERCEL_URL", "").strip())
     if not vercel_host:
         raise HTTPException(status_code=503, detail="Preview deployment URL is unavailable")
     webhook_url = f"https://{vercel_host}/api/telegram/webhook"
