@@ -1,9 +1,11 @@
 import os
+import json
+import hmac
 import asyncio
 import urllib.parse
 import urllib.request
 import edge_tts
-from fastapi import FastAPI, HTTPException, UploadFile, File, Header
+from fastapi import FastAPI, HTTPException, UploadFile, File, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, HTMLResponse
 from pydantic import BaseModel
@@ -2533,6 +2535,145 @@ async def generate_gemini_text(
             raise HTTPException(status_code=502, detail=f"Gemini connection failed: {str(error)[:300]}")
 
     return await asyncio.to_thread(call_gemini)
+
+
+
+# Telegram Bot integration. Secrets are read only from server-side environment variables.
+def _telegram_config():
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip() or os.getenv("BOT_TOKEN", "").strip()
+    webhook_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
+    web_app_url = os.getenv("WEB_APP_URL", "").strip()
+    return token, webhook_secret, web_app_url
+
+
+def _telegram_api_call(method: str, payload: dict):
+    token, _, _ = _telegram_config()
+    if not token:
+        raise RuntimeError("Telegram bot is not configured")
+    request = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/{method}",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        raise RuntimeError("Telegram API request failed")
+    if not result.get("ok"):
+        raise RuntimeError("Telegram API rejected the request")
+    return result.get("result", {})
+
+
+def _telegram_start_message(chat_id: int, first_name: str = ""):
+    _, _, web_app_url = _telegram_config()
+    greeting = f" {first_name}" if first_name else ""
+    text = (
+        f"မင်္ဂလာပါ{greeting} 👋\n\n"
+        "🍿 GoRecap မှ ကြိုဆိုပါတယ်။\n"
+        "Video ကို Recap ပြုလုပ်ခြင်း၊ စာသားထုတ်ယူခြင်းနဲ့ Voice Over ပြုလုပ်ခြင်းတို့ကို "
+        "တစ်နေရာတည်းမှာ လုပ်ဆောင်နိုင်ပါတယ်။\n\n"
+        "အောက်က ခလုတ်ကိုနှိပ်ပြီး GoRecap Studio ကို ဖွင့်လိုက်ပါ။"
+    )
+    keyboard = {"inline_keyboard": [[
+        {"text": "🍿 Open GoRecap Studio", "web_app": {"url": web_app_url}}
+    ]]} if web_app_url.startswith("https://") else {"inline_keyboard": [[
+        {"text": "🍿 Open GoRecap Studio", "url": web_app_url}
+    ]]} if web_app_url.startswith("http://") else None
+    payload = {"chat_id": chat_id, "text": text}
+    if keyboard:
+        payload["reply_markup"] = keyboard
+    else:
+        payload["text"] += "\n\nStudio link ကို မရရှိသေးပါ။ Bot administrator က WEB_APP_URL ကို စစ်ဆေးပေးပါ။"
+    return _telegram_api_call("sendMessage", payload)
+
+
+@app.post("/api/telegram/setup")
+async def setup_telegram_webhook(request: Request):
+    """Register this preview deployment as the Telegram webhook; requires the setup secret."""
+    token, webhook_secret, _ = _telegram_config()
+    if not token or not webhook_secret:
+        raise HTTPException(status_code=503, detail="Telegram bot configuration is incomplete")
+    supplied = (
+        request.headers.get("x-setup-secret", "")
+        or request.headers.get("x-telegram-setup-secret", "")
+    )
+    authorization = request.headers.get("authorization", "")
+    if not supplied and authorization.lower().startswith("bearer "):
+        supplied = authorization[7:].strip()
+    if not supplied:
+        try:
+            body = await request.json()
+            supplied = str(body.get("setup_secret") or body.get("secret") or "")
+        except Exception:
+            supplied = ""
+    if not hmac.compare_digest(supplied, webhook_secret):
+        raise HTTPException(status_code=403, detail="Invalid setup secret")
+
+    vercel_host = os.getenv("VERCEL_URL", "").strip()
+    if not vercel_host:
+        raise HTTPException(status_code=503, detail="Preview deployment URL is unavailable")
+    webhook_url = f"https://{vercel_host}/api/telegram/webhook"
+    try:
+        result = await asyncio.to_thread(
+            _telegram_api_call,
+            "setWebhook",
+            {
+                "url": webhook_url,
+                "secret_token": webhook_secret,
+                "allowed_updates": ["message", "callback_query"],
+            },
+        )
+    except Exception:
+        raise HTTPException(status_code=502, detail="Telegram webhook registration failed")
+    return {"ok": True, "webhook_configured": bool(result), "webhook_url": webhook_url}
+
+
+@app.post("/api/telegram/webhook")
+async def telegram_webhook(request: Request):
+    """Receive Telegram updates and respond to /start without exposing bot credentials."""
+    token, webhook_secret, _ = _telegram_config()
+    if not token or not webhook_secret:
+        raise HTTPException(status_code=503, detail="Telegram bot configuration is incomplete")
+    received_secret = request.headers.get("x-telegram-bot-api-secret-token", "")
+    if not hmac.compare_digest(received_secret, webhook_secret):
+        raise HTTPException(status_code=403, detail="Invalid Telegram webhook signature")
+    try:
+        update = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Telegram update")
+    message = update.get("message") or update.get("edited_message") or {}
+    chat = message.get("chat") or {}
+    chat_id = chat.get("id")
+    text = str(message.get("text") or "").strip()
+    if not chat_id or not text:
+        return {"ok": True, "ignored": True}
+    command = text.split()[0].split("@")[0].lower()
+    if command in ("/start", "/help"):
+        first_name = str((message.get("from") or {}).get("first_name") or "")
+        try:
+            await asyncio.to_thread(_telegram_start_message, chat_id, first_name)
+        except Exception:
+            raise HTTPException(status_code=502, detail="Telegram reply could not be delivered")
+    else:
+        try:
+            await asyncio.to_thread(
+                _telegram_api_call,
+                "sendMessage",
+                {
+                    "chat_id": chat_id,
+                    "text": "🍿 GoRecap ကို အသုံးပြုရန် အောက်က Open GoRecap Studio ခလုတ်ကိုနှိပ်ပါ။\n/help ကိုနှိပ်ပြီး အကူအညီရယူနိုင်ပါတယ်။",
+                    "reply_markup": {
+                        "inline_keyboard": [[
+                            {"text": "🍿 Open GoRecap Studio", "web_app": {"url": _telegram_config()[2]}}
+                        ]]
+                    } if _telegram_config()[2].startswith("https://") else None,
+                },
+            )
+        except Exception:
+            raise HTTPException(status_code=502, detail="Telegram reply could not be delivered")
+    return {"ok": True}
 
 
 @app.get("/{full_path:path}")
